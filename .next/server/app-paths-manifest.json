@@ -1,0 +1,6 @@
+{
+  "/api/chat/health/route": "app/api/chat/health/route.js",
+  "/api/chat/route": "app/api/chat/route.js",
+  "/phase4/long-term-goals/page": "app/phase4/long-term-goals/page.js",
+  "/phase4/short-term-goals/page": "app/phase4/short-term-goals/page.js"
+}
