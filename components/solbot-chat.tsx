@@ -546,6 +546,55 @@ For assistance, you can:
   const cleanMessageContent = (content: string): string => {
     if (!content || typeof content !== 'string') return content;
 
+    // Check if we need to enhance evaluation section
+    if (content.includes("Specificity:") || content.includes("Knowledge Alignment:") || content.includes("Resource Planning:")) {
+      // Find evaluation section and replace with enhanced version
+      const sections = content.split(/\n\n|##/);
+      
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        
+        // If this is the evaluation section with scores
+        if ((section.includes("Specificity:") || section.includes("specificity:")) && 
+            (section.includes("Knowledge Alignment:") || section.includes("knowledge alignment:") || section.includes("Resource Planning:"))) {
+          
+          // Extract scores (assuming they're in the format "Score: X" or "Score: X (comment)")
+          const specificityMatch = section.match(/Specificity:\s*(\d+)/i);
+          const knowledgeMatch = section.match(/Knowledge\s+Alignment:\s*(\d+)/i);
+          const resourceMatch = section.match(/Resource\s+Planning:\s*(\d+)/i);
+          
+          const specificityScore = specificityMatch ? parseInt(specificityMatch[1]) : 0;
+          const knowledgeScore = knowledgeMatch ? parseInt(knowledgeMatch[1]) : 0;
+          const resourceScore = resourceMatch ? parseInt(resourceMatch[1]) : 0;
+          
+          const avgScore = ((specificityScore + knowledgeScore + resourceScore) / 3).toFixed(1);
+          const avgScoreNum = parseFloat(avgScore);
+          const supportLevel = avgScoreNum < 1.5 ? "HIGH" : avgScoreNum < 2.5 ? "MEDIUM" : "LOW";
+          
+          // Create enhanced evaluation HTML with color coding and progress bars
+          const enhancedEvaluation = `
+## 📊 Learning Progress Evaluation
+
+| Criteria | Score | Feedback | How to Improve |
+|----------|-------|----------|---------------|
+| **Specificity** | \`${specificityScore}/3\` | ${getProgressBar(specificityScore)} | ${getImprovementTip("Specificity", specificityScore)} |
+| **Knowledge Alignment** | \`${knowledgeScore}/3\` | ${getProgressBar(knowledgeScore)} | ${getImprovementTip("Knowledge Alignment", knowledgeScore)} |
+| **Resource Planning** | \`${resourceScore}/3\` | ${getProgressBar(resourceScore)} | ${getImprovementTip("Resource Planning", resourceScore)} |
+
+**Overall Progress:** ${getProgressBar(parseFloat(avgScore))} \`${avgScore}/3\`
+
+${getSupportMessage(supportLevel, parseFloat(avgScore))}
+`;
+          sections[i] = enhancedEvaluation;
+          break;
+        }
+      }
+      
+      // Reconstruct the content with enhanced evaluation
+      return sections.join("\n\n");
+    }
+
+    // If no evaluation section found, just clean as before
     // Remove anything in square brackets that contains evaluation information
     const patterns = [
       /\[(?:Note|Evaluation):[^\]]+\]/g,
@@ -560,6 +609,199 @@ For assistance, you can:
     });
 
     return cleanedContent.trim();
+  }
+
+  // Helper function to generate progress bars for scores
+  const getProgressBar = (score: number): string => {
+    // Create a visual progress bar
+    let bar = "";
+    const fullColor = score < 1.2 ? "🔴" : score < 2.2 ? "🟠" : "🟢";
+    const emptyColor = "⚪";
+    
+    // Convert score to filled circles (max 3)
+    const filled = Math.round(score);
+    const empty = 3 - filled;
+    
+    bar = fullColor.repeat(filled) + emptyColor.repeat(empty);
+    
+    return bar;
+  }
+  
+  // Helper function to get improvement tips for each criterion
+  const getImprovementTip = (criterion: string, score: number): string => {
+    // Phase-specific improvement tips
+    const phaseSpecificTips: Record<string, Record<string, Record<string, Record<number, string>>>> = {
+      phase1: {
+        general: {
+          Specificity: {
+            1: "Define what specific aspects of SRL you want to understand",
+            2: "Set clear goals for how SRL will benefit your learning",
+            3: "Your SRL learning goals are well-defined"
+          },
+          "Knowledge Alignment": {
+            1: "Connect SRL concepts to your current learning experiences",
+            2: "Identify which SRL strategies match your learning style",
+            3: "Your SRL goals align well with your background"
+          },
+          "Resource Planning": {
+            1: "Find specific SRL resources relevant to your field",
+            2: "Create a plan to implement SRL in your daily studying",
+            3: "Your SRL resource planning is comprehensive"
+          }
+        }
+      },
+      phase2: {
+        general: {
+          Specificity: {
+            1: "Define concrete learning objectives for your psychology studies",
+            2: "Add specific psychology sub-fields and theories to focus on",
+            3: "Your psychology learning goals are well-defined"
+          },
+          "Knowledge Alignment": {
+            1: "Connect psychology goals to your current knowledge level",
+            2: "Identify which psychology concepts you need to review first",
+            3: "Your psychology goals align well with your background"
+          },
+          "Resource Planning": {
+            1: "Identify specific psychology textbooks, courses or resources",
+            2: "Structure psychology resources by topic importance",
+            3: "Your psychology resource planning is comprehensive"
+          }
+        }
+      },
+      phase3: {
+        general: {
+          Specificity: {
+            1: "Break your complex learning goal into smaller objectives",
+            2: "Define specific milestones for your learning journey",
+            3: "Your learning breakdown is clear and actionable"
+          },
+          "Knowledge Alignment": {
+            1: "Identify prerequisite knowledge needed for each sub-goal",
+            2: "Map dependencies between different learning components",
+            3: "Your learning components are well-aligned with your knowledge"
+          },
+          "Resource Planning": {
+            1: "Assign specific resources to each learning component",
+            2: "Create a roadmap showing when to use each resource",
+            3: "Your resource allocation is comprehensive and efficient"
+          }
+        }
+      },
+      phase4: {
+        long_term_goals: {
+          Specificity: {
+            1: "Define your long-term learning goals with clear outcomes",
+            2: "Add specific timeframes and success criteria to your goals",
+            3: "Your long-term goals are comprehensive and specific"
+          },
+          "Knowledge Alignment": {
+            1: "Connect long-term goals to your career or personal aspirations",
+            2: "Map how these goals build on your existing knowledge",
+            3: "Your long-term goals align perfectly with your trajectory"
+          },
+          "Resource Planning": {
+            1: "Identify long-term resources and tools you'll need",
+            2: "Create a sustainable resource acquisition timeline",
+            3: "Your long-term resource planning is robust and complete"
+          }
+        },
+        short_term_goals: {
+          Specificity: {
+            1: "Create SMART goals with measurable outcomes",
+            2: "Define weekly or monthly learning objectives",
+            3: "Your short-term goals are clear and actionable"
+          },
+          "Knowledge Alignment": {
+            1: "Link short-term goals to build toward your long-term vision",
+            2: "Identify quick wins based on your current knowledge",
+            3: "Your short-term goals effectively leverage your background"
+          },
+          "Resource Planning": {
+            1: "List specific resources needed for immediate learning",
+            2: "Schedule specific times to use each resource",
+            3: "Your short-term resource planning is detailed and practical"
+          }
+        },
+        contingency_strategies: {
+          Specificity: {
+            1: "Identify specific obstacles that might occur",
+            2: "Create detailed if-then contingency plans",
+            3: "Your contingency planning is thorough and specific"
+          },
+          "Knowledge Alignment": {
+            1: "Analyze past learning challenges to prepare better",
+            2: "Adapt strategies based on your learning strengths/weaknesses",
+            3: "Your contingency plans are perfectly aligned with your needs"
+          },
+          "Resource Planning": {
+            1: "Identify backup resources for each major learning goal",
+            2: "Create a flexible schedule that accommodates setbacks",
+            3: "Your backup resource planning is comprehensive"
+          }
+        }
+      },
+      phase5: {
+        general: {
+          Specificity: {
+            1: "Define specific monitoring intervals and review points",
+            2: "Create measurable progress indicators for each goal",
+            3: "Your monitoring approach is detailed and systematic"
+          },
+          "Knowledge Alignment": {
+            1: "Connect monitoring strategies to your learning style",
+            2: "Design self-assessments that target your weak areas",
+            3: "Your monitoring approach aligns perfectly with your needs"
+          },
+          "Resource Planning": {
+            1: "Identify tools to track progress (journals, apps, etc.)",
+            2: "Schedule regular reflection and adjustment times",
+            3: "Your monitoring resource planning is comprehensive"
+          }
+        }
+      }
+    };
+
+    // Get phase-specific tip if available
+    if (phase && component && 
+        phaseSpecificTips[phase] && 
+        phaseSpecificTips[phase][component] && 
+        phaseSpecificTips[phase][component][criterion] && 
+        phaseSpecificTips[phase][component][criterion][score]) {
+      return phaseSpecificTips[phase][component][criterion][score];
+    }
+    
+    // Fall back to general tips if phase-specific ones aren't available
+    if (criterion === "Specificity") {
+      if (score <= 1) return "Define concrete learning objectives with measurable outcomes";
+      if (score <= 2) return "Add timeframes and specific topics to your goals";
+      return "Your goals are well-defined and specific";
+    }
+    
+    if (criterion === "Knowledge Alignment") {
+      if (score <= 1) return "Connect goals to your current knowledge level and background";
+      if (score <= 2) return "Identify knowledge gaps and prerequisites more clearly";
+      return "Your goals align well with your knowledge background";
+    }
+    
+    if (criterion === "Resource Planning") {
+      if (score <= 1) return "Identify specific materials, tools and mentors you'll need";
+      if (score <= 2) return "Create a structured resource roadmap with alternatives";
+      return "Your resource planning is comprehensive";
+    }
+    
+    return "";
+  }
+  
+  // Helper function to generate motivational messages based on support level
+  const getSupportMessage = (supportLevel: string, score: number): string => {
+    if (supportLevel === "HIGH") {
+      return `> 💪 **Opportunity for Growth**: You're at the beginning of your learning journey! With more specific goals and resource planning, you'll see rapid improvement. What specific aspect would you like to clarify first?`;
+    } else if (supportLevel === "MEDIUM") {
+      return `> 🌱 **Building Momentum**: You're making good progress! With some refinement of your learning objectives and resources, you'll be well on your way to mastery. What specific element would you like to strengthen next?`;
+    } else {
+      return `> 🌟 **Strong Foundation**: Excellent work structuring your learning approach! You have well-defined objectives and resources. Let's focus on optimizing your learning strategy for even better results!`;
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -630,9 +872,7 @@ For assistance, you can:
     
     // Base thinking texts that apply to all phases
     const baseThinkingTexts = [
-      "SoLBot is thinking",
-      "Processing your message",
-      "Analyzing response"
+      "SoLBot is thinking"
     ]
     
     // Phase-specific thinking texts
@@ -674,15 +914,48 @@ For assistance, you can:
     const thinkingTexts = [...baseThinkingTexts, ...phaseTexts, "Almost ready"]
     
     // Response fragments to simulate streaming (show partial responses while waiting)
-    const responseFragments = [
-      "I'm analyzing your message...",
-      "Here's what I'm thinking about your input...",
-      "Starting to formulate a response...",
-      "Processing what you've shared...",
-      "Putting together some thoughts for you...",
-      "Working on a personalized response...",
-      "Almost done with your answer..."
-    ]
+    const responseFragments = {
+      phase1: [
+        "Analyzing your learning interests...",
+        "Identifying initial learning patterns...",
+        "Preparing personalized guidance for your journey...",
+        "Evaluating potential learning paths for you...",
+        "Structuring initial recommendations based on your input..."
+      ],
+      phase2: [
+        "Analyzing your learning objectives in detail...",
+        "Evaluating resource requirements for your goals...",
+        "Assessing knowledge gaps and prerequisites...",
+        "Preparing a structured learning plan outline...",
+        "Identifying key milestones for your learning journey..."
+      ],
+      phase3: [
+        "Analyzing how to break down your complex goal...",
+        "Structuring intermediate objectives for you...",
+        "Mapping dependencies between learning components...",
+        "Evaluating optimal sequencing for your learning path...",
+        "Preparing adaptive scaffolding based on your needs..."
+      ],
+      phase4: [
+        "Formulating specific, measurable learning objectives...",
+        "Creating SMART goal structures for your learning...",
+        "Designing actionable next steps for immediate progress...",
+        "Establishing clear metrics to track your advancement...",
+        "Preparing a time-bound learning framework for you..."
+      ],
+      default: [
+        "Processing your request with care...",
+        "Analyzing the best approach to help you...",
+        "Preparing a thoughtful, personalized response...",
+        "Structuring guidance tailored to your needs...",
+        "Almost ready with your customized feedback..."
+      ]
+    }
+    
+    // Get appropriate fragments based on current phase
+    const getPhaseFragments = () => {
+      return responseFragments[phase as keyof typeof responseFragments] || responseFragments.default;
+    }
     
     // Add typing indicator with initial message
     setMessages((prev) => [
@@ -703,7 +976,7 @@ For assistance, you can:
       
       // After a few cycles, start showing response fragments to simulate streaming
       const content = count > 2 && count % 2 === 0 
-        ? responseFragments[Math.floor(Math.random() * responseFragments.length)]
+        ? getPhaseFragments()[Math.floor(Math.random() * getPhaseFragments().length)]
         : thinkingTexts[count]
       
       setLoadingText(content)

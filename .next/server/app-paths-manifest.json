@@ -1,6 +1,8 @@
 {
-  "/api/chat/health/route": "app/api/chat/health/route.js",
-  "/api/chat/route": "app/api/chat/route.js",
+  "/summary/page": "app/summary/page.js",
+  "/phase4/short-term-goals/page": "app/phase4/short-term-goals/page.js",
   "/phase4/long-term-goals/page": "app/phase4/long-term-goals/page.js",
-  "/phase4/short-term-goals/page": "app/phase4/short-term-goals/page.js"
+  "/phase4/page": "app/phase4/page.js",
+  "/phase4/contingency-strategies/page": "app/phase4/contingency-strategies/page.js",
+  "/phase5/page": "app/phase5/page.js"
 }

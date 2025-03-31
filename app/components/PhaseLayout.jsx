@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { notifyPhaseTransition } from '../../lib/useChatAgent';
-import { Bot, User, Send } from 'lucide-react';
+import { Bot, User, Send, LightbulbIcon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
@@ -16,6 +16,109 @@ const ChatPortal = dynamic(() => Promise.resolve(({ children, container }) => {
   
   return mounted && container ? createPortal(children, container) : null;
 }), { ssr: false });
+
+// Loading tips component that shows different tips based on the current phase
+const LoadingTips = ({ phase }) => {
+  // Predefined tips for different phases
+  const phaseTips = {
+    phase1: [
+      "Self-regulated learning helps you become an independent and efficient learner.",
+      "Breaking down your goals into smaller, achievable tasks can make learning more manageable.",
+      "Regular reflection on your learning process helps improve future learning experiences."
+    ],
+    phase2: [
+      "Task Analysis helps you break down complex tasks into manageable steps.",
+      "When planning resources, consider what materials, time, and support you'll need.",
+      "SMART goals are Specific, Measurable, Achievable, Relevant, and Time-bound.",
+      "Planning ahead helps you identify potential obstacles before they arise."
+    ],
+    phase3: [
+      "Monitoring your progress regularly helps you stay on track with your learning goals.",
+      "If something isn't working, don't be afraid to adjust your strategy.",
+      "Self-testing is one of the most effective ways to solidify your learning.",
+      "Taking brief notes about what worked and what didn't can improve your future learning."
+    ],
+    phase4: [
+      "A SMART goal should be Specific, Measurable, Achievable, Relevant, and Time-bound.",
+      "Short-term goals help you build momentum toward your long-term objectives.",
+      "Consider how your learning goals connect to your broader personal or career aspirations.",
+      "Breaking down big goals into smaller milestones makes them less overwhelming."
+    ],
+    phase5: [
+      "Reflecting on past learning experiences helps you improve future ones.",
+      "Consider both what you learned and how you learned it.",
+      "Identifying specific strategies that worked well helps reinforce good learning habits.",
+      "Learning from setbacks is just as important as celebrating successes."
+    ]
+  };
+
+  // Get tips for the current phase, defaulting to general tips if phase not found
+  const currentPhaseTips = phaseTips[phase] || [
+    "Setting SMART goals helps make your objectives clear and achievable.",
+    "Breaking down complex tasks makes them more manageable.",
+    "Regular reflection improves your learning process over time."
+  ];
+
+  // Select a random tip from the current phase
+  const [tipIndex, setTipIndex] = useState(0);
+
+  // Rotate tips every 6 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTipIndex(prevIndex => (prevIndex + 1) % currentPhaseTips.length);
+    }, 6000);
+    
+    return () => clearInterval(interval);
+  }, [currentPhaseTips.length]);
+
+  return (
+    <div className="loading-tip">
+      <div className="tip-icon">
+        <LightbulbIcon size={20} />
+      </div>
+      <div className="tip-content">
+        <div className="tip-label">Tip:</div>
+        <div className="tip-text">{currentPhaseTips[tipIndex]}</div>
+      </div>
+      <style jsx>{`
+        .loading-tip {
+          background-color: rgba(59, 130, 246, 0.1);
+          border-left: 3px solid #3b82f6;
+          padding: 0.75rem 1rem;
+          margin: 1rem 0;
+          border-radius: 0.25rem;
+          display: flex;
+          align-items: flex-start;
+          max-width: 90%;
+          transition: opacity 0.5s ease;
+          animation: fadeInOut 12s infinite;
+        }
+        .tip-icon {
+          color: #3b82f6;
+          margin-right: 0.75rem;
+          margin-top: 0.125rem;
+        }
+        .tip-content {
+          flex: 1;
+        }
+        .tip-label {
+          font-weight: 500;
+          color: #3b82f6;
+          margin-bottom: 0.25rem;
+        }
+        .tip-text {
+          color: white;
+          font-size: 0.925rem;
+          line-height: 1.5;
+        }
+        @keyframes fadeInOut {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+};
 
 const PhaseLayout = ({ 
   children, 
@@ -234,6 +337,7 @@ const PhaseLayout = ({
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p>Loading phase content...</p>
+          <LoadingTips phase={phase} />
         </div>
       ) : (
         <div className="phase-layout">
@@ -278,6 +382,7 @@ const PhaseLayout = ({
                       </div>
                     </div>
                   ))}
+                  {isTyping && <LoadingTips phase={phase} />}
                 </div>
                 
                 <div className="chat-input-container">
