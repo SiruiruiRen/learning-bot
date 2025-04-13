@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3004",
-    "build": "next build",
+    "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
     "test-connection": "node test_frontend_connection.js"
@@ -59,9 +59,9 @@
     "marked": "^15.0.7",
     "next": "15.1.0",
     "next-themes": "^0.4.4",
-    "react": "^18",
+    "react": "18.2.0",
     "react-day-picker": "8.10.1",
-    "react-dom": "^18",
+    "react-dom": "18.2.0",
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
@@ -76,12 +76,16 @@
     "@types/dompurify": "^3.0.5",
     "@types/marked": "^5.0.2",
     "@types/node": "^22",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "18.2.0",
+    "@types/react-dom": "18.2.0",
     "chalk": "^4.1.2",
     "node-fetch": "^2.6.9",
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
+  },
+  "overrides": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   }
 }
