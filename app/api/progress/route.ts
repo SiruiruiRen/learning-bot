@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase client with error handling
+let supabase: any = null;
+try {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.warn('Supabase URL or key missing in progress API, database features will be disabled');
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client in progress API:', error);
+}
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is initialized
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection unavailable' },
+        { status: 503 }
+      );
+    }
+
     const userId = request.nextUrl.searchParams.get('userId');
     const courseId = request.nextUrl.searchParams.get('courseId');
 
@@ -54,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     // Get phase progress
     const coursesWithPhases = await Promise.all(
-      userCourses.map(async (course) => {
+      userCourses.map(async (course: any) => {
         const { data: phases, error: phaseError } = await supabase
           .from('phase_progress')
           .select(`
@@ -95,6 +114,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is initialized
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection unavailable' },
+        { status: 503 }
+      );
+    }
+
     const data = await request.json();
     const { userId, phaseId, courseId, status, scaffoldingLevel } = data;
 

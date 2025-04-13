@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase client with error handling
+let supabase: any = null;
+try {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully in user profile API');
+  } else {
+    console.warn('Supabase URL or key missing in user profile API, database features will be disabled');
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client in user profile API:', error);
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is initialized
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection unavailable' },
+        { status: 503 }
+      );
+    }
+
     const data = await request.json();
     const { email, full_name, education_level, background, preferences } = data;
 
@@ -94,6 +113,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is initialized
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database connection unavailable' },
+        { status: 503 }
+      );
+    }
+
     const email = request.nextUrl.searchParams.get('email');
 
     if (!email) {
