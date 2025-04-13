@@ -10,11 +10,19 @@ from dotenv import load_dotenv
 # Add the project root to the Python path to fix imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Internal imports - use relative imports to fix module not found errors
-from backend.routes.chat import router as chat_router
-from backend.routes.user import router as user_router
-from backend.routes.scores import router as scores_router
-from backend.utils.db import init_db, close_db
+# Try to import using both styles to ensure compatibility
+try:
+    # First try relative imports (works when running from project root)
+    from backend.routes.chat import router as chat_router
+    from backend.routes.user import router as user_router
+    from backend.routes.scores import router as scores_router
+    from backend.utils.db import init_db, close_db
+except ImportError:
+    # Fallback to direct imports (works when running directly in backend dir)
+    from routes.chat import router as chat_router
+    from routes.user import router as user_router
+    from routes.scores import router as scores_router
+    from utils.db import init_db, close_db
 
 # Load environment variables
 load_dotenv()
@@ -50,9 +58,17 @@ app = FastAPI(
 )
 
 # Configure CORS
+origins = [
+    "http://localhost:3000",          # Local development
+    "http://localhost:3004",          # Local development alternate port
+    "https://sol-bot-seven.vercel.app", # Vercel domain
+    "https://learning-bot.vercel.app",   # Alternate Vercel domain
+    "https://solbot.vercel.app",         # Another possible Vercel domain
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URLs
+    allow_origins=origins,  # Specified frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
