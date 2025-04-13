@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { PlayCircle, CheckCircle, Brain, MoveRight, Sparkles, BookMarked } from "lucide-react"
+import { PlayCircle, CheckCircle, Brain, MoveRight, Sparkles, BookMarked, ChevronRight, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
 import KnowledgeCheck from "./knowledge-check"
 import { Bot } from "lucide-react"
 import SolBotChat from "@/components/solbot-chat"
@@ -123,6 +123,32 @@ export default function Phase3Content() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userName, setUserName] = useState("")
   const [step, setStep] = useState(1)
+  const [currentCardIndex, setCurrentCardIndex] = useState(0)
+
+  // Define the cards for easy reference
+  const cards = [
+    { id: "intro", title: "Learning Strategies" },
+    { id: "self-explanation", title: "Self-Explanation Strategy" },
+    { id: "spacing-effect", title: "The Power of Spacing Effect" },
+    { id: "knowledge-check", title: "Knowledge Check" },
+  ]
+
+  // Function to navigate to the next card
+  const nextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1)
+    } else {
+      // If we're on the last card, complete the phase
+      handleComplete()
+    }
+  }
+
+  // Function to navigate to the previous card
+  const prevCard = () => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex(currentCardIndex - 1)
+    }
+  }
 
   // Load user name from localStorage
   useEffect(() => {
@@ -242,265 +268,98 @@ export default function Phase3Content() {
       </div>
 
       <div className="container mx-auto px-4 relative z-10 pt-16">
+        {/* Card navigation indicators */}
+        <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-30 flex flex-col gap-2">
+          <button 
+            onClick={prevCard}
+            disabled={currentCardIndex === 0}
+            className={`rounded-full p-2 transition-all ${currentCardIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100 bg-slate-700/50 hover:bg-slate-700/80'}`}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+          
+          {/* Card indicators */}
+          <div className="flex flex-col items-center gap-1.5">
+            {cards.map((_, i) => (
+              <div 
+                key={i}
+                className={`rounded-full transition-all ${i === currentCardIndex ? 'w-2 h-2 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
+                onClick={() => setCurrentCardIndex(i)}
+              ></div>
+            ))}
+          </div>
+          
+          <button 
+            onClick={nextCard}
+            disabled={currentCardIndex === cards.length - 1}
+            className={`rounded-full p-2 transition-all ${currentCardIndex === cards.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100 bg-slate-700/50 hover:bg-slate-700/80'}`}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-4xl mx-auto mt-16"
         >
-          <Card className="bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-xl mb-6">
+          <Card className="bg-slate-900/60 backdrop-blur-md border border-blue-500/30 shadow-xl mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                <BookMarked className="h-8 w-8 text-purple-500" />
-                <span className="bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-                  Science of Learning Foundations
+                <BookMarked className="h-8 w-8 text-blue-500" />
+                <span className="bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                  {cards[currentCardIndex].title}
                 </span>
               </CardTitle>
             </CardHeader>
 
             <CardContent>
-              <div className="text-white/80 space-y-4 mb-6">
-                <div className="bg-indigo-900/20 p-5 rounded-lg border border-purple-500/30 mb-4">
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent mb-3">
-                    🧠 Science of Learning Strategies
-                  </h2>
-                  
-                  <div className="space-y-4">
+              {/* Introduction Card */}
+              {currentCardIndex === 0 && (
+                <div className="space-y-6">
+                  <div className="text-white/80 space-y-4">
                     <p>
-                      {userName ? `Great work so far, ${userName}!` : "Great work so far!"} Welcome to Phase 3, where you'll discover the science-backed techniques that transform average studying into effective learning.
+                      {userName ? `Welcome, ${userName}!` : "Welcome!"} In this phase, you'll explore evidence-based learning strategies backed by cognitive science.
                     </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
-                      <div className="bg-purple-900/20 p-3 rounded border border-purple-500/30">
-                        <h3 className="font-bold text-purple-300 flex items-center gap-2">
-                          <span className="bg-purple-900/50 w-7 h-7 rounded-full flex items-center justify-center text-white">1</span> 
-                          Retrieval Practice
-                        </h3>
-                        <p className="text-sm mt-1">Test yourself</p>
+                    <p>
+                      Discover powerful techniques such as self-explanation and the spacing effect that can significantly improve your learning efficiency and retention.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20">
+                    <h3 className="text-lg font-medium text-blue-300 mb-2">In This Phase You'll Learn:</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="text-blue-400 mt-0.5">📊</div>
+                        <p className="text-white/80">How to use evidence-based learning strategies</p>
                       </div>
-                      
-                      <div className="bg-purple-900/20 p-3 rounded border border-purple-500/30">
-                        <h3 className="font-bold text-purple-300 flex items-center gap-2">
-                          <span className="bg-purple-900/50 w-7 h-7 rounded-full flex items-center justify-center text-white">2</span> 
-                          Spacing Effect
-                        </h3>
-                        <p className="text-sm mt-1">Distribute learning</p>
+                      <div className="flex items-start gap-2">
+                        <div className="text-blue-400 mt-0.5">🔄</div>
+                        <p className="text-white/80">The power of spacing effect and distributed practice</p>
                       </div>
-                      
-                      <div className="bg-purple-900/20 p-3 rounded border border-purple-500/30">
-                        <h3 className="font-bold text-purple-300 flex items-center gap-2">
-                          <span className="bg-purple-900/50 w-7 h-7 rounded-full flex items-center justify-center text-white">3</span> 
-                          Self-Explanation
-                        </h3>
-                        <p className="text-sm mt-1">Explain in your own words</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col md:flex-row gap-4 text-sm">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-indigo-300 mb-1">What you'll do:</h4>
-                        <ul className="space-y-1">
-                          <li className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
-                            <span>Watch a video on evidence-based learning strategies</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
-                            <span>Take a quiz that reinforces key concepts</span>
-                          </li>
-                        </ul>
-                      </div>
-                      
-                      <div className="flex-1">
-                        <h4 className="font-bold text-indigo-300 mb-1">Benefits you'll gain:</h4>
-                        <ul className="space-y-1">
-                          <li className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
-                            <span>Study less but learn more effectively</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <CheckCircle className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
-                            <span>Retain information longer for practical application</span>
-                          </li>
-                        </ul>
+                      <div className="flex items-start gap-2">
+                        <div className="text-blue-400 mt-0.5">🧠</div>
+                        <p className="text-white/80">Self-explanation techniques for deeper understanding</p>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Place the learning strategy guide components here */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <SelfExplanationTips />
-                <SpacingEffectGuide />
-              </div>
-
-              {/* Progress Indicator */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        videoCompleted
-                          ? "bg-purple-500 text-white"
-                          : "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                      }`}
-                    >
-                      {videoCompleted ? <CheckCircle className="h-4 w-4" /> : "1"}
-                    </div>
-                    <span className={`text-sm ${videoCompleted ? "text-purple-400" : "text-indigo-400"}`}>
-                      Watch Video
-                    </span>
+              )}
+              
+              {/* Self-Explanation Strategy Card */}
+              {currentCardIndex === 1 && <SelfExplanationTips />}
+              
+              {/* Spacing Effect Guide Card */}
+              {currentCardIndex === 2 && <SpacingEffectGuide />}
+              
+              {/* Knowledge Check Card */}
+              {currentCardIndex === 3 && (
+                <div>
+                  <div className="text-white/80 mb-4">
+                    <p>Let's test your understanding of these evidence-based learning strategies.</p>
                   </div>
-
-                  <div className="h-0.5 flex-1 mx-4 bg-gray-700">
-                    <div
-                      className={`h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${
-                        videoCompleted ? "w-full" : "w-0"
-                      }`}
-                    ></div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        quizCompleted
-                          ? "bg-purple-500 text-white"
-                          : "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                      }`}
-                    >
-                      {quizCompleted ? <CheckCircle className="h-4 w-4" /> : "2"}
-                    </div>
-                    <span className={`text-sm ${quizCompleted ? "text-purple-400" : "text-indigo-400"}`}>
-                      Complete Quiz
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {!videoCompleted ? (
-                <>
-                  {!viewingVideo ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.5 }}
-                    >
-                      <Card className="bg-slate-800/50 border border-indigo-500/30 mb-6">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center gap-4 mb-4">
-                            {videoContent.icon}
-                            <div>
-                              <h3 className="text-xl font-bold text-white">{videoContent.title}</h3>
-                            </div>
-                          </div>
-
-                          <Separator className="my-4 bg-indigo-500/20" />
-
-                          <p className="text-white/70 mb-6">{videoContent.description}</p>
-
-                          <div className="bg-indigo-500/10 rounded-lg p-4 mb-6">
-                            <h4 className="font-bold text-indigo-400 mb-2">In this video, you'll learn about:</h4>
-                            <ul className="space-y-2">
-                              <li className="flex items-start gap-2">
-                                <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-white/80">
-                                  <span className="font-semibold text-white">Retrieval Practice:</span> How
-                                  testing yourself strengthens memory more than rereading
-                                </span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-white/80">
-                                  <span className="font-semibold text-white">Spacing Effect:</span> Why
-                                  distributing your study sessions over time improves retention
-                                </span>
-                              </li>
-                              <li className="flex items-start gap-2">
-                                <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                                <span className="text-white/80">
-                                  <span className="font-semibold text-white">Self-Explanation:</span> How
-                                  explaining concepts to yourself deepens understanding
-                                </span>
-                              </li>
-                            </ul>
-                          </div>
-
-                          <Button
-                            onClick={handleWatchVideo}
-                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/30"
-                          >
-                            <PlayCircle className="mr-2 h-5 w-5" />
-                            Watch Video (8 min)
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.5 }}
-                      className="space-y-6"
-                    >
-                      <Card className="bg-slate-800/50 border border-indigo-500/30 overflow-hidden">
-                        <div className="aspect-video bg-black/50 flex flex-col items-center justify-center p-6">
-                          <div className="text-center space-y-4">
-                            <h3 className="text-xl font-bold text-white">Video: {videoContent.title}</h3>
-                            <p className="text-white/60 text-sm">[This is a simulation of the video content]</p>
-
-                            <div className="flex justify-center mt-4">
-                              <motion.div
-                                animate={{ scale: [1, 1.2, 1] }}
-                                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                              >
-                                <PlayCircle className="h-16 w-16 text-indigo-400 opacity-70" />
-                              </motion.div>
-                            </div>
-                          </div>
-
-                          <Button
-                            onClick={handleCompleteVideo}
-                            className="mt-8 bg-white text-indigo-700 hover:bg-white/90"
-                          >
-                            Complete Video
-                          </Button>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  )}
-                </>
-              ) : !quizCompleted ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                  className="space-y-6"
-                >
-                  <div className="bg-slate-800/50 rounded-lg p-5 border border-indigo-500/30 mb-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <CheckCircle className="h-4 w-4 text-emerald-500" />
-                      </div>
-                      <h3 className="font-bold text-white">Video Completed!</h3>
-                    </div>
-
-                    <p className="text-white/80 mb-2">
-                      Great job! Now let's test your understanding with a few questions about the learning strategies
-                      covered in the video.
-                    </p>
-
-                    <div className="bg-indigo-500/10 rounded-lg p-4">
-                      <p className="text-white/80 italic">
-                        Answering these questions will help reinforce the concepts through retrieval practice - one of
-                        the key strategies you just learned about!
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Knowledge check for current question */}
-                  <KnowledgeCheck
-                    key={knowledgeChecks[currentQuestionIndex].id}
+                  <KnowledgeCheck 
                     questionNumber={currentQuestionIndex + 1}
                     question={knowledgeChecks[currentQuestionIndex].question}
                     options={knowledgeChecks[currentQuestionIndex].options}
@@ -509,66 +368,29 @@ export default function Phase3Content() {
                     onComplete={handleKnowledgeCheckComplete}
                     totalQuestions={knowledgeChecks.length}
                   />
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                >
-                  <Card className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 shadow-lg">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="h-12 w-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <CheckCircle className="h-6 w-6 text-emerald-500" />
-                        </div>
-                        <h3 className="text-xl font-bold text-white">Congratulations!</h3>
-                      </div>
-
-                      <p className="text-white/80 mb-6">
-                        You've completed the Science of Learning Foundations phase. You now have a strong
-                        understanding of key evidence-based learning strategies: retrieval practice, spacing effect,
-                        and self-explanation.
-                      </p>
-
-                      <div className="bg-white/10 rounded-lg p-4 mb-6">
-                        <h4 className="font-bold text-white mb-2">Key Takeaways:</h4>
-                        <ul className="space-y-2">
-                          <li className="flex items-start gap-2">
-                            <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-white/80">
-                              <span className="font-semibold text-white">Test yourself regularly</span> instead of
-                              just rereading material
-                            </span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-white/80">
-                              <span className="font-semibold text-white">Space out your study sessions</span> over
-                              time rather than cramming
-                            </span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-white/80">
-                              <span className="font-semibold text-white">Explain concepts in your own words</span> to
-                              deepen understanding
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-
-                      <Button
-                        onClick={handleComplete}
-                        className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/30"
-                      >
-                        Continue to Strategic Planning
-                        <MoveRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                </div>
               )}
+              
+              {/* Navigation buttons at the bottom of each card */}
+              <div className="flex justify-between mt-8">
+                {currentCardIndex > 0 ? (
+                  <Button 
+                    variant="outline"
+                    className="text-blue-400 border-blue-500/30 hover:bg-blue-900/20"
+                    onClick={prevCard}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+                  </Button>
+                ) : <div></div>} {/* Empty div to maintain flex spacing */}
+                
+                <Button 
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-2 rounded-lg"
+                  onClick={nextCard}
+                  disabled={currentCardIndex === 3 && !quizCompleted}
+                >
+                  {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete & Continue'} <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

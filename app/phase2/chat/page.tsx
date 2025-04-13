@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import SolBotChat, { Message } from "@/components/solbot-chat"
+import GuidedLearningObjective from "@/components/guided-learning-objective"
 
 // Add a message cleaning function to strip any possible score text
 const cleanScoresFromMessage = (message: string): string => {
@@ -40,6 +41,7 @@ export default function Phase2ChatPage() {
   const phaseId = 2
   const [userName, setUserName] = useState("")
   const [userId, setUserId] = useState("")
+  const [useGuidedMode, setUseGuidedMode] = useState(true) // Default to guided mode
   
   // Load user data on component mount
   useEffect(() => {
@@ -61,13 +63,23 @@ export default function Phase2ChatPage() {
     console.log("Message sent:", message);
   }
 
-  const handlePhaseComplete = (nextPhase: string) => {
-    // If nextPhase already contains "phase", don't add it again
+  const handlePhaseComplete = (nextPhase?: string) => {
+    // If no nextPhase provided or it already contains "phase", don't add it again
+    if (!nextPhase) {
+      // Default to next phase if none provided
+      router.push(`/phase3`);
+      return;
+    }
+    
     if (nextPhase.startsWith("phase")) {
       router.push(`/${nextPhase}`);
     } else {
       router.push(`/phase${nextPhase}`);
     }
+  }
+
+  const toggleMode = () => {
+    setUseGuidedMode(!useGuidedMode);
   }
 
   return (
@@ -103,7 +115,7 @@ export default function Phase2ChatPage() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto mt-16"
         >
-          <div className="flex justify-start mb-4">
+          <div className="flex justify-between mb-4">
             <Button
               variant="ghost"
               className="text-teal-400 hover:text-teal-300 hover:bg-slate-800/50"
@@ -111,14 +123,22 @@ export default function Phase2ChatPage() {
             >
               <ArrowLeft className="h-4 w-4 mr-2" /> Back to Phase 2
             </Button>
+            
+            <Button
+              variant="outline"
+              className="text-teal-400 border-teal-400 hover:text-teal-300 hover:bg-slate-800/50"
+              onClick={toggleMode}
+            >
+              Switch to {useGuidedMode ? "Free Chat" : "Guided"} Mode
+            </Button>
           </div>
           
-          <Card className="bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-xl mb-6">
+          <Card className="bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-xl mb-6 max-w-4xl mx-auto w-full">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-3 text-xl md:text-2xl font-bold">
                 <MessageSquare className="h-7 w-7 text-teal-500" />
                 <span className="bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text text-transparent">
-                  Task Analysis Chat
+                  {useGuidedMode ? "Guided Learning Objective Builder" : "Task Analysis Chat"}
                 </span>
               </CardTitle>
             </CardHeader>
@@ -126,15 +146,22 @@ export default function Phase2ChatPage() {
             <CardContent>
               <div className="text-white/80 mb-6">
                 <p>
-                  {userName ? `Welcome, ${userName}!` : "Welcome!"} Interact with SoLBot to define your learning task and identify resources. 
-                  Be specific and thoughtful in your responses to create an effective learning plan.
+                  {userName ? `Welcome, ${userName}!` : "Welcome!"} {useGuidedMode ? 
+                    "I'll guide you through creating a complete learning objective by asking specific questions about what you want to learn, your background, and the resources you'll use." :
+                    "Interact with SoLBot to define your learning task and identify resources. Be specific and thoughtful in your responses to create an effective learning plan."}
                 </p>
               </div>
 
-              {/* SolBot Chat Component */}
-              <div className="mt-4">
+              {useGuidedMode ? (
+                <GuidedLearningObjective 
+                  userId={userId}
+                  phase="phase2" 
+                  height="750px"
+                  onComplete={handlePhaseComplete}
+                />
+              ) : (
                 <SolBotChat
-                  height="650px"
+                  height="750px"
                   userId={userId}
                   phase="phase2"
                   useAgent={true}
@@ -145,20 +172,30 @@ export default function Phase2ChatPage() {
                       sender: "bot",
                       content: cleanScoresFromMessage(`# 🎯 Task Analysis & Resource Planning
 
-Welcome to Phase 2! This is where we'll define your learning objective and align resources.
-
-## What you'll do in this phase:
+Welcome to Phase 2! Let's define what you want to learn and what resources you'll need.`),
+                      timestamp: new Date(),
+                    },
+                    {
+                      id: 3,
+                      sender: "bot",
+                      content: cleanScoresFromMessage(`## What you'll do in this phase:
 - Define a **specific, measurable learning objective**
 - Connect your objective to your **existing knowledge**
-- Identify **resources** that will support your learning journey
-
-## How excellence works:
+- Identify **resources** that will support your learning journey`),
+                      timestamp: new Date(),
+                    },
+                    {
+                      id: 4,
+                      sender: "bot",
+                      content: cleanScoresFromMessage(`## What makes a good task analysis:
 - You can refine your answers as many times as needed
-- Your responses are evaluated on a quality scale (0-3)
-- Once you reach excellence level (≥2.5), you'll move to the next phase
-- Focus on quality rather than speed - take your time to develop your best work
-
-Think of this like planning an expedition:
+- Focus on quality rather than speed - take your time to develop your best work`),
+                      timestamp: new Date(),
+                    },
+                    {
+                      id: 5,
+                      sender: "bot",
+                      content: cleanScoresFromMessage(`Think of this like planning an expedition:
 \`\`\`
 1. DESTINATION: Where do you want to go? (Learning objective)
 2. STARTING POINT: Where are you now? (Current knowledge)
@@ -172,7 +209,7 @@ Let's start by defining what you want to learn. Could you share the specific top
                   onSendMessage={onSendMessage}
                   onPhaseComplete={handlePhaseComplete}
                 />
-              </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

@@ -4,7 +4,7 @@ import { useState, useEffect, ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BrainCircuit, PlayCircle, VideoIcon, MoveRight, CheckCircle, Bot, Sparkles, MessageSquare, User, ArrowRight, Send, Youtube, FileQuestion, CheckCircle2 } from "lucide-react"
+import { BrainCircuit, PlayCircle, VideoIcon, MoveRight, CheckCircle, Bot, Sparkles, MessageSquare, User, ArrowRight, Send, Youtube, FileQuestion, CheckCircle2, ChevronRight, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
 import { motion } from "framer-motion"
 import ModuleBar from "@/components/module-bar"
 import SolBotChat, { Message } from "@/components/solbot-chat"
@@ -25,6 +25,31 @@ export default function Phase1Content() {
   const [userId, setUserId] = useState("")
   const [stageAnswers, setStageAnswers] = useState(["", "", "", ""])
   const [answersSubmitted, setAnswersSubmitted] = useState(false)
+  const [currentCardIndex, setCurrentCardIndex] = useState(0)
+
+  // Define the cards for easy reference
+  const cards = [
+    { id: "intro", title: "Introduction to Self-Regulated Learning" },
+    { id: "video", title: "Understanding the SRL Framework" },
+    { id: "quiz", title: "Knowledge Check" },
+  ]
+
+  // Function to navigate to the next card
+  const nextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1)
+    } else {
+      // If we're on the last card, complete the phase
+      handleComplete()
+    }
+  }
+
+  // Function to navigate to the previous card
+  const prevCard = () => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex(currentCardIndex - 1)
+    }
+  }
 
   // Load user name from localStorage
   useEffect(() => {
@@ -264,157 +289,151 @@ export default function Phase1Content() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-indigo-900 text-white py-8">
-      {/* Animated background */}
+    <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-slate-800 text-white py-8">
+      {/* Animated stars background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="stars"></div>
         <div className="stars2"></div>
         <div className="stars3"></div>
+        {/* Nebula effect */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/10 via-transparent to-transparent opacity-30"></div>
       </div>
 
-      {/* Add Module Bar */}
-      <ModuleBar currentPhase={1} />
+      <div className="container mx-auto px-4">
+        <ModuleBar currentPhase={1} />
 
-      {/* Fixed Title Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-indigo-500/20 py-3 px-4">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-center">
-            <BrainCircuit className="h-7 w-7 text-indigo-500 mr-2" />
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent">
-              Self-Regulated Learning Introduction
-            </h1>
+        {/* Card navigation indicators */}
+        <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-30 flex flex-col gap-2">
+          <button 
+            onClick={prevCard}
+            disabled={currentCardIndex === 0}
+            className={`rounded-full p-2 transition-all ${currentCardIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100 bg-slate-700/50 hover:bg-slate-700/80'}`}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+          
+          {/* Card indicators */}
+          <div className="flex flex-col items-center gap-1.5">
+            {cards.map((_, i) => (
+              <div 
+                key={i}
+                className={`rounded-full transition-all ${i === currentCardIndex ? 'w-2 h-2 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
+                onClick={() => setCurrentCardIndex(i)}
+              ></div>
+            ))}
           </div>
+          
+          <button 
+            onClick={nextCard}
+            disabled={currentCardIndex === cards.length - 1}
+            className={`rounded-full p-2 transition-all ${currentCardIndex === cards.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100 bg-slate-700/50 hover:bg-slate-700/80'}`}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 relative z-10 pt-16">
+        {/* Content */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-4xl mx-auto mt-16"
         >
           <Card className="bg-slate-900/60 backdrop-blur-md border border-indigo-500/30 shadow-xl mb-6">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-3 text-2xl md:text-3xl font-bold">
+              <CardTitle className="flex items-center gap-3 text-2xl md:text-3xl font-bold text-center justify-center">
                 <BrainCircuit className="h-8 w-8 text-indigo-500" />
-                <span className="bg-gradient-to-r from-indigo-400 to-blue-500 bg-clip-text text-transparent">
-                  Self-Regulated Learning Introduction
+                <span className="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+                  {cards[currentCardIndex].title}
                 </span>
               </CardTitle>
             </CardHeader>
 
             <CardContent>
-              <div className="text-white/80 space-y-6">
-                <div className="bg-slate-800/50 p-5 rounded-lg border border-indigo-500/20">
-                  <div className="flex items-start">
-                    <Sparkles className="h-6 w-6 text-indigo-400 mr-3 mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-medium text-white mb-2">Welcome, {userName || "Learner"}!</h3>
-                      <p>
-                        Ready to unlock the secrets of how top students master any subject? This introduction
-                        will reveal the powerful self-regulated learning framework used by expert learners worldwide!
-                      </p>
+              {/* Introduction Card */}
+              {currentCardIndex === 0 && (
+                <div className="space-y-6">
+                  <div className="text-white/80 space-y-4">
+                    <p>
+                      {userName ? `Welcome, ${userName}!` : "Welcome!"} In this phase, you'll learn about the Self-Regulated Learning (SRL) framework - a powerful approach used by expert learners.
+                    </p>
+                    <p>
+                      Self-Regulated Learning involves planning your learning, monitoring your progress, controlling your strategies, and reflecting on your outcomes. This cyclical process helps you become a more effective learner.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-indigo-900/20 p-4 rounded-lg border border-indigo-500/20">
+                    <h3 className="text-lg font-medium text-indigo-300 mb-2">What You'll Learn:</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="text-indigo-400 mt-0.5">🧠</div>
+                        <p className="text-white/80">The 4 key stages of Self-Regulated Learning</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="text-indigo-400 mt-0.5">📈</div>
+                        <p className="text-white/80">How expert students approach their learning</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="text-indigo-400 mt-0.5">💡</div>
+                        <p className="text-white/80">Basic principles you'll use throughout this course</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="bg-indigo-900/20 p-5 rounded-lg border border-indigo-500/20">
-                  <h3 className="text-lg font-medium text-indigo-300 mb-3">Your learning adventure begins here:</h3>
-                  <ul className="space-y-2">
-                    <li className="flex items-start gap-2">
-                      <div className="text-indigo-400 mt-0.5">🧠</div>
-                      <div>Discover the <strong>four key stages</strong> that transform ordinary studying into extraordinary learning</div>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="text-indigo-400 mt-0.5">🔬</div>
-                      <div>Master an <strong>evidence-based framework</strong> backed by decades of cognitive science research</div>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="text-indigo-400 mt-0.5">⚡</div>
-                      <div>Learn how to <strong>apply these powerful principles</strong> to ace your most challenging courses</div>
-                    </li>
-                  </ul>
-                </div>
-                
-                <div className="bg-slate-800/50 p-5 rounded-lg border border-indigo-500/20">
-                  <p className="text-white/80">
-                    Watch a quick video that will change how you think about learning forever, then test your knowledge with an interactive challenge!
-                  </p>
-                </div>
-                
-                {/* Progress Bar */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                          videoWatched
-                            ? "bg-blue-500 text-white"
-                            : "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                        }`}
-                      >
-                        {videoWatched ? <CheckCircle className="h-4 w-4" /> : "1"}
-                      </div>
-                      <span className={`text-sm ${videoWatched ? "text-blue-400" : "text-indigo-400"}`}>
-                        Watch Video
-                      </span>
-                    </div>
-
-                    <div className="h-0.5 flex-1 mx-4 bg-gray-700">
-                      <div
-                        className={`h-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-300 ${
-                          videoWatched ? "w-full" : "w-0"
-                        }`}
-                      ></div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                          quizCompleted
-                            ? "bg-blue-500 text-white"
-                            : "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-                        }`}
-                      >
-                        {quizCompleted ? <CheckCircle className="h-4 w-4" /> : "2"}
-                      </div>
-                      <span className={`text-sm ${quizCompleted ? "text-blue-400" : "text-indigo-400"}`}>
-                        Complete Quiz
-                      </span>
-                    </div>
+              )}
+              
+              {/* Video Component */}
+              {currentCardIndex === 1 && (
+                <div>
+                  <div className="text-white/80 mb-4">
+                    <p>This video introduces the Self-Regulated Learning framework and its four key stages.</p>
                   </div>
+                  <VideoComponent />
                 </div>
+              )}
+              
+              {/* Quiz Component */}
+              {currentCardIndex === 2 && (
+                <div>
+                  <div className="text-white/80 mb-4">
+                    <p>Let's check your understanding of the Self-Regulated Learning framework.</p>
+                  </div>
+                  {quizStarted ? <QuizComponent /> : (
+                    <div className="text-center py-6">
+                      <Button
+                        onClick={handleStartQuiz}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-md shadow-md"
+                      >
+                        Start Knowledge Check
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Navigation buttons at the bottom of each card */}
+              <div className="flex justify-between mt-8">
+                {currentCardIndex > 0 ? (
+                  <Button 
+                    variant="outline"
+                    className="text-indigo-400 border-indigo-500/30 hover:bg-indigo-900/20"
+                    onClick={prevCard}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-2" /> Previous
+                  </Button>
+                ) : <div></div>} {/* Empty div to maintain flex spacing */}
                 
-                {/* Video Component */}
-                <VideoComponent />
-                
-                {/* Quiz Component - shown after video completion */}
-                {videoWatched && quizStarted && <QuizComponent />}
+                <Button 
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg"
+                  onClick={nextCard}
+                  disabled={currentCardIndex === 2 && !quizCompleted}
+                >
+                  {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete & Continue'} <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
               </div>
             </CardContent>
           </Card>
         </motion.div>
-      </div>
-      
-      {/* Add a text showing the step description */}
-      <div className="container mx-auto px-4 relative z-10 mt-4 text-center">
-        <p className="text-white/80 max-w-4xl mx-auto">
-          {!videoWatched 
-            ? "After watching the video, you'll take a short quiz to reinforce what you've learned through active retrieval practice."
-            : quizStarted && !quizCompleted 
-              ? "Test your knowledge of the self-regulated learning framework by completing the quiz."
-              : quizCompleted 
-                ? "Great work! You've completed the first phase of your learning journey."
-                : "Click 'Video Completed' to continue to the quiz."
-          }
-        </p>
-      </div>
-      
-      {/* Add subtle animated gradient background */}
-      <div className="fixed inset-0 -z-20 opacity-25 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-blue-900/20 animate-pulse" style={{ animationDuration: '8s' }}></div>
       </div>
     </div>
   )

@@ -34,6 +34,8 @@ import {
   Sparkles,
   ClipboardList,
   Search,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react"
 
 // Import the ModuleBar component
@@ -176,6 +178,32 @@ export default function Phase2Content() {
   const [stepComplete, setStepComplete] = useState(false)
   const [chatInitialized, setChatInitialized] = useState(false)
   const [showResourceSelector, setShowResourceSelector] = useState(false)
+  const [currentCardIndex, setCurrentCardIndex] = useState(0) // Track the current card
+
+  // Define the cards for easy reference
+  const cards = [
+    { id: "intro", title: "Task Analysis & Resource Identification" },
+    { id: "objectives", title: "How to Analyze Learning Objectives" },
+    { id: "resources", title: "Why Prior Knowledge & Resources Matter" },
+    { id: "video", title: "Watch: Introduction to Learning Task Analysis" },
+  ]
+
+  // Function to navigate to the next card
+  const nextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1)
+    } else {
+      // If we're on the last card, go to the chat page
+      router.push("/phase2/chat")
+    }
+  }
+
+  // Function to navigate to the previous card
+  const prevCard = () => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex(currentCardIndex - 1)
+    }
+  }
 
   // Load saved state from localStorage on component mount
   const loadSavedState = () => {
@@ -307,6 +335,36 @@ export default function Phase2Content() {
           </div>
         </div>
         
+        {/* Card navigation indicators */}
+        <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-30 flex flex-col gap-2">
+          <button 
+            onClick={prevCard}
+            disabled={currentCardIndex === 0}
+            className={`rounded-full p-2 transition-all ${currentCardIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100 bg-slate-700/50 hover:bg-slate-700/80'}`}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+          
+          {/* Card indicators */}
+          <div className="flex flex-col items-center gap-1.5">
+            {cards.map((_, i) => (
+              <div 
+                key={i}
+                className={`rounded-full transition-all ${i === currentCardIndex ? 'w-2 h-2 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}
+                onClick={() => setCurrentCardIndex(i)}
+              ></div>
+            ))}
+          </div>
+          
+          <button 
+            onClick={nextCard}
+            disabled={currentCardIndex === cards.length - 1}
+            className={`rounded-full p-2 transition-all ${currentCardIndex === cards.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100 bg-slate-700/50 hover:bg-slate-700/80'}`}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -324,82 +382,81 @@ export default function Phase2Content() {
             </CardHeader>
 
             <CardContent>
-              <div className="text-white/80 space-y-4 mb-6">
-                <p>
-                  {userName ? `Great work, ${userName}!` : "Great work!"} Now let's define your learning task in a way that sets you up for success.
-                </p>
-                <p>Define what you want to learn, how your current knowledge relates to it, and what resources you'll use.</p>
-              </div>
+              {/* Card content based on the current index */}
+              {currentCardIndex === 0 && (
+                <div className="text-white/80 space-y-4 mb-6">
+                  <p>
+                    {userName ? `Great work, ${userName}!` : "Great work!"} Now let's define your learning task in a way that sets you up for success.
+                  </p>
+                  <p>Define what you want to learn, how your current knowledge relates to it, and what resources you'll use.</p>
+                </div>
+              )}
 
-              {/* Learning Objective Analysis - placed here */}
-              <LearningObjectiveAnalysis />
+              {/* Learning Objective Analysis */}
+              {currentCardIndex === 1 && <LearningObjectiveAnalysis />}
 
               {/* Prior Knowledge and Resources Analysis */}
-              <PriorKnowledgeResourceAnalysis />
+              {currentCardIndex === 2 && <PriorKnowledgeResourceAnalysis />}
 
-              {/* Progress bar showing the flow - simplified version */}
-              <div className="mt-6 mb-6">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-teal-900 flex items-center justify-center text-teal-300 border border-teal-500">
-                      1
-                    </div>
-                    <span className="ml-2 text-teal-300 font-medium">Watch Video</span>
-                  </div>
-                  <div className="flex-1 mx-4">
-                    <div className="h-0.5 w-full bg-slate-700 relative">
-                      <div className="absolute inset-y-0 left-0 bg-teal-500" style={{ width: "100%" }}></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-white/60 border border-slate-600">
-                      2
-                    </div>
-                    <span className="ml-2 text-white/60">SolBot Chat</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Video Player Component */}
-              <div className="mt-6 space-y-6">
-                <div className="bg-slate-800/50 p-4 rounded-lg border border-teal-500/20">
-                  <h3 className="text-lg font-medium text-teal-300 mb-3 flex items-center gap-2">
-                    <PlayCircle className="h-5 w-5 text-teal-400" />
-                    Watch: Introduction to Learning Task Analysis
-                  </h3>
-                  
-                  {/* Video Player */}
-                  <div className="relative aspect-video bg-slate-900 rounded-lg overflow-hidden mb-4 shadow-lg border border-slate-700/50">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="bg-teal-500/20 p-4 rounded-full mb-3 mx-auto w-16 h-16 flex items-center justify-center">
-                          <PlayCircle className="h-8 w-8 text-teal-400" />
+              {/* Video section */}
+              {currentCardIndex === 3 && (
+                <div className="mt-6 space-y-6">
+                  <div className="bg-slate-800/50 p-4 rounded-lg border border-teal-500/20">
+                    <h3 className="text-lg font-medium text-teal-300 mb-3 flex items-center gap-2">
+                      <PlayCircle className="h-5 w-5 text-teal-400" />
+                      Watch: Introduction to Learning Task Analysis
+                    </h3>
+                    
+                    {/* Video Player */}
+                    <div className="relative aspect-video bg-slate-900 rounded-lg overflow-hidden mb-4 shadow-lg border border-slate-700/50">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="bg-teal-500/20 p-4 rounded-full mb-3 mx-auto w-16 h-16 flex items-center justify-center">
+                            <PlayCircle className="h-8 w-8 text-teal-400" />
+                          </div>
+                          <p className="text-teal-300 text-sm">Video introduction to task analysis</p>
                         </div>
-                        <p className="text-teal-300 text-sm">Video introduction to task analysis</p>
                       </div>
                     </div>
-                  </div>
+                    
+                    <div className="text-white/80 text-sm">
                   
-                  <div className="text-white/80 text-sm">
-                
-                    <p className="mt-4 text-teal-300 font-medium flex items-center">
-                      <MessageSquare className="h-4 w-4 mr-2 text-teal-300" />
-                      After watching the video, you'll chat with SolBot to create your personalized Task Analysis & Resource Identification plan.
-                    </p>
+                      <p className="mt-4 text-teal-300 font-medium flex items-center">
+                        <MessageSquare className="h-4 w-4 mr-2 text-teal-300" />
+                        After watching the video, you'll chat with SolBot to create your personalized Task Analysis & Resource Identification plan.
+                      </p>
+                    </div>
                   </div>
                 </div>
-                
-                {/* Button to navigate to chat page */}
-                <div className="flex justify-center mt-8">
+              )}
+              
+              {/* Navigation buttons at the bottom of each card */}
+              <div className="flex justify-between mt-8">
+                {currentCardIndex > 0 ? (
                   <Button 
-                    className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-6 py-6 rounded-lg shadow-lg transition-all duration-200 flex items-center gap-2"
-                    onClick={() => router.push("/phase2/chat")}
+                    variant="outline"
+                    className="text-teal-400 border-teal-500/30 hover:bg-teal-900/20"
+                    onClick={prevCard}
                   >
-                    <MessageSquare className="h-5 w-5" />
-                    <span className="font-medium text-lg">Continue to Task Analysis Chat</span>
-                    <ChevronRight className="h-5 w-5" />
+                    <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                   </Button>
-                </div>
+                ) : <div></div>} {/* Empty div to maintain flex spacing */}
+                
+                {currentCardIndex < cards.length - 1 ? (
+                  <Button 
+                    className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-6 py-2 rounded-lg"
+                    onClick={nextCard}
+                  >
+                    Next <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button 
+                    className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-6 py-3 rounded-full font-medium shadow-lg"
+                    onClick={nextCard}
+                  >
+                    Continue to Chat <ChevronRight className="h-5 w-5 ml-2" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

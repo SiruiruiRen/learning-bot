@@ -16,7 +16,6 @@ import traceback
 import uuid
 import datetime
 
-from backend.rubrics import get_criteria_for_phase, get_rubric
 
 # Load environment variables
 load_dotenv()
@@ -26,11 +25,17 @@ logger = logging.getLogger("solbot.llm")
 
 # Get API key from environment
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+# Hard-code the model to ensure we use the right version
+CLAUDE_MODEL = "claude-3-5-sonnet-20241022"
 
-# Initialize Anthropic client
+logger.info(f"Using Claude model: {CLAUDE_MODEL}")
+
+# Initialize Anthropic client with increased timeout
 try:
-    client = AsyncAnthropic(api_key=CLAUDE_API_KEY)
+    client = AsyncAnthropic(
+        api_key=CLAUDE_API_KEY,
+        timeout=60.0  # Increase timeout to 60 seconds
+    )
     logger.info(f"Anthropic client initialized with model: {CLAUDE_MODEL}")
 except Exception as e:
     logger.error(f"Error initializing Anthropic client: {e}")
@@ -277,8 +282,10 @@ async def call_claude(
         
         # Make API call with proper timeout handling using asyncio.wait_for
         try:
-            # Set a reasonable timeout for the API call (30 seconds)
-            api_timeout = 45  # Increased timeout for complex prompts
+            # Set a reasonable timeout for the API call (60 seconds)
+            api_timeout = 60  # Increased timeout for complex prompts
+            
+            logger.info(f"Calling Claude API with model={CLAUDE_MODEL}, temperature={temperature}")
             
             # Create the API call as a task
             if stream:
@@ -286,15 +293,65 @@ async def call_claude(
                 # Would need to implement client-side streaming reception
                 logger.warning("Streaming requested but not implemented yet")
             
-            # Create the API call as a task
-            api_task = client.messages.create(**params)
+            # Implement retry logic for API calls
+            max_retries = 2
+            retry_count = 0
+            last_error = None
             
-            # Wait for the task with a timeout
-            response = await asyncio.wait_for(api_task, timeout=api_timeout)
+            while retry_count <= max_retries:
+                try:
+                    # Create the API call as a task
+                    api_task = client.messages.create(**params)
+                    
+                    # Wait for the task with a timeout
+                    response = await asyncio.wait_for(api_task, timeout=api_timeout)
+                    
+                    # If we get here, the call succeeded
+                    break
+                    
+                except asyncio.TimeoutError:
+                    retry_count += 1
+                    last_error = "timeout"
+                    logger.warning(f"API call timed out (attempt {retry_count}/{max_retries})")
+                    if retry_count <= max_retries:
+                        # Wait before retrying
+                        await asyncio.sleep(2)
+                    else:
+                        # Max retries reached, re-raise
+                        raise
+                        
+                except aiohttp.ClientError as e:
+                    retry_count += 1
+                    last_error = f"connection: {str(e)}"
+                    logger.warning(f"API connection error (attempt {retry_count}/{max_retries}): {e}")
+                    if retry_count <= max_retries:
+                        # Wait before retrying
+                        await asyncio.sleep(2)
+                    else:
+                        # Max retries reached, re-raise
+                        raise
+                        
+                except Exception as e:
+                    retry_count += 1
+                    last_error = f"other: {str(e)}"
+                    logger.warning(f"API call error (attempt {retry_count}/{max_retries}): {e}")
+                    if retry_count <= max_retries:
+                        # Wait before retrying
+                        await asyncio.sleep(2)
+                    else:
+                        # Max retries reached, re-raise
+                        raise
+            
+            # Check if we exhausted all retries
+            if retry_count > max_retries:
+                raise Exception(f"Failed after {max_retries} retries. Last error: {last_error}")
             
         except asyncio.TimeoutError:
-            logger.error(f"API call timed out after {api_timeout} seconds")
-            result = {"error": "The request timed out", "content": "I'm taking too long to respond. Please try again with a simpler query."}
+            logger.error(f"API call timed out after {api_timeout} seconds and {max_retries} retries")
+            result = {
+                "error": "The request timed out", 
+                "content": "I'm taking too long to respond. Please try again with a simpler query or check your network connection."
+            }
             
             # Calculate response time for logging
             response_timestamp = time.time()
@@ -326,8 +383,11 @@ async def call_claude(
             
             return result
         except aiohttp.ClientError as e:
-            logger.error(f"API connection error: {e}")
-            result = {"error": str(e), "content": "I'm having network connectivity issues right now."}
+            logger.error(f"API connection error after {max_retries} retries: {e}")
+            result = {
+                "error": str(e), 
+                "content": "I'm having network connectivity issues right now. Please check your internet connection and try again."
+            }
             
             # Calculate response time for logging
             response_timestamp = time.time()

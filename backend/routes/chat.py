@@ -11,6 +11,10 @@ import traceback
 import time
 import re
 import json
+import sys
+import os
+sys.path.append(os.path.abspath('..'))
+from prompt_engineering.scripts.final_prompts import FINAL_PROMPTS
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
@@ -18,8 +22,7 @@ from pydantic import BaseModel, Field
 # Remove manager agent import and replace with direct LLM utility
 from backend.utils.llm import call_claude
 from backend.models.schemas import ChatRequest, ChatResponse
-from backend.utils.db import save_message, get_user_profile, get_messages
-from backend.rubrics import get_rubric
+from backend.utils.db import save_message, get_user_profile, get_messages, _memory_db, _using_memory_db
 
 logger = logging.getLogger("solbot.routes.chat")
 
@@ -60,120 +63,88 @@ def _get_cached_response(user_id: str, phase: str, message: str) -> Optional[dic
 def _get_system_prompt(phase: str, component: str, scaffolding_level: int) -> str:
     """Generate appropriate system prompt based on phase, component and scaffolding level"""
     
-    # Get the rubric for this phase and component
-    rubric = get_rubric(phase, component)
-    
-    # Base system prompt that applies to all phases - improved with interactive elements
-    base_prompt = """You are SoLBot, an AI tutor for teaching self-regulated learning (SRL).
-Provide scaffolding based on the student's needs and respond in an engaging, visual way:
-- Use markdown formatting, including headings (##), lists, bold for key terms
-- Create tables and step-by-step guides when helpful
-- Include 4-5 emojis for enthusiasm and emphasis (🔑, 💡, ✅, ⚠️, 🚀, 🎯, 🌟, 🎓)
-- Keep responses concise (2-4 paragraphs)
-- Begin with a warm, personalized acknowledgment, then answer directly
-- End with a reflection question that prompts deeper thinking
-- Use a conversational, enthusiastic tone with occasional humor
-- be empathetic and supportive for the student' emotion and motivation such as growth mindset and expectancy value
-
-
-This helps users interact more easily and makes the interface more dynamic.
-"""
-
-    # Shorter, more focused phase-specific instructions 
-    phase_prompt = {
-
-        
-        "phase2": """Help the student analyze existing course learning objectives and identify available resources.
-- Guide them to locate and analyze specific course learning objectives from their course materials
-- Help them identify the topic each objective addresses and required level of understanding
-- Assist in analyzing what knowledge they already have vs. what they need to learn
-- Ask about specific offline resources available (textbooks, handouts, tutors, peers, notes, etc.)
-- Guide them to explore digital learning resources for their course
-- Help them connect available resources to their specific learning objectives
-- Focus on ANALYZING the task and personal resources rather than SETTING new goals""",
-        
-        "phase3": """Analyze learning environment and external factors.
-- Discuss study spaces and optimization
-- Explore helpful digital tools
-- Address time and social factors""",
-        
-        "phase4": """Guide strategic planning.
-- Help connect course to personal goals
-- Create actionable goals
-- Develop contingency plans
-- Establish measurable success criteria""",
-        
-        "phase5": """Develop monitoring and adaptation systems.
-- Create progress check schedules
-- Establish adaptation triggers
-- Develop alternative approaches
-- Connect monitoring to adaptation""",
-      
-        
-        "summary": """Provide brief completion message."""
-    }.get(phase, "Respond about self-regulated learning.")
-
-    # Phase progression mapping (for reference)
-    phase_progression = {
-        "intro": "phase1",
-        "phase1": "phase2", 
-        "phase2": "phase3",
-        "phase3": "phase4",
-        "phase4": "phase5",
-        "phase5": "phase6",
-        "phase6": "summary"
+    # Define criteria sections based on phase
+    phase_criteria = {
+        "phase2": "• Goal Clarity: [⚠️/💡/✅] [brief feedback]\n• Background Connection: [⚠️/💡/✅] [brief feedback]\n• Study Resources: [⚠️/💡/✅] [brief feedback]",
+        "phase4_long_term": "• Goal Clarity: [⚠️/💡/✅] [brief feedback]\n• Timeline: [⚠️/💡/✅] [brief feedback]\n• Measurement: [⚠️/💡/✅] [brief feedback]",
+        "phase4_short_term": "• SMART Elements: [⚠️/💡/✅] [brief feedback]\n• Step-by-step Plan: [⚠️/💡/✅] [brief feedback]\n• Long-term Alignment: [⚠️/💡/✅] [brief feedback]",
+        "phase4_contingency": "• Problem Description: [⚠️/💡/✅] [brief feedback]\n• Response Clarity: [⚠️/💡/✅] [brief feedback]\n• Feasibility: [⚠️/💡/✅] [brief feedback]",
+        "phase5": "• Progress Checks: [⚠️/💡/✅] [brief feedback]\n• Adaptation Trigger: [⚠️/💡/✅] [brief feedback]\n• Strategy Alternatives: [⚠️/💡/✅] [brief feedback]\n• Success Criteria: [⚠️/💡/✅] [brief feedback]"
     }
     
-    # Combine prompts
-    final_prompt = f"{base_prompt}\n\n{phase_prompt}"
+    # Select the right criteria based on phase and component
+    criteria_section = phase_criteria.get(phase)
+    phase_focus = "strategy"
     
-    # Add rubric-based evaluation directly in the prompt - only for active chat phases (not intro or summary)
-    if rubric and phase not in ["intro", "summary"]:
-        rubric_prompt = """
-EVALUATION CRITERIA:
-"""
-        
-        # Add criteria descriptions from rubric
-        for criterion, description in rubric.items():
-            rubric_prompt += f"- {criterion}: {description}\n"
-        
-        rubric_prompt += f"""
-Score response 1-3 (1=needs improvement, 2=satisfactory, 3=excellent)
-Average ≥2.0 indicates readiness to progress.
-
-SCAFFOLDING APPROACH:
-- Score <1.5: HIGH support (detailed guidance, examples, templates)
-- Score 1.5-2.0: MEDIUM support (balanced guidance, some examples)
-- Score ≥2.0: LOW support (thought-provoking questions, student-led)
-
-If score ≥2.0, include:
-"🎉 Congratulations! You've demonstrated a strong understanding of [current phase topic]. You can reflect more if you want to. But you're ready to move to the next phase. Click the Continue button when you're ready to proceed."
-"""
-
-        final_prompt += rubric_prompt
-    # If no rubric or in intro/summary phase, add simplified scaffolding level
-    else:
-        # Condensed scaffolding level instructions for non-rubric phases
-        high_support = """- Clear step-by-step guidance with examples
-- Explicit templates and frameworks 
-- Direct questions with limited choices"""
-        
-        medium_support = """- Balance explanations with guiding questions
-- Some examples while encouraging personal ones
-- Open-ended questions with structure"""
-        
-        low_support = """- Thought-provoking questions over explanations
-- Student-generated examples
-- Complex, open-ended questions"""
-        
-        support_level = "HIGH" if scaffolding_level == 1 else "MEDIUM" if scaffolding_level == 2 else "LOW"
-        support_text = high_support if scaffolding_level == 1 else medium_support if scaffolding_level == 2 else low_support
-        
-        scaffolding_prompt = f"""Provide {support_level} support:
-{support_text}"""
-        final_prompt += f"\n\n{scaffolding_prompt}"
+    # Handle phase4 with different components
+    if phase == "phase4":
+        if component in ["longtermgoal", "long_term_goals"]:
+            criteria_section = phase_criteria["phase4_long_term"]
+            phase_focus = "long-term goal"
+        elif component in ["shorttermgoal", "short_term_goals"]:
+            criteria_section = phase_criteria["phase4_short_term"]
+            phase_focus = "short-term goal"
+        elif component in ["ifthen", "contingency_strategies"]:
+            criteria_section = phase_criteria["phase4_contingency"]
+            phase_focus = "contingency strategies"
+    elif phase == "phase2":
+        phase_focus = "learning objective"
+    elif phase == "phase5":
+        phase_focus = "monitoring & adaptation system"
+            
+    # Use generic template if no specific criteria found
+    if not criteria_section:
+        criteria_section = "• Key Element 1: [⚠️/💡/✅] [brief feedback]\n• Key Element 2: [⚠️/💡/✅] [brief feedback]\n• Key Element 3: [⚠️/💡/✅] [brief feedback]"
     
-    return final_prompt
+    # Get the rubric for this phase and component - try importing from backend.rubrics
+    try:
+        # Remove the rubrics import since we don't need it
+        rubric = None
+    except Exception:
+        rubric = None
+    
+    # Create base prompt with consistent structure
+    prompt = f"""You are SoLBot, an AI tutor for self-regulated learning.
+
+Your response MUST follow this exact structure:
+
+## Greeting
+Brief, personalized greeting acknowledging the student's focus.
+
+## Assessment
+```
+Looking at your {phase_focus}:
+{criteria_section}
+```
+
+## Guidance
+Provide specific, actionable advice using templates, examples, or frameworks appropriate to their current level.
+
+## Next Steps
+Progress indicator: [▫▫▫▫▫▫] (X%)
+Ask ONE reflection question to deepen their understanding.
+
+When student achieves excellence (score ≥ 2.5), end with: "Your {phase_focus} is excellent! Please click the Continue button below to proceed to the next step in your learning journey."
+
+Use supportive, encouraging tone with educational emojis (🔍, 📝, 🔄, 📊, 🎯).
+
+⚠️ SCORING INSTRUCTIONS (NOT VISIBLE TO STUDENTS):
+Score 1-3 on each criterion.
+Calculate overall Score as the average.
+Set Scaffolding level based on score:
+- Score <1.5: Scaffolding 3 (HIGH support)
+- Score 1.5-2.0: Scaffolding 2 (MEDIUM support)
+- Score >2.0: Scaffolding 1 (LOW support)
+
+ALWAYS end with metadata in this exact format:
+<!-- INSTRUCTOR_METADATA
+Score: [1.0-3.0]
+Scaffolding: [1-3]
+[Phase-specific criteria scores]
+Rationale: [brief explanation]
+-->"""
+
+    return prompt
 
 @router.post("/")
 async def process_chat(request: dict):
@@ -273,8 +244,23 @@ async def process_chat(request: dict):
         if not conversation_id:
             conversation_id = str(uuid.uuid4())
             
-        # Get the system prompt for this phase
-        system_prompt = _get_system_prompt(phase, component, scaffolding_level)
+        # Get the appropriate prompt based on phase and component
+        if phase == "phase2":
+            system_prompt = FINAL_PROMPTS["phase2_learning_objectives"]
+        elif phase == "phase4":
+            if component in ["longtermgoal", "long_term_goals"]:
+                system_prompt = FINAL_PROMPTS["phase4_long_term_goals"]
+            elif component in ["shorttermgoal", "short_term_goals"]:
+                system_prompt = FINAL_PROMPTS["phase4_short_term_goals"]
+            elif component in ["ifthen", "contingency_strategies"]:
+                system_prompt = FINAL_PROMPTS["phase4_contingency_strategies"]
+            else:
+                system_prompt = FINAL_PROMPTS["phase4_long_term_goals"]  # Default for phase 4
+        elif phase == "phase5":
+            system_prompt = FINAL_PROMPTS["phase5_monitoring_adaptation"]
+        else:
+            # For other phases that don't have specific prompts yet
+            system_prompt = _get_system_prompt(phase, component, scaffolding_level)
         
         # Get recent conversation history (last 8 messages)
         # Using try-except since we're not sure if get_messages is async
@@ -546,81 +532,53 @@ async def process_chat(request: dict):
             }
             next_phase = phase_progression.get(phase)
         
-        # Check if this is a submission that needs to be saved
-        if request.get("is_submission", False):
-            try:
-                # Save submission to the new submissions table
-                from backend.utils.db import get_db
-                db = get_db()
-                
-                # Get the appropriate phase_id
-                phase_id = None
-                # This would normally come from a DB query
-                # For now we'll create a mapping
-                phase_mapping = {
-                    "phase1": "p1_uuid", 
-                    "phase2": "p2_uuid",
-                    "phase3": "p3_uuid",
-                    "phase4": "p4_uuid", 
-                    "phase5": "p5_uuid"
-                }
-                phase_id = phase_mapping.get(phase)
-                
+        # Try to store the feedback for this submission
+        try:
+            if "is_submission" in request and request["is_submission"]:
+                # Save the submission
                 submission_data = {
-                    "id": str(uuid.uuid4()),
                     "user_id": user_id,
-                    "phase_id": phase_id,
                     "conversation_id": conversation_id,
-                    "submission_type": request.get("submission_type", component),
+                    "submission_type": request.get("submission_type", "goal"),
+                    "phase": phase,
+                    "component": component,
                     "content": message,
-                    "submitted_at": datetime.utcnow().isoformat(),
-                    "status": "evaluated" if score is not None else "submitted",
+                    "feedback": content,
+                    "score": score,
+                    "scaffolding_level": recommended_scaffolding,
                     "attempt_number": request.get("attempt_number", 1),
-                    "metadata": json.dumps({
-                        "raw_message": request.get("raw_message", message),
-                        "evaluation_score": score,
-                        "scaffolding_level": recommended_scaffolding,
-                        "criteria_scores": extracted_metadata
-                    })
+                    "timestamp": datetime.utcnow().isoformat()
                 }
                 
-                # Save to database or memory storage
-                if db is None or "_using_memory_db" in globals() and globals()["_using_memory_db"]:
+                # Save to appropriate storage based on available DB
+                if _using_memory_db:
+                    # Ensure submissions list exists
                     if "submissions" not in _memory_db:
                         _memory_db["submissions"] = []
                     _memory_db["submissions"].append(submission_data)
-                else:
-                    db.table("submissions").insert(submission_data).execute()
                 
-                logger.info(f"Saved submission for user {user_id}, phase {phase}")
+                # Save assessment separately too
+                assessment_data = {
+                    "user_id": user_id,
+                    "conversation_id": conversation_id,
+                    "phase": phase,
+                    "component": component,
+                    "assessment_type": request.get("submission_type", "goal"),
+                    "score": score,
+                    "scaffolding_level": recommended_scaffolding,
+                    "metadata": extracted_metadata,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
                 
-                # If we have evaluation scores, save those too
-                if score is not None:
-                    # Create assessment record
-                    assessment_data = {
-                        "id": str(uuid.uuid4()),
-                        "submission_id": submission_data["id"],
-                        "score": int(score) if score else 2,
-                        "feedback": rationale or "",
-                        "assessed_at": datetime.utcnow().isoformat(),
-                        "assessed_by": f"llm:{CLAUDE_MODEL}",
-                        "criteria_scores": json.dumps(extracted_metadata)
-                    }
-                    
-                    # Save to database or memory storage
-                    if db is None or "_using_memory_db" in globals() and globals()["_using_memory_db"]:
-                        if "assessments" not in _memory_db:
-                            _memory_db["assessments"] = []
-                        _memory_db["assessments"].append(assessment_data)
-                    else:
-                        db.table("assessments").insert(assessment_data).execute()
-                        
-                    logger.info(f"Saved assessment for submission {submission_data['id']}")
-                
-            except Exception as e:
-                logger.error(f"Error saving submission: {e}")
-                logger.error(traceback.format_exc())
-            
+                if _using_memory_db:
+                    # Ensure assessments list exists
+                    if "assessments" not in _memory_db:
+                        _memory_db["assessments"] = []
+                    _memory_db["assessments"].append(assessment_data)
+        except Exception as e:
+            logger.error(f"Error saving submission: {e}")
+            # Continue even if saving fails
+        
         # Create response data object
         response_data = {
             "message": content,
@@ -709,14 +667,15 @@ async def submit_work(request: dict):
         # Extract request parameters
         user_id = request.get("user_id")
         phase = request.get("phase", "phase1").lower()
-        content = request.get("content", "")
+        message = request.get("message", "")  # Changed from content to message
         submission_type = request.get("submission_type", "goal")
         conversation_id = request.get("conversation_id")
         component = request.get("component", "general")
         
         # Validate required fields
-        if not user_id or not phase or not content:
-            return {"error": "userId, phase, and content are required", "status": "error"}
+        if not user_id or not phase or not message:
+            logger.error(f"Missing required fields in submission: {request}")
+            return {"error": "userId, phase, and message are required", "status": "error"}
         
         logger.info(f"Processing submission: phase={phase}, type={submission_type}, userId={user_id[:8]}...")
         
@@ -724,8 +683,23 @@ async def submit_work(request: dict):
         if not conversation_id:
             conversation_id = str(uuid.uuid4())
             
-        # Get the system prompt for this phase with evaluation focus
-        system_prompt = _get_system_prompt(phase, component, 2)  # Use medium scaffolding for evaluation
+        # Get the appropriate prompt based on phase and component
+        if phase == "phase2":
+            system_prompt = FINAL_PROMPTS["phase2_learning_objectives"]
+        elif phase == "phase4":
+            if component in ["longtermgoal", "long_term_goals"]:
+                system_prompt = FINAL_PROMPTS["phase4_long_term_goals"]
+            elif component in ["shorttermgoal", "short_term_goals"]:
+                system_prompt = FINAL_PROMPTS["phase4_short_term_goals"]
+            elif component in ["ifthen", "contingency_strategies"]:
+                system_prompt = FINAL_PROMPTS["phase4_contingency_strategies"]
+            else:
+                system_prompt = FINAL_PROMPTS["phase4_long_term_goals"]  # Default for phase 4
+        elif phase == "phase5":
+            system_prompt = FINAL_PROMPTS["phase5_monitoring_adaptation"]
+        else:
+            # For other phases that don't have specific prompts yet
+            system_prompt = _get_system_prompt(phase, component, 2)  # Use medium scaffolding for evaluation
         
         # Add specific evaluation instructions
         system_prompt += f"\n\nThis is a student submission for {phase}, {submission_type}. Please evaluate it carefully against the rubric criteria."
@@ -734,25 +708,31 @@ async def submit_work(request: dict):
         chat_request = {
             "user_id": user_id,
             "phase": phase,
-            "message": content,
+            "message": message,
             "component": component,
             "conversation_id": conversation_id,
             "is_submission": True,
             "submission_type": submission_type,
-            "raw_message": content,
+            "raw_message": message,
             "attempt_number": request.get("attempt_number", 1)
         }
         
         # Call the chat endpoint to process this submission
+        logger.info(f"Sending submission to process_chat: {chat_request}")
         response = await process_chat(chat_request)
         
+        # Handle error responses
         if "error" in response:
             logger.error(f"Error processing submission: {response['error']}")
             return response
+        
+        # Log successful responses    
+        logger.info(f"Submission processed successfully: {response.get('data', {}).get('message', '')[:100]}...")
             
         # Add submission-specific data to the response
-        response["data"]["submission_type"] = submission_type
-        response["data"]["is_submission"] = True
+        if "data" in response:
+            response["data"]["submission_type"] = submission_type
+            response["data"]["is_submission"] = True
         
         return response
         

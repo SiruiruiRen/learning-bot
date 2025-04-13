@@ -21,7 +21,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
 export async function GET(request: NextRequest) {
   try {
     // Get backend URL from environment or use default
-    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8080';
+    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8090';
     console.log(`Checking backend health at ${backendUrl}/api/chat/health`);
     
     try {

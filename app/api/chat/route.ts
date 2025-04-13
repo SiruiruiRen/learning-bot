@@ -35,335 +35,201 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_R
   }
 }
 
+// Proxy API route that forwards requests to the backend
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    const { userId, phase, component, message, conversationId } = data;
+    // Parse the request body
+    const body = await request.json()
+    console.log("API route received request:", body)
 
-    if (!userId || !phase || !message) {
+    // Make sure we have required fields
+    if (!body.phase || !body.message) {
+      console.error("Missing required fields in request:", body)
       return NextResponse.json(
-        { error: 'userId, phase, and message are required' },
+        { error: "Missing required fields", status: "error" },
         { status: 400 }
-      );
+      )
     }
 
-    // Log the request for debugging
-    console.log(`Processing request: phase=${phase}, component=${component}, userId=${userId.slice(0,8)}...`);
-    console.log(`Message: "${message.substring(0, 30)}${message.length > 30 ? '...' : ''}"`);
-
-    // For phase1, we'll handle it on the client side with predefined responses
-    if (phase === 'phase1') {
-      console.log('Using client-side handling for phase1');
-      return NextResponse.json({
-        success: true,
-        data: {
-          message: "This is handled on the client side for phase1",
-          phase: phase,
-          component: component
-        }
-      });
-    }
-
-    // Map frontend phase name to backend agent if needed
-    let backendPhase = phase;
-    if (phase === 'intro') {
-      backendPhase = 'intro'; // 'intro' page uses intro agent
-    } else if (phase === 'summary') {
-      backendPhase = 'summary'; // 'summary' page uses the summary agent
-    }
-
-    // Backend API URL
-    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8081';
-    console.log(`Connecting to backend API at ${backendUrl}/api/chat (Updated: ${new Date().toISOString()})`);
+    // Set the backend URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080'
+    const endpoint = '/api/chat/'
+    const fullUrl = `${backendUrl}${endpoint}`
     
+    console.log(`Forwarding request to backend at ${fullUrl}`)
+
     try {
-      // Set a reasonable timeout for the request
+      // Forward the request to the backend with increased timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);  // 20 second timeout
+      const timeoutId = setTimeout(() => {
+        console.log("API call timeout - aborting fetch");
+        controller.abort();
+      }, 60000); // 60 second timeout (increased from 20s)
       
-      // Prepare the request body
-      const requestBody: BackendRequestBody = {
-        user_id: userId,
-        phase: backendPhase,
-        message: message,
-        conversation_id: conversationId,
-        raw_message: message,
-        component: component
-      };
+      // Implement retry logic for more resilience
+      let maxRetries = 2;
+      let retryCount = 0;
+      let backendResponse: Response | undefined;
       
-      console.log('Sending request to backend:', JSON.stringify(requestBody));
-      
-      // Always try to connect to the backend API without complex fallbacks
-      console.log('Connecting to backend at:', `${backendUrl}/api/chat`);
-      
-      let response: Response;
-      try {
-        response = await fetchWithRetry(`${backendUrl}/api/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
-        });
-        
-        console.log(`Backend response status: ${response.status}`);
-
-        if (!response.ok) {
-          let errorDetails = '';
-          try {
-            errorDetails = await response.text();
-            console.error(`Backend API error: ${response.status} - ${errorDetails}`);
-          } catch (textError) {
-            console.error(`Error reading response text: ${textError}`);
-          }
-          
-          if (response.status === 404) {
-            console.log('Endpoint not found, providing fallback response');
-            return NextResponse.json({
-              success: true,
-              data: {
-                message: "I'm sorry, but that resource is not available yet. Let's continue with what we have.",
-                phase: phase,
-                component: component,
-                agent_type: "fallback",
-                scaffolding_level: 2,
-                timestamp: new Date().toISOString()
-              }
-            });
-          }
-          
-          throw new Error(`Backend API error: ${response.status}`);
-        }
-
-        // Parse the JSON response
-        let responseData;
-        let formattedData;
-        
+      while (retryCount <= maxRetries) {
         try {
-          responseData = await response.json();
-          console.log('Successfully parsed response JSON');
-          console.log('Raw response data:', JSON.stringify(responseData));
+          // Forward the request to the backend
+          backendResponse = await fetch(fullUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
           
-          // Validate the response data
-          if (!responseData) {
-            console.error('Empty response from backend');
-            throw new Error('Empty response from backend');
+          // If we get here and the response is ok, break out of retry loop
+          if (backendResponse.ok) {
+            break;
           }
           
-          // Handle different response formats
-          if (responseData.data && responseData.data.message) {
-            // Standard format with nested data object
-            console.log('Using standard format with nested data object');
-            formattedData = responseData.data;
-          } else if (responseData.message) {
-            // Direct format without nested data (new format from real agents)
-            console.log('Using direct format without nested data');
+          // If not ok but not a network error, still break (we'll handle the error below)
+          break;
+          
+        } catch (fetchError: any) {
+          // Only retry on network errors, not on aborts
+          if (fetchError.name !== 'AbortError') {
+            retryCount++;
+            console.log(`Retry attempt ${retryCount}/${maxRetries}`);
             
-            // Clean the message if it contains JSON structure
-            if (typeof responseData.message === 'string' && 
-                (responseData.message.includes("message':") || 
-                 responseData.message.includes('"message":') || 
-                 responseData.message.includes("'agent_type':"))) {
-              
-              console.log('Detected JSON in message string, extracting content...');
-              try {
-                // Try to extract just the message content from the JSON string
-                const match = responseData.message.match(/message['"]?\s*:\s*['"]([^'"]+)['"]/);
-                if (match && match[1]) {
-                  responseData.message = match[1];
-                }
-              } catch (jsonError) {
-                console.log('Error parsing JSON in message, using as is');
-              }
+            if (retryCount <= maxRetries) {
+              // Wait for a short delay before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            } else {
+              // Max retries reached - let the outer catch handle it
+              throw fetchError;
             }
-            
-            formattedData = responseData;
           } else {
-            console.error('Invalid response format:', responseData);
-            throw new Error('Invalid response format from backend');
+            // For abort errors, just throw immediately
+            throw fetchError;
           }
-          
-          // Ensure the response has all required fields
-          if (!formattedData.message) {
-            formattedData.message = "The server returned a response without a message.";
-          }
-          if (!formattedData.agent_type) {
-            formattedData.agent_type = "fallback";
-          }
-          if (!formattedData.phase) {
-            formattedData.phase = phase;
-          }
-          
-          // Clean any remaining "Real Agent [GPT]:" prefixes that might have gotten through
-          if (typeof formattedData.message === 'string') {
-            // Remove any prefixes like "Real Agent [GPT]:" - make this more aggressive
-            formattedData.message = formattedData.message.replace(/^.*?Real Agent(?:\s*\[GPT\])?:\s*/i, '');
-            
-            // First clean any CONTEXT blocks
-            if (formattedData.message.includes('CONTEXT:')) {
-              console.log('Detected CONTEXT in message, cleaning...');
-              const parts = formattedData.message.split('CONTEXT:');
-              if (parts.length > 1) {
-                // Take the last part after all CONTEXT blocks
-                formattedData.message = parts[parts.length - 1].trim();
-              }
-            }
-            
-            // Handle TASK blocks
-            if (formattedData.message.includes('TASK:')) {
-              console.log('Detected TASK in message, cleaning...');
-              const parts = formattedData.message.split('TASK:');
-              if (parts.length > 1) {
-                // Look for content after instructions (usually after a !, . or ?)
-                const taskContent = parts[parts.length - 1];
-                const match = taskContent.match(/[\.!\?]\s*([^]*?)$/);
-                if (match && match[1]) {
-                  formattedData.message = match[1].trim();
-                } else {
-                  // If no clear ending found, just take everything after TASK
-                  formattedData.message = taskContent.trim();
-                }
-              }
-            }
-            
-            // Handle conversation stage instructions
-            if (formattedData.message.includes('CONVERSATION STAGE:') || 
-                formattedData.message.includes('CURRENT CONVERSATION STAGE:') || 
-                formattedData.message.includes('NEXT STAGE:')) {
-              console.log('Detected conversation stage instructions, cleaning more aggressively...');
-              // Try to find the actual response after all instructions
-              const match = formattedData.message.match(/Begin with a natural response without any introductory phrases\.\s*([^]*?)$/);
-              if (match && match[1]) {
-                formattedData.message = match[1].trim();
-              } else {
-                // Look for content after the last period, exclamation or question mark
-                const match2 = formattedData.message.match(/[\.!\?]\s*([^]*?)$/);
-                if (match2 && match2[1]) {
-                  formattedData.message = match2[1].trim();
-                }
-              }
-            }
-            
-            // Final cleanup for any non-alphanumeric prefixes
-            formattedData.message = formattedData.message.replace(/^[^a-zA-Z0-9]+/, '');
-            
-            console.log('Cleaned message:', formattedData.message);
-          }
-          
-          // For intro phase, ensure we have next_intro_stage when needed
-          if (phase === 'intro' && !formattedData.next_intro_stage) {
-            const componentToStageMap: Record<string, string> = {
-              'welcome': 'name',
-              'name': 'major',
-              'major': 'challenging_course',
-              'challenging_course': 'motivation',
-              'motivation': 'srl_ability',
-              'srl_ability': 'complete'
-            };
-            
-            // Use the component to determine the next stage
-            if (component && componentToStageMap[component]) {
-              console.log(`Adding next_intro_stage: ${componentToStageMap[component]}`);
-              formattedData.next_intro_stage = componentToStageMap[component];
-            }
-          }
-          
-          console.log('Final formatted data:', JSON.stringify(formattedData));
-        } catch (jsonError) {
-          console.error(`Error parsing response JSON: ${jsonError}`);
-          throw new Error('Invalid JSON response from backend');
         }
-        
-        // Store the conversation history in Supabase if available
-        try {
-          if (supabase && conversationId) {
-            await supabase.from('conversations').upsert({
-              conversation_id: conversationId,
-              user_id: userId,
-              phase: phase,
-              component: component || 'general',
-              updated_at: new Date().toISOString(),
-              messages: [
-                ...(await getExistingMessages(conversationId) || []),
-                { role: 'user', content: message, timestamp: new Date().toISOString() },
-                { role: 'assistant', content: formattedData.message, timestamp: new Date().toISOString() }
-              ]
-            }, { onConflict: 'conversation_id' });
-            console.log('Saved conversation to database');
-          }
-        } catch (dbError) {
-          console.error('Error saving conversation to database:', dbError);
-          // Continue even if database operation fails
-        }
-
-        // Format the response data for the frontend
-        const formattedResponse = {
-          success: true,
-          data: {
-            message: typeof formattedData.message === 'string' ? formattedData.message : 
-                     typeof formattedData.message === 'object' && formattedData.message?.message ? 
-                     formattedData.message.message : 
-                     JSON.stringify(formattedData.message),
-            agent_type: formattedData.agent_type || "ai_assistant",
-            phase: formattedData.phase || phase,
-            component: formattedData.component || component,
-            scaffolding_level: formattedData.scaffolding_level || 2,
-            next_component: formattedData.next_component,
-            next_phase: formattedData.next_phase,
-            next_intro_stage: formattedData.next_intro_stage,
-            timestamp: new Date().toISOString()
-          }
-        };
-
-        console.log('Formatted response for frontend:', JSON.stringify(formattedResponse, null, 2));
-
-        // Return the formatted response with consistent structure
-        return NextResponse.json(formattedResponse);
-      } catch (error) {
-        console.error(`Backend fetch error:`, error);
-        console.log('Connection refused - backend may not be running');
-        
-        // Default to a simplified fallback response when the backend is unavailable
-        return NextResponse.json({
-          success: true,
-          data: {
-            message: "I'm sorry, but I'm unable to connect to the backend service right now. Please ensure the backend server is running.",
-            phase: phase,
-            component: component,
-            agent_type: "fallback",
-            scaffolding_level: 2,
-            timestamp: new Date().toISOString()
-          }
-        });
       }
-    } catch (error) {
-      console.error('Error in chat API:', error);
-      return NextResponse.json({
-        success: true,
-        data: {
-          message: "I couldn't process that request properly. Let's try again or take a different approach.",
-          agent_type: "error",
-          phase: "unknown",
-          component: null,
-          scaffolding_level: 2,
-          timestamp: new Date().toISOString()
+      
+      clearTimeout(timeoutId);
+
+      // Make sure we have a response
+      if (!backendResponse) {
+        throw new Error("Failed to get response from server after multiple attempts");
+      }
+
+      // Log response status
+      console.log(`Backend response status: ${backendResponse.status}`)
+
+      // Handle different status codes
+      if (!backendResponse.ok) {
+        let errorText = await backendResponse.text()
+        console.error("Backend error:", errorText)
+        
+        try {
+          // Try to parse as JSON
+          const errorJson = JSON.parse(errorText)
+          return NextResponse.json(
+            { error: errorJson.error || "Backend error", details: errorJson, status: "error" },
+            { status: backendResponse.status }
+          )
+        } catch (e) {
+          // Not JSON, return as plain text
+          return NextResponse.json(
+            { error: "Backend error", details: errorText, status: "error" },
+            { status: backendResponse.status }
+          )
         }
-      });
+      }
+
+      // Parse the response
+      const data = await backendResponse.json()
+      console.log("Backend response:", data)
+
+      // Return the response to the client
+      return NextResponse.json(data)
+    } catch (fetchError: any) {
+      console.error("Backend connection error:", fetchError)
+      
+      // Provide more detailed error messages based on the error type
+      let errorMessage = "Could not connect to backend server";
+      let errorDetails = fetchError.message || "Connection failed";
+      let errorCode = fetchError.cause?.code || "UNKNOWN";
+      
+      // More specific error messages for different error types
+      if (fetchError.name === 'AbortError') {
+        errorMessage = "The request timed out";
+        errorDetails = "The server took too long to respond. Please try again.";
+        errorCode = "TIMEOUT";
+      } else if (fetchError.message?.includes('ECONNREFUSED')) {
+        errorMessage = "Backend server is not running";
+        errorDetails = "Please start the backend server and try again.";
+        errorCode = "SERVER_DOWN";
+      }
+      
+      return NextResponse.json(
+        { 
+          error: errorMessage, 
+          details: errorDetails,
+          code: errorCode,
+          status: "error" 
+        },
+        { status: 503 } // Service Unavailable
+      )
     }
   } catch (error: any) {
-    console.error('Error in chat API:', error);
-    return NextResponse.json({
-      success: true,
-      data: {
-        message: "I couldn't process that request properly. Let's try again or take a different approach.",
-        agent_type: "error",
-        phase: "unknown",
-        component: null,
-        scaffolding_level: 2,
-        timestamp: new Date().toISOString()
+    console.error("API proxy error:", error)
+    return NextResponse.json(
+      { error: error.message || "Internal server error", status: "error" },
+      { status: 500 }
+    )
+  }
+}
+
+// Health check endpoint
+export async function GET(request: NextRequest) {
+  try {
+    // Check if the backend is running
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080'
+    const healthEndpoint = '/api/chat/health'
+    const fullUrl = `${backendUrl}${healthEndpoint}`
+    
+    console.log(`Checking backend health at ${fullUrl}`)
+    
+    try {
+      const backendResponse = await fetch(fullUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Use a timeout of 2 seconds
+        signal: AbortSignal.timeout(2000)
+      })
+      
+      console.log(`Backend health response status: ${backendResponse.status}`)
+      
+      // Return backend status
+      if (backendResponse.ok) {
+        return NextResponse.json({ status: "healthy", backend: "connected" })
+      } else {
+        return NextResponse.json(
+          { status: "unhealthy", backend: "error", details: backendResponse.statusText },
+          { status: 200 } // We still return 200 to the frontend
+        )
       }
-    });
+    } catch (error: any) {
+      console.error("Backend health check error:", error)
+      return NextResponse.json(
+        { status: "unhealthy", backend: "unreachable", details: error.message },
+        { status: 200 } // We still return 200 to the frontend
+      )
+    }
+  } catch (error: any) {
+    console.error("Health check error:", error)
+    return NextResponse.json(
+      { status: "error", details: error.message },
+      { status: 500 }
+    )
   }
 }
 

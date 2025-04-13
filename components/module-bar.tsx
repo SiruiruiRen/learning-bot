@@ -136,6 +136,15 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
     router.push(`/phase${phase}`)
   }
 
+  // Function to navigate to Phase 5 specifically
+  const navigateToPhase5 = () => {
+    router.push("/phase5");
+    // Force a reload to ensure we get the intro page
+    setTimeout(() => {
+      window.location.href = "/phase5";
+    }, 100);
+  }
+
   // Function to navigate to home
   const navigateToHome = () => {
     router.push("/intro")
@@ -269,7 +278,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                         return (
                           <div
                             key={phase}
-                            onClick={() => navigateToPhase(phase)}
+                            onClick={() => phase === 5 ? navigateToPhase5() : navigateToPhase(phase)}
                             className={`flex items-center py-1.5 px-3 rounded-md cursor-pointer text-sm
                               ${isActive ? 
                                 `${colorMap[module.color].bgLight} ${colorMap[module.color].text}` : 
@@ -470,7 +479,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                       className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer
                         ${currentPhase === 5 ? "bg-amber-600/80 text-white" : 
                           completedPhases.includes(5) ? "bg-amber-800/50 text-white/80" : "bg-slate-800 text-white/50 hover:bg-slate-700/70 hover:text-white/80"}`}
-                      onClick={() => router.push("/phase5")}
+                      onClick={navigateToPhase5}
                     >
                       <TrendingUp className="h-4 w-4" />
                     </div>

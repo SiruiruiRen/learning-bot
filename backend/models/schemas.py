@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional, Any, Union, TypedDict
+from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
 
 # Request models
@@ -43,21 +43,7 @@ class EvaluationResults(BaseModel):
     scaffolding_level: int
     criteria_scores: List[RubricResult]
 
-# State schema for LangGraph
-class AgentState(TypedDict, total=False):
-    user_id: str
-    phase: str
-    component: str
-    message: str
-    raw_message: str
-    conversation_id: str
-    conversation_history: List[Dict[str, Any]]
-    user_profile: Dict[str, Any]
-    current_scaffolding_level: int
-    rubric_evaluation: Optional[Dict[str, Any]]
-    response: Optional[str]
-    response_metadata: Optional[Dict[str, Any]]
-    error: Optional[str]
+# Removed AgentState TypedDict as it's no longer needed with direct LLM approach
 
 # Rubric criteria models for each phase
 class Phase2Criteria(BaseModel):

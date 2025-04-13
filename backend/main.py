@@ -11,10 +11,10 @@ from dotenv import load_dotenv
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Internal imports - use relative imports to fix module not found errors
-from routes.chat import router as chat_router
-from routes.user import router as user_router
-from routes.scores import router as scores_router
-from utils.db import init_db, close_db
+from backend.routes.chat import router as chat_router
+from backend.routes.user import router as user_router
+from backend.routes.scores import router as scores_router
+from backend.utils.db import init_db, close_db
 
 # Load environment variables
 load_dotenv()

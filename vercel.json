@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["sfo1"],
+  "rewrites": [
+    { 
+      "source": "/api/chat/:path*", 
+      "destination": "/api/chat/:path*"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_BACKEND_URL": "BACKEND_URL_TO_BE_CONFIGURED_AFTER_DEPLOYMENT"
+  }
+} 

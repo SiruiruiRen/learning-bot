@@ -40,9 +40,11 @@ export default function IntroPage() {
   const [motivation, setMotivation] = useState<string>("")
   const [otherMotivation, setOtherMotivation] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   
-  // Load user data on component mount
+  // Load user data on component mount - client-side only
   useEffect(() => {
+    setIsClient(true)
     try {
       const storedUserId = localStorage.getItem("userId")
       if (storedUserId) {
@@ -214,6 +216,7 @@ export default function IntroPage() {
               <div className="mt-8 bg-slate-800/70 p-6 rounded-lg border border-indigo-500/30">
                 <h3 className="text-xl font-medium text-indigo-300 mb-4">Let's get to know you</h3>
                 
+                {isClient ? (
                 <div className="space-y-6">
                   {/* Name */}
                   <div className="space-y-2">
@@ -343,6 +346,11 @@ export default function IntroPage() {
                     )}
                   </Button>
                 </div>
+                ) : (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -5,9 +5,10 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Target, ArrowLeft, Trophy } from "lucide-react"
+import { Target, ArrowLeft, Trophy, ArrowRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import SolBotChat from "@/components/solbot-chat"
+import GuidedShortTermGoal from "@/components/guided-short-term-goal"
 
 // Add a message cleaning function to strip any possible score text
 const cleanScoresFromMessage = (message: string): string => {
@@ -76,12 +77,12 @@ export default function ShortTermGoalsPage() {
   }
 
   // Handle task completion
-  const handleTaskComplete = (nextPhase: string) => {
+  const handleTaskComplete = (nextPhase?: string) => {
     // Extract score from nextPhase string if it contains a score value
     let scoreValue = 0
     try {
       // Check if nextPhase contains a score value
-      if (nextPhase.includes('score:')) {
+      if (nextPhase && nextPhase.includes('score:')) {
         scoreValue = parseFloat(nextPhase.split('score:')[1])
       } else {
         // If not, set a default excellent score
@@ -185,54 +186,30 @@ export default function ShortTermGoalsPage() {
                 </p>
               </div>
 
-              {/* SolBot Chat Component */}
+              {/* Guided Short Term Goal Component */}
               <div className="mt-4">
-                <SolBotChat
+                <GuidedShortTermGoal
                   height="500px"
-                  userId={userId as any}
+                  userId={userId}
                   phase="phase4"
                   component="short_term_goals"
-                  useAgent={true}
-                  initialMessages={[
-                    {
-                      id: 1,
-                      sender: "bot",
-                      content: cleanScoresFromMessage(`# Short-term SMART Goals
-
-Now that you've established your long-term goal, let's create a specific short-term SMART goal that will help you progress toward that larger objective.
-
-## What makes an excellent SMART goal?
-- **S**pecific: Precisely what will you accomplish?
-- **M**easurable: How will you know when you've reached it?
-- **A**chievable: Is it realistic with your current resources?
-- **R**elevant: How does it connect to your long-term goal?
-- **T**ime-bound: By when will you complete this?
-
-## Example:
-*"Within the next 30 days, I will complete an online SQL basics course with at least 85% on the final assessment, as part of my path toward becoming a data analyst."*
-
-What short-term SMART goal would you like to set that will help you move toward your long-term learning objective?`),
-                      timestamp: new Date(),
-                    }
-                  ]}
-                  onSendMessage={onSendMessage}
-                  onPhaseComplete={handleTaskComplete}
+                  onComplete={handleTaskComplete}
                 />
               </div>
-              
-              {isCompleted && (
-                <div className="text-center mt-6">
-                  <p className="text-green-400 mb-4">You've successfully created an excellent SMART objective!</p>
-                  <Button 
-                    onClick={continueToNextTask}
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-2 rounded-full"
-                  >
-                    Continue to Contingency Strategies
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          {/* Adding Continue button outside the card at the left bottom */}
+          {isCompleted && (
+            <div className="flex justify-center mt-8 mb-16">
+              <Button 
+                onClick={continueToNextTask}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-3 rounded-full font-medium shadow-lg"
+              >
+                Continue to Contingency Strategies <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </motion.div>
       </div>
       

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sparkles, ArrowLeft, Trophy, ArrowRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
-import SolBotChat from "@/components/solbot-chat"
+import GuidedContingencyPlan from "@/components/guided-contingency-plan"
 
 // Add a message cleaning function to strip any possible score text
 const cleanScoresFromMessage = (message: string): string => {
@@ -76,12 +76,12 @@ export default function ContingencyStrategiesPage() {
   }
 
   // Handle task completion
-  const handleTaskComplete = (nextPhase: string) => {
+  const handleTaskComplete = (nextPhase?: string) => {
     // Extract score from nextPhase string if it contains a score value
     let scoreValue = 0
     try {
       // Check if nextPhase contains a score value
-      if (nextPhase.includes('score:')) {
+      if (nextPhase && nextPhase.includes('score:')) {
         scoreValue = parseFloat(nextPhase.split('score:')[1])
       } else {
         // If not, set a default excellent score
@@ -185,54 +185,32 @@ export default function ContingencyStrategiesPage() {
                 </p>
               </div>
 
-              {/* SolBot Chat Component */}
+              {/* Replace SolBot Chat with Guided Contingency Plan Component */}
               <div className="mt-4">
-                <SolBotChat
-                  height="500px"
-                  userId={userId as any}
+                <GuidedContingencyPlan
+                  userId={userId}
                   phase="phase4"
-                  component="contingency_strategies"
-                  useAgent={true}
-                  initialMessages={[
-                    {
-                      id: 1,
-                      sender: "bot",
-                      content: cleanScoresFromMessage(`# IF-THEN Contingency Planning
-
-Now let's create specific contingency plans for challenges you might face while working toward your goals. These IF-THEN plans help you prepare for obstacles and maintain progress even when things get difficult.
-
-## What makes excellent IF-THEN plans?
-- Specific triggers (the "IF" part)
-- Clear, actionable responses (the "THEN" part)
-- Realistic strategies that address common challenges
-- Proactive rather than reactive approaches
-
-## Example format:
-**IF** I miss a scheduled study session due to unexpected work demands,  
-**THEN** I will reschedule it immediately for the next available time slot and add 15 extra minutes to make up for lost time.
-
-Please create 1 specific IF-THEN plan that address potential challenges to your learning goals. You can add more than one IF-THEN plan if you think it's necessary.`),
-                      timestamp: new Date(),
-                    }
-                  ]}
-                  onSendMessage={onSendMessage}
-                  onPhaseComplete={handleTaskComplete}
+                  component="contingency_strategies" 
+                  onComplete={handleTaskComplete}
+                  height="500px"
                 />
               </div>
               
-              {isCompleted && (
-                <div className="text-center mt-6">
-                  <p className="text-green-400 mb-4">You've successfully created excellent contingency strategies!</p>
-                  <Button 
-                    onClick={continueToNextPhase}
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-2 rounded-full"
-                  >
-                    Continue to Phase 5
-                  </Button>
-                </div>
-              )}
+              {/* Removing the Continue button from inside the card */}
             </CardContent>
           </Card>
+
+          {/* Adding Continue button outside the card at the left bottom */}
+          {isCompleted && (
+            <div className="flex justify-center mt-8 mb-16">
+              <Button 
+                onClick={continueToNextPhase}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-3 rounded-full font-medium shadow-lg"
+              >
+                Continue to Phase 5 <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </motion.div>
       </div>
       

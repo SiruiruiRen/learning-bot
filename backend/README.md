@@ -1,20 +1,20 @@
 # SoLBot Backend
 
-This is the backend implementation for SoLBot, a self-regulated learning platform that helps students develop effective learning strategies through a phase-based agent system.
+This is the backend implementation for SoLBot, a self-regulated learning platform that helps students develop effective learning strategies through a phase-based approach with direct LLM integration.
 
 ## Architecture
 
-The backend uses LangGraph for agent workflows with the following components:
+The backend uses FastAPI with direct Claude API integration for handling different learning phases:
 
-- **Manager Agent**: Routes user messages to appropriate phase agents
-- **Phase Agents**: Specialists for each learning phase
-  - Intro Agent: Onboarding and user profile collection
-  - Phase 2 Agent: Task understanding
-  - Phase 4 Agent: Learning strategy selection
-  - Phase 5 Agent: Reflection and monitoring
-  - Summary Agent: Learning journey overview
+- **Single LLM Architecture**: Each request is processed through a direct call to Claude with phase-specific prompts
+- **Phase Processing**: Different phases have customized prompts and evaluation criteria
+  - Intro: Onboarding and user profile collection
+  - Phase 2: Task understanding
+  - Phase 4: Learning strategy selection
+  - Phase 5: Reflection and monitoring
+  - Summary: Learning journey overview
 
-Each agent uses Claude 3.5 with rubric-based evaluation for adaptive scaffolding.
+The system uses Claude 3.5 with rubric-based evaluation for adaptive scaffolding.
 
 ## Setup Instructions
 
@@ -30,7 +30,7 @@ Create a `.env` file in the root directory with the following variables:
 
 ```
 ANTHROPIC_API_KEY=your-anthropic-api-key
-CLAUDE_MODEL=claude-3-5-sonnet-20240620
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 SUPABASE_SERVICE_KEY=your-supabase-service-key
 ```

@@ -5,9 +5,10 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Target, Sparkles, ArrowLeft, Trophy } from "lucide-react"
+import { Target, Sparkles, ArrowLeft, Trophy, ArrowRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import SolBotChat from "@/components/solbot-chat"
+import GuidedLongTermGoal from "@/components/guided-long-term-goal"
 
 // Add a message cleaning function to strip any possible score text
 const cleanScoresFromMessage = (message: string): string => {
@@ -76,12 +77,12 @@ export default function LongTermGoalsPage() {
   }
 
   // Handle task completion
-  const handleTaskComplete = (nextPhase: string) => {
+  const handleTaskComplete = (nextPhase?: string) => {
     // Extract score from nextPhase string if it contains a score value
     let scoreValue = 0
     try {
       // Check if nextPhase contains a score value
-      if (nextPhase.includes('score:')) {
+      if (nextPhase && nextPhase.includes('score:')) {
         scoreValue = parseFloat(nextPhase.split('score:')[1])
       } else {
         // If not, set a default excellent score
@@ -188,52 +189,30 @@ export default function LongTermGoalsPage() {
                 </p>
               </div>
 
-              {/* SolBot Chat Component */}
+              {/* Guided Long Term Goal Component */}
               <div className="mt-4">
-                <SolBotChat
+                <GuidedLongTermGoal
                   height="500px"
-                  userId={userId as any}
+                  userId={userId}
                   phase="phase4"
                   component="long_term_goals"
-                  useAgent={true}
-                  initialMessages={[
-                    {
-                      id: 1,
-                      sender: "bot",
-                      content: cleanScoresFromMessage(`# Long-term Learning Goals
-
-Let's start by defining your long-term learning goal. This is the big-picture aspiration that gives direction to your learning journey.
-
-## What makes an excellent long-term goal?
-- **Aspirational**: Connects to your personal values and larger life objectives
-- **Clear**: Defines what success looks like in specific terms
-- **Meaningful**: Explains why this goal matters to you personally
-- **Developmentally appropriate**: Challenging but achievable given your background
-
-## Example:
-*"I want to master data science skills to transition into a career as a data analyst within two years. This goal matters to me because I'm passionate about using data to solve real-world problems, and it will provide me with more career stability and fulfillment."*
-
-What long-term learning goal would you like to achieve? Please describe one goal and explain why it's important to you.`),
-                      timestamp: new Date(),
-                    }
-                  ]}
-                  onSendMessage={onSendMessage}
-                  onPhaseComplete={handleTaskComplete}
+                  onComplete={handleTaskComplete}
                 />
               </div>
-              
-              {isCompleted && (
-                <div className="text-center mt-6">
-                  <Button 
-                    onClick={continueToNextTask}
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-2 rounded-full"
-                  >
-                    Continue to SMART Objectives
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          {/* Adding Continue button outside the card at the left bottom */}
+          {isCompleted && (
+            <div className="flex justify-center mt-8 mb-16">
+              <Button 
+                onClick={continueToNextTask}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-3 rounded-full font-medium shadow-lg"
+              >
+                Continue to SMART Objectives <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </motion.div>
       </div>
       

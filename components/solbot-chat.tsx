@@ -2,12 +2,12 @@
 
 import { useState, useEffect, ReactNode } from "react"
 import { motion } from "framer-motion"
-import { Bot, Send, User, ArrowRight, CheckCircle } from "lucide-react"
+import { Bot, Send, User, ArrowRight, CheckCircle, ChevronUp, ChevronDown, CheckCircle2, AlertTriangle, Info, BookOpen } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { v4 as uuidv4 } from 'uuid'
-import MarkdownRenderer from "@/components/markdown-renderer"
+import MarkdownRenderer from "./markdown-renderer"
 import { getNextPhase } from "@/lib/phase-data"
 import ChatMessageParser from "@/components/chat-message-parser"
 
@@ -25,6 +25,11 @@ export interface Message {
   characterLimit?: number
   agentType?: string
   next_phase?: string
+  evaluationScores?: {
+    overall: number
+    criteria: { name: string; score: number }[]
+    supportLevel: string
+  }
 }
 
 interface SolBotChatProps {
@@ -82,6 +87,8 @@ export default function SolBotChat({
   const [conversationId, setConversationId] = useState(uuidv4())
   const [loadingText, setLoadingText] = useState("SoLBot is thinking")
   const [thinkingIntervalId, setThinkingIntervalId] = useState<NodeJS.Timeout | null>(null)
+  const [currentVisibleCard, setCurrentVisibleCard] = useState<number>(0)
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
   
   // Predefined responses for phase1 (static content)
   const predefinedResponses: Record<string, Record<string, string>> = {
@@ -97,13 +104,97 @@ export default function SolBotChat({
     setCharactersRemaining(maxMessageLength - userInput.length)
   }, [userInput, maxMessageLength])
 
-  // Auto-scroll to bottom of chat
+  // Auto-scroll to bottom of chat with one-card-at-a-time visibility
   useEffect(() => {
     const chatContainer = document.getElementById("chat-container")
     if (chatContainer) {
-      chatContainer.scrollTop = chatContainer.scrollHeight
+      // Add cards intersection observer logic
+      const cards = chatContainer.querySelectorAll('.message-card')
+      
+      if (cards.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const index = Array.from(cards).indexOf(entry.target as Element)
+              setCurrentVisibleCard(index)
+            }
+          })
+        }, {
+          root: chatContainer,
+          threshold: 0.7 // 70% visibility required to consider a card "visible"
+        })
+        
+        cards.forEach(card => {
+          observer.observe(card)
+        })
+        
+        return () => {
+          cards.forEach(card => {
+            observer.unobserve(card)
+          })
+        }
+      }
+      
+      // Conditional scrolling behavior:
+      // 1. On first load: scroll to first message (if there are messages)
+      // 2. When bot is thinking: scroll to bottom to show thinking animation
+      // 3. Otherwise: scroll to bottom for new messages
+      
+      if (isFirstLoad && cards.length > 0) {
+        // On first load, scroll to the first bot message
+        const firstBotMessage = chatContainer.querySelector('.message-card')
+        if (firstBotMessage) {
+          firstBotMessage.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          setIsFirstLoad(false)
+        }
+      } else if (isTyping) {
+        // When bot is thinking, scroll to view the thinking animation
+        chatContainer.scrollTop = chatContainer.scrollHeight
+      } else {
+        // For regular messages, scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight
+      }
     }
-  }, [messages])
+  }, [messages, isTyping, isFirstLoad])
+
+  // Add effect to make sure initial messages display properly
+  useEffect(() => {
+    // Only run this on component mount
+    if (initialMessages.length > 0) {
+      // Short delay to ensure DOM is ready
+      setTimeout(() => {
+        const chatContainer = document.getElementById("chat-container")
+        if (chatContainer) {
+          const firstMessage = chatContainer.querySelector('.message-card')
+          if (firstMessage) {
+            firstMessage.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        }
+      }, 300)
+    }
+  }, []) // Empty dependency array = run once on mount
+  
+  // Function to scroll to next card
+  const scrollToNextCard = () => {
+    const chatContainer = document.getElementById("chat-container")
+    const cards = chatContainer?.querySelectorAll('.message-card')
+    
+    if (chatContainer && cards && currentVisibleCard < cards.length - 1) {
+      const nextCard = cards[currentVisibleCard + 1]
+      nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+  
+  // Function to scroll to previous card
+  const scrollToPrevCard = () => {
+    const chatContainer = document.getElementById("chat-container")
+    const cards = chatContainer?.querySelectorAll('.message-card')
+    
+    if (chatContainer && cards && currentVisibleCard > 0) {
+      const prevCard = cards[currentVisibleCard - 1]
+      prevCard.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
 
   // Function to provide contextual responses based on phase and component
   const getContextualResponse = (phase: string, component: string): string => {
@@ -145,6 +236,14 @@ export default function SolBotChat({
     if (useScaffolding && currentScaffoldStep < scaffoldingSteps) {
       setCurrentScaffoldStep(prev => prev + 1)
     }
+    
+    // Scroll to show user message immediately
+    setTimeout(() => {
+      const chatContainer = document.getElementById("chat-container")
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight
+      }
+    }, 50)
     
     // For phase1, use predefined responses instead of connecting to an agent
     if (phase === 'phase1') {
@@ -300,11 +399,11 @@ Would you like to continue with the conversation? I'll try my best to assist eve
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  userId: userId,
+                  user_id: userId,
                   phase: agentPhase,
                   component: component,
                   message: messageSent,
-                  conversationId: conversationId
+                  conversation_id: conversationId
                 }),
                 signal: apiController.signal
               });
@@ -546,55 +645,6 @@ For assistance, you can:
   const cleanMessageContent = (content: string): string => {
     if (!content || typeof content !== 'string') return content;
 
-    // Check if we need to enhance evaluation section
-    if (content.includes("Specificity:") || content.includes("Knowledge Alignment:") || content.includes("Resource Planning:")) {
-      // Find evaluation section and replace with enhanced version
-      const sections = content.split(/\n\n|##/);
-      
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i];
-        
-        // If this is the evaluation section with scores
-        if ((section.includes("Specificity:") || section.includes("specificity:")) && 
-            (section.includes("Knowledge Alignment:") || section.includes("knowledge alignment:") || section.includes("Resource Planning:"))) {
-          
-          // Extract scores (assuming they're in the format "Score: X" or "Score: X (comment)")
-          const specificityMatch = section.match(/Specificity:\s*(\d+)/i);
-          const knowledgeMatch = section.match(/Knowledge\s+Alignment:\s*(\d+)/i);
-          const resourceMatch = section.match(/Resource\s+Planning:\s*(\d+)/i);
-          
-          const specificityScore = specificityMatch ? parseInt(specificityMatch[1]) : 0;
-          const knowledgeScore = knowledgeMatch ? parseInt(knowledgeMatch[1]) : 0;
-          const resourceScore = resourceMatch ? parseInt(resourceMatch[1]) : 0;
-          
-          const avgScore = ((specificityScore + knowledgeScore + resourceScore) / 3).toFixed(1);
-          const avgScoreNum = parseFloat(avgScore);
-          const supportLevel = avgScoreNum < 1.5 ? "HIGH" : avgScoreNum < 2.5 ? "MEDIUM" : "LOW";
-          
-          // Create enhanced evaluation HTML with color coding and progress bars
-          const enhancedEvaluation = `
-## 📊 Learning Progress Evaluation
-
-| Criteria | Score | Feedback | How to Improve |
-|----------|-------|----------|---------------|
-| **Specificity** | \`${specificityScore}/3\` | ${getProgressBar(specificityScore)} | ${getImprovementTip("Specificity", specificityScore)} |
-| **Knowledge Alignment** | \`${knowledgeScore}/3\` | ${getProgressBar(knowledgeScore)} | ${getImprovementTip("Knowledge Alignment", knowledgeScore)} |
-| **Resource Planning** | \`${resourceScore}/3\` | ${getProgressBar(resourceScore)} | ${getImprovementTip("Resource Planning", resourceScore)} |
-
-**Overall Progress:** ${getProgressBar(parseFloat(avgScore))} \`${avgScore}/3\`
-
-${getSupportMessage(supportLevel, parseFloat(avgScore))}
-`;
-          sections[i] = enhancedEvaluation;
-          break;
-        }
-      }
-      
-      // Reconstruct the content with enhanced evaluation
-      return sections.join("\n\n");
-    }
-
-    // If no evaluation section found, just clean as before
     // Remove anything in square brackets that contains evaluation information
     const patterns = [
       /\[(?:Note|Evaluation):[^\]]+\]/g,
@@ -629,149 +679,7 @@ ${getSupportMessage(supportLevel, parseFloat(avgScore))}
   
   // Helper function to get improvement tips for each criterion
   const getImprovementTip = (criterion: string, score: number): string => {
-    // Phase-specific improvement tips
-    const phaseSpecificTips: Record<string, Record<string, Record<string, Record<number, string>>>> = {
-      phase1: {
-        general: {
-          Specificity: {
-            1: "Define what specific aspects of SRL you want to understand",
-            2: "Set clear goals for how SRL will benefit your learning",
-            3: "Your SRL learning goals are well-defined"
-          },
-          "Knowledge Alignment": {
-            1: "Connect SRL concepts to your current learning experiences",
-            2: "Identify which SRL strategies match your learning style",
-            3: "Your SRL goals align well with your background"
-          },
-          "Resource Planning": {
-            1: "Find specific SRL resources relevant to your field",
-            2: "Create a plan to implement SRL in your daily studying",
-            3: "Your SRL resource planning is comprehensive"
-          }
-        }
-      },
-      phase2: {
-        general: {
-          Specificity: {
-            1: "Define concrete learning objectives for your psychology studies",
-            2: "Add specific psychology sub-fields and theories to focus on",
-            3: "Your psychology learning goals are well-defined"
-          },
-          "Knowledge Alignment": {
-            1: "Connect psychology goals to your current knowledge level",
-            2: "Identify which psychology concepts you need to review first",
-            3: "Your psychology goals align well with your background"
-          },
-          "Resource Planning": {
-            1: "Identify specific psychology textbooks, courses or resources",
-            2: "Structure psychology resources by topic importance",
-            3: "Your psychology resource planning is comprehensive"
-          }
-        }
-      },
-      phase3: {
-        general: {
-          Specificity: {
-            1: "Break your complex learning goal into smaller objectives",
-            2: "Define specific milestones for your learning journey",
-            3: "Your learning breakdown is clear and actionable"
-          },
-          "Knowledge Alignment": {
-            1: "Identify prerequisite knowledge needed for each sub-goal",
-            2: "Map dependencies between different learning components",
-            3: "Your learning components are well-aligned with your knowledge"
-          },
-          "Resource Planning": {
-            1: "Assign specific resources to each learning component",
-            2: "Create a roadmap showing when to use each resource",
-            3: "Your resource allocation is comprehensive and efficient"
-          }
-        }
-      },
-      phase4: {
-        long_term_goals: {
-          Specificity: {
-            1: "Define your long-term learning goals with clear outcomes",
-            2: "Add specific timeframes and success criteria to your goals",
-            3: "Your long-term goals are comprehensive and specific"
-          },
-          "Knowledge Alignment": {
-            1: "Connect long-term goals to your career or personal aspirations",
-            2: "Map how these goals build on your existing knowledge",
-            3: "Your long-term goals align perfectly with your trajectory"
-          },
-          "Resource Planning": {
-            1: "Identify long-term resources and tools you'll need",
-            2: "Create a sustainable resource acquisition timeline",
-            3: "Your long-term resource planning is robust and complete"
-          }
-        },
-        short_term_goals: {
-          Specificity: {
-            1: "Create SMART goals with measurable outcomes",
-            2: "Define weekly or monthly learning objectives",
-            3: "Your short-term goals are clear and actionable"
-          },
-          "Knowledge Alignment": {
-            1: "Link short-term goals to build toward your long-term vision",
-            2: "Identify quick wins based on your current knowledge",
-            3: "Your short-term goals effectively leverage your background"
-          },
-          "Resource Planning": {
-            1: "List specific resources needed for immediate learning",
-            2: "Schedule specific times to use each resource",
-            3: "Your short-term resource planning is detailed and practical"
-          }
-        },
-        contingency_strategies: {
-          Specificity: {
-            1: "Identify specific obstacles that might occur",
-            2: "Create detailed if-then contingency plans",
-            3: "Your contingency planning is thorough and specific"
-          },
-          "Knowledge Alignment": {
-            1: "Analyze past learning challenges to prepare better",
-            2: "Adapt strategies based on your learning strengths/weaknesses",
-            3: "Your contingency plans are perfectly aligned with your needs"
-          },
-          "Resource Planning": {
-            1: "Identify backup resources for each major learning goal",
-            2: "Create a flexible schedule that accommodates setbacks",
-            3: "Your backup resource planning is comprehensive"
-          }
-        }
-      },
-      phase5: {
-        general: {
-          Specificity: {
-            1: "Define specific monitoring intervals and review points",
-            2: "Create measurable progress indicators for each goal",
-            3: "Your monitoring approach is detailed and systematic"
-          },
-          "Knowledge Alignment": {
-            1: "Connect monitoring strategies to your learning style",
-            2: "Design self-assessments that target your weak areas",
-            3: "Your monitoring approach aligns perfectly with your needs"
-          },
-          "Resource Planning": {
-            1: "Identify tools to track progress (journals, apps, etc.)",
-            2: "Schedule regular reflection and adjustment times",
-            3: "Your monitoring resource planning is comprehensive"
-          }
-        }
-      }
-    };
-
-    // Get phase-specific tip if available
-    if (phase && component && 
-        phaseSpecificTips[phase] && 
-        phaseSpecificTips[phase][component] && 
-        phaseSpecificTips[phase][component][criterion] && 
-        phaseSpecificTips[phase][component][criterion][score]) {
-      return phaseSpecificTips[phase][component][criterion][score];
-    }
-    
-    // Fall back to general tips if phase-specific ones aren't available
+    // Default general tips
     if (criterion === "Specificity") {
       if (score <= 1) return "Define concrete learning objectives with measurable outcomes";
       if (score <= 2) return "Add timeframes and specific topics to your goals";
@@ -913,50 +821,6 @@ ${getSupportMessage(supportLevel, parseFloat(avgScore))}
     const phaseTexts = phaseThinkingTexts[phase] || phaseThinkingTexts.intro
     const thinkingTexts = [...baseThinkingTexts, ...phaseTexts, "Almost ready"]
     
-    // Response fragments to simulate streaming (show partial responses while waiting)
-    const responseFragments = {
-      phase1: [
-        "Analyzing your learning interests...",
-        "Identifying initial learning patterns...",
-        "Preparing personalized guidance for your journey...",
-        "Evaluating potential learning paths for you...",
-        "Structuring initial recommendations based on your input..."
-      ],
-      phase2: [
-        "Analyzing your learning objectives in detail...",
-        "Evaluating resource requirements for your goals...",
-        "Assessing knowledge gaps and prerequisites...",
-        "Preparing a structured learning plan outline...",
-        "Identifying key milestones for your learning journey..."
-      ],
-      phase3: [
-        "Analyzing how to break down your complex goal...",
-        "Structuring intermediate objectives for you...",
-        "Mapping dependencies between learning components...",
-        "Evaluating optimal sequencing for your learning path...",
-        "Preparing adaptive scaffolding based on your needs..."
-      ],
-      phase4: [
-        "Formulating specific, measurable learning objectives...",
-        "Creating SMART goal structures for your learning...",
-        "Designing actionable next steps for immediate progress...",
-        "Establishing clear metrics to track your advancement...",
-        "Preparing a time-bound learning framework for you..."
-      ],
-      default: [
-        "Processing your request with care...",
-        "Analyzing the best approach to help you...",
-        "Preparing a thoughtful, personalized response...",
-        "Structuring guidance tailored to your needs...",
-        "Almost ready with your customized feedback..."
-      ]
-    }
-    
-    // Get appropriate fragments based on current phase
-    const getPhaseFragments = () => {
-      return responseFragments[phase as keyof typeof responseFragments] || responseFragments.default;
-    }
-    
     // Add typing indicator with initial message
     setMessages((prev) => [
       ...prev,
@@ -969,23 +833,24 @@ ${getSupportMessage(supportLevel, parseFloat(avgScore))}
       },
     ])
     
+    // Ensure we scroll to the thinking indicator after it's added
+    setTimeout(() => {
+      const chatContainer = document.getElementById("chat-container")
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight
+      }
+    }, 50)
+    
     // Update the message every 2 seconds with a new thinking text
-    // or a partial response fragment after a few cycles
     const intervalId = setInterval(() => {
       count = (count + 1) % thinkingTexts.length
-      
-      // After a few cycles, start showing response fragments to simulate streaming
-      const content = count > 2 && count % 2 === 0 
-        ? getPhaseFragments()[Math.floor(Math.random() * getPhaseFragments().length)]
-        : thinkingTexts[count]
-      
-      setLoadingText(content)
+      setLoadingText(thinkingTexts[count])
       
       // Update the typing indicator message
       setMessages((prev) => 
         prev.map(msg => 
           msg.isTyping 
-            ? { ...msg, content: content } 
+            ? { ...msg, content: thinkingTexts[count] } 
             : msg
         )
       )
@@ -1035,320 +900,673 @@ ${getSupportMessage(supportLevel, parseFloat(avgScore))}
     return phaseSequence[currentIndex + 1];
   };
 
-  return (
-    <Card className="bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-xl mb-6 max-w-full">
-      <CardContent className="p-0 max-w-full">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 p-4 rounded-t-lg border-b border-indigo-500/30 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600/80 to-blue-500/50 shadow-[0_0_15px_rgba(122,86,220,0.5)] flex items-center justify-center">
-                <Bot className="h-6 w-6 text-white" />
-              </div>
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "easeInOut",
-                }}
-                className="absolute inset-0 w-12 h-12 rounded-full bg-purple-500/30 -z-10"
-              />
-              <motion.div
-                animate={{
-                  scale: [1, 1.4, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "easeInOut",
-                  delay: 0.5,
-                }}
-                className="absolute inset-0 w-12 h-12 rounded-full bg-blue-500/20 -z-20"
-              />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">SoLBot</h2>
-              <p className="text-indigo-300 text-sm">Your AI Learning Coach</p>
-            </div>
-          </div>
-          <div className="bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-500/30">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-xs font-medium text-indigo-300">Online</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Chat Container */}
-        <div id="chat-container" style={{ height }} className="overflow-y-auto p-4 space-y-4">
-          {messages.map((message, index) => (
-            <div key={`${message.id}-${index}`} className={`flex ${message.sender === "bot" ? "" : "justify-end"}`}>
-              <div className={`flex ${message.sender === "bot" ? "" : "flex-row-reverse"} max-w-[80%]`}>
-                <div className="flex-shrink-0 mr-3">
-                  {message.sender === "bot" ? (
-                    <div className="relative h-10 w-10">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-600/80 to-blue-500/50 flex items-center justify-center">
-                        <Bot className="h-5 w-5 text-white" />
-                      </div>
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.7, 1, 0.7],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Number.POSITIVE_INFINITY,
-                          ease: "easeInOut",
-                        }}
-                        className="absolute inset-0 w-10 h-10 rounded-full bg-purple-500/30 -z-10"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center">
-                      <User className="h-5 w-5 text-indigo-300" />
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  className={`${
-                    message.sender === "bot"
-                      ? "bg-slate-800/50 border border-indigo-500/30 text-white/90"
-                      : "bg-indigo-600/30 border border-indigo-500/30 text-white/90"
-                  } rounded-lg p-4 break-words overflow-hidden`}
-                >
-                  {message.isTyping ? (
-                    <div className="flex flex-col space-y-3 p-1 w-full min-w-[180px]">
-                      <div className="text-sm text-indigo-300 font-medium ml-1">
-                        {message.content}
-                      </div>
-                      <div className="flex space-x-2 items-center">
-                        <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" style={{ animationDuration: "0.8s" }}></div>
-                        <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" style={{ animationDuration: "0.8s", animationDelay: "0.2s" }}></div>
-                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" style={{ animationDuration: "0.8s", animationDelay: "0.4s" }}></div>
-                        <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" style={{ animationDuration: "0.8s", animationDelay: "0.6s" }}></div>
-                      </div>
-                      
-                      {/* Progress bar animation */}
-                      <div className="w-full bg-slate-700/50 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <motion.div 
-                          className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
-                          initial={{ width: "10%" }}
-                          animate={{ 
-                            width: ["10%", "30%", "60%", "90%", "95%"],
-                            transition: { 
-                              duration: 10, 
-                              ease: "easeInOut", 
-                              repeat: Infinity,
-                              repeatType: "reverse"
-                            }
-                          }}
-                        />
-                      </div>
-                      
-                      <div className="text-xs text-indigo-300/70 italic mt-1">
-                        This might take a moment for complex responses...
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="text-sm">
-                        {typeof message.content === 'string' 
-                          ? (
-                            // Only use ChatMessageParser for phases where clickable components are desired
-                            // Disable for phases 2, 4, and 5 as requested
-                            phase === "phase2" || phase === "phase4" || phase === "phase5"
-                            ? <MarkdownRenderer content={cleanMessageContent(message.content)} />
-                            : <ChatMessageParser 
-                                content={cleanMessageContent(message.content)} 
-                                onOptionSelect={(selected) => {
-                                  // Create a temporary state for the input to pass to handleSendMessage
-                                  setUserInput(selected);
-                                  
-                                  // Add the user message to the chat
-                                  const newUserMessage: Message = {
-                                    id: Date.now(),
-                                    sender: "user",
-                                    content: selected,
-                                    timestamp: new Date(),
-                                  };
-                                  
-                                  setMessages((prev) => [...prev, newUserMessage]);
-                                  
-                                  // Process the selected option as a message
-                                  setTimeout(() => {
-                                    // Call the onSendMessage callback if provided
-                                    if (onSendMessage) {
-                                      onSendMessage(selected);
-                                    }
-                                    
-                                    // Send the message to the agent
-                                    handleSendMessage();
-                                    
-                                    // Clear the input
-                                    setUserInput("");
-                                  }, 0);
-                                }} 
-                              />
-                          ) 
-                          : message.content
-                        }
-                      </div>
-                      
-                      {/* Scaffolding step indicator */}
-                      {message.type === "scaffold" && message.scaffoldStep && message.scaffoldTotalSteps && (
-                        <div className="mt-2 flex items-center justify-between text-xs text-indigo-300">
-                          <div className="flex items-center gap-1">
-                            <span>Step {message.scaffoldStep} of {message.scaffoldTotalSteps}</span>
-                          </div>
-                          {message.scaffoldHint && (
-                            <div className="italic text-indigo-300/80">
-                              Hint: {message.scaffoldHint}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Special content based on message type */}
-                      {message.type === "video" && videoComponent && (
-                        <div className="mt-4">{videoComponent}</div>
-                      )}
-                      
-                      {message.type === "quiz" && quizComponent && (
-                        <div className="mt-4">{quizComponent}</div>
-                      )}
-                      
-                      {message.type === "feedback" && feedbackComponent && (
-                        <div className="mt-4">{feedbackComponent}</div>
-                      )}
-                      
-                      {message.type === "summary" && summaryComponent && (
-                        <div className="mt-4">{summaryComponent}</div>
-                      )}
-                      
-                      {message.showContinue && onContinue && (
-                        <div className="mt-4">
-                          <Button
-                            onClick={() => {
-                              if (!onPhaseComplete) {
-                                // Fall back to regular continue if no onPhaseComplete
-                                if (onContinue) {
-                                  onContinue();
-                                }
-                                return;
-                              }
-                              
-                              const nextStep = getNextPhaseInSequence(phase);
-                              
-                              // For Phase 4, if it's a task transition within the phase
-                              if (phase === "phase4" && 
-                                  (nextStep === "short_term_goals" || nextStep === "contingency_strategies")) {
-                                // Send with score info to maintain progress tracking
-                                onPhaseComplete(`${nextStep}:score:2.5`);
-                              } else {
-                                // Regular phase transition
-                                onPhaseComplete(nextStep);
-                              }
-                            }}
-                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 flex items-center gap-2 px-6"
-                          >
-                            Continue
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Input Area */}
-        {allowInput && (
-          <div className="border-t border-indigo-500/30 p-4">
-            {useScaffolding && (
-              <div className="mb-2 flex items-center justify-between text-xs text-indigo-300">
-                <div>
-                  <span>Step {currentScaffoldStep} of {scaffoldingSteps}</span>
-                </div>
-                {/* Character limit counter - only shows when approaching limit */}
-                {charactersRemaining <= 100 && (
-                  <div className={`${charactersRemaining < 0 ? 'text-red-400' : 'text-indigo-300'}`}>
-                    {charactersRemaining} characters remaining
-                  </div>
-                )}
+  // Improved message formatting function that preserves all content
+  const formatStructuredMessage = (content: string) => {
+    if (!content || typeof content !== 'string') return <MarkdownRenderer content={content} />;
+    
+    try {
+      // For phase 2, use an extremely direct approach targeting the exact content pattern we see
+      if (phase === "phase2") {
+        console.log("Using emergency direct Phase 2 formatting");
+        
+        // Hard-coded section detection based on the actual content we see in Phase 2
+        const parts = {
+          greeting: "",
+          assessment: "",
+          guidance: "",
+          nextSteps: ""
+        };
+        
+        // Find greeting section
+        if (content.includes("Hi there!") || content.includes("👋 I see you're interested in")) {
+          const greetingEnd = content.indexOf("Looking at your");
+          if (greetingEnd > 0) {
+            parts.greeting = content.substring(0, greetingEnd).trim();
+          }
+        }
+        
+        // Find assessment section - this must contain the bullet points with warnings
+        if (content.includes("Looking at your learning objective")) {
+          const assessmentStart = content.indexOf("Looking at your");
+          let assessmentEnd = -1;
+          
+          // Find where assessment ends and guidance begins
+          const possibleEndMarkers = [
+            "Here's a template", 
+            "Since this is", 
+            "Let me help", 
+            "I'll help you"
+          ];
+          
+          for (const marker of possibleEndMarkers) {
+            const index = content.indexOf(marker);
+            if (index > assessmentStart && (assessmentEnd === -1 || index < assessmentEnd)) {
+              assessmentEnd = index;
+            }
+          }
+          
+          if (assessmentStart > -1 && assessmentEnd > assessmentStart) {
+            parts.assessment = content.substring(assessmentStart, assessmentEnd).trim();
+          }
+        }
+        
+        // Find guidance section - contains the template
+        const possibleGuidanceStarts = [
+          "Here's a template", 
+          "Since this is", 
+          "Let me help", 
+          "I'll help you"
+        ];
+        
+        let guidanceStart = -1;
+        for (const marker of possibleGuidanceStarts) {
+          const index = content.indexOf(marker);
+          if (index > -1 && (guidanceStart === -1 || index < guidanceStart)) {
+            guidanceStart = index;
+          }
+        }
+        
+        // Find next steps section - typically starts with a prompt to revise
+        const possibleNextStepsMarkers = [
+          "📝 Please", 
+          "Please revise", 
+          "Remember,", 
+          "What specific"
+        ];
+        
+        let nextStepsStart = -1;
+        for (const marker of possibleNextStepsMarkers) {
+          const index = content.indexOf(marker);
+          if (index > guidanceStart && (nextStepsStart === -1 || index < nextStepsStart)) {
+            nextStepsStart = index;
+          }
+        }
+        
+        if (guidanceStart > -1 && nextStepsStart > guidanceStart) {
+          parts.guidance = content.substring(guidanceStart, nextStepsStart).trim();
+          parts.nextSteps = content.substring(nextStepsStart).trim();
+        } else if (guidanceStart > -1) {
+          parts.guidance = content.substring(guidanceStart).trim();
+        }
+        
+        // If we somehow failed to parse all sections, use a brute force approach
+        if (!parts.assessment || !parts.guidance) {
+          console.log("Falling back to manual section splitting for Phase 2");
+          
+          // Manual section splitting as a last resort
+          const lines = content.split('\n');
+          let currentSection = 'greeting';
+          
+          // Reset parts
+          parts.greeting = "";
+          parts.assessment = "";
+          parts.guidance = "";
+          parts.nextSteps = "";
+          
+          for (const line of lines) {
+            // Detect section transitions based on content
+            if (line.includes("Looking at your")) {
+              currentSection = 'assessment';
+            } else if (line.includes("Here's a template") || line.includes("Learning Task:")) {
+              currentSection = 'guidance';
+            } else if (line.includes("📝 Please") || line.includes("Remember,")) {
+              currentSection = 'nextSteps';
+            }
+            
+            // Add line to current section
+            if (currentSection === 'greeting') {
+              parts.greeting += line + '\n';
+            } else if (currentSection === 'assessment') {
+              parts.assessment += line + '\n';
+            } else if (currentSection === 'guidance') {
+              parts.guidance += line + '\n';
+            } else if (currentSection === 'nextSteps') {
+              parts.nextSteps += line + '\n';
+            }
+          }
+          
+          // Trim whitespace
+          parts.greeting = parts.greeting.trim();
+          parts.assessment = parts.assessment.trim();
+          parts.guidance = parts.guidance.trim();
+          parts.nextSteps = parts.nextSteps.trim();
+        }
+        
+        // Debugging logs
+        console.log("Phase 2 emergency sections found:", {
+          hasGreeting: !!parts.greeting,
+          hasAssessment: !!parts.assessment,
+          hasGuidance: !!parts.guidance,
+          hasNextSteps: !!parts.nextSteps,
+          greetingChars: parts.greeting?.length || 0,
+          assessmentChars: parts.assessment?.length || 0,
+          guidanceChars: parts.guidance?.length || 0,
+          nextStepsChars: parts.nextSteps?.length || 0
+        });
+        
+        // Always have at least an empty div to trigger rendering
+        return (
+          <div className="flex flex-col space-y-4">
+            {parts.greeting && (
+              <div className="text-teal-300 font-medium flex items-start gap-2">
+                <CheckCircle2 size={18} className="text-teal-400 mt-1 flex-shrink-0" />
+                <div><MarkdownRenderer content={parts.greeting} /></div>
               </div>
             )}
             
-            <div className="flex items-end gap-2">
+            {parts.assessment && (
+              <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-amber-400" />
+                  Assessment
+                </h4>
+                <MarkdownRenderer content={parts.assessment} />
+              </div>
+            )}
+            
+            {parts.guidance && (
+              <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-teal-400 font-medium mb-2 flex items-center gap-2">
+                  <Info size={16} className="text-teal-400" />
+                  Guidance
+                </h4>
+                <MarkdownRenderer content={parts.guidance} />
+              </div>
+            )}
+            
+            {parts.nextSteps && (
+              <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
+                  <BookOpen size={16} className="text-blue-400" />
+                  Next Steps
+                </h4>
+                <MarkdownRenderer content={parts.nextSteps} />
+              </div>
+            )}
+            
+            {/* Emergency debug - render original content if all sections are empty */}
+            {(!parts.greeting && !parts.assessment && !parts.guidance && !parts.nextSteps) && (
+              <div className="text-white">
+                <MarkdownRenderer content={content} />
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // For other phases, use the existing formatting with headings
+      if (content.includes("## Greeting") || content.includes("## Assessment") || content.includes("## Guidance") || content.includes("## Next Steps")) {
+        // Extract sections with fixed regex patterns
+        const sections = {
+          greeting: "",
+          assessment: "",
+          guidance: "",
+          nextSteps: ""
+        }
+        
+        const greetingMatch = content.match(/## Greeting\n([\s\S]*?)(?=## Assessment|$)/)
+        const assessmentMatch = content.match(/## Assessment\n([\s\S]*?)(?=## Guidance|$)/)
+        const guidanceMatch = content.match(/## Guidance\n([\s\S]*?)(?=## Next Steps|$)/)
+        const nextStepsMatch = content.match(/## Next Steps\n([\s\S]*?)(?=<!--|$)/)
+        
+        // Populate sections if matches found
+        if (greetingMatch && greetingMatch[1]) sections.greeting = greetingMatch[1].trim()
+        if (assessmentMatch && assessmentMatch[1]) sections.assessment = assessmentMatch[1].trim()
+        if (guidanceMatch && guidanceMatch[1]) {
+          // Remove template format with blank lines
+          let guidance = guidanceMatch[1].trim()
+          // Remove template lines with blank fields
+          guidance = guidance.replace(/^([^•-]*?)_+\s*$/gm, '')
+          sections.guidance = guidance
+        }
+        if (nextStepsMatch && nextStepsMatch[1]) sections.nextSteps = nextStepsMatch[1].trim()
+        
+        // Return formatted content in enhanced card sections
+        return (
+          <div className="flex flex-col space-y-4">
+            {sections.greeting && (
+              <div className="text-teal-300 font-medium flex items-start gap-2">
+                <CheckCircle2 size={18} className="text-teal-400 mt-1 flex-shrink-0" />
+                <div><MarkdownRenderer content={sections.greeting} /></div>
+              </div>
+            )}
+            {sections.assessment && (
+              <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-amber-400" />
+                  Assessment
+                </h4>
+                <MarkdownRenderer content={sections.assessment} />
+              </div>
+            )}
+            {sections.guidance && (
+              <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-teal-400 font-medium mb-2 flex items-center gap-2">
+                  <Info size={16} className="text-teal-400" />
+                  Guidance
+                </h4>
+                <MarkdownRenderer content={sections.guidance} />
+              </div>
+            )}
+            {sections.nextSteps && (
+              <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
+                  <BookOpen size={16} className="text-blue-400" />
+                  Next Steps
+                </h4>
+                <MarkdownRenderer content={sections.nextSteps} />
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // Fallback for all other messages - use simple markers to identify sections
+      if (content.includes("Looking at your") || 
+          phase === "phase4" || 
+          phase === "phase5" ||
+          content.includes("Task Identification:") || 
+          content.includes("Resource Specificity:") || 
+          content.includes("Goal Clarity:")) {
+        
+        console.log("Using generic section detection for phase:", phase);
+        
+        // Split the content into sections using common markers
+        let greeting = "";
+        let assessment = "";
+        let guidance = "";
+        let nextSteps = "";
+        
+        // Look for greeting (usually the first paragraph)
+        const lookingAtIndex = content.indexOf("Looking at");
+        if (lookingAtIndex > 0) {
+          greeting = content.substring(0, lookingAtIndex).trim();
+          
+          // Find end of assessment section
+          const guidanceKeywords = ["Let me help", "Let me suggest", "Here are some", "Let's make", "Since this"];
+          let guidanceStart = -1;
+          
+          for (const keyword of guidanceKeywords) {
+            const index = content.indexOf(keyword);
+            if (index > lookingAtIndex && (guidanceStart === -1 || index < guidanceStart)) {
+              guidanceStart = index;
+            }
+          }
+          
+          if (guidanceStart > -1) {
+            assessment = content.substring(lookingAtIndex, guidanceStart).trim();
+            
+            // Find next steps
+            const nextStepsKeywords = ["📝 Please", "Please revise", "Remember,", "What specific"];
+            let nextStepsStart = -1;
+            
+            for (const keyword of nextStepsKeywords) {
+              const index = content.indexOf(keyword);
+              if (index > guidanceStart && (nextStepsStart === -1 || index < nextStepsStart)) {
+                nextStepsStart = index;
+              }
+            }
+            
+            if (nextStepsStart > -1) {
+              guidance = content.substring(guidanceStart, nextStepsStart).trim();
+              nextSteps = content.substring(nextStepsStart).trim();
+            } else {
+              guidance = content.substring(guidanceStart).trim();
+            }
+          }
+        } else {
+          // Fallback if no "Looking at" found - try to identify by bullet points
+          const bulletPoints = content.match(/(•|\*|\d+\.)\s+[^\n]+/g);
+          const paragraphs = content.split("\n\n").filter(p => p.trim() !== "");
+          
+          if (paragraphs.length > 0) {
+            greeting = paragraphs[0].trim();
+            
+            if (bulletPoints && bulletPoints.length > 0) {
+              // Find where bullet points start
+              const firstBulletIndex = content.indexOf(bulletPoints[0]);
+              if (firstBulletIndex > 0) {
+                // Check if there's text between greeting and bullets that should be part of greeting
+                if (firstBulletIndex > greeting.length + 2) {
+                  // Find the paragraph that contains the first bullet
+                  for (let i = 1; i < paragraphs.length; i++) {
+                    if (paragraphs[i].includes(bulletPoints[0])) {
+                      // All paragraphs before this are part of greeting
+                      greeting = content.substring(0, content.indexOf(paragraphs[i])).trim();
+                      break;
+                    }
+                  }
+                }
+                
+                // Find where guidance might start (after bullets)
+                const lastBulletIndex = content.lastIndexOf(bulletPoints[bulletPoints.length - 1]) + bulletPoints[bulletPoints.length - 1].length;
+                
+                // Find next paragraph after bullets
+                let guidanceStart = content.indexOf("\n\n", lastBulletIndex);
+                if (guidanceStart > -1) {
+                  assessment = content.substring(firstBulletIndex, guidanceStart).trim();
+                  
+                  // Look for next steps
+                  const nextStepsKeywords = ["📝 Please", "Please revise", "Remember,", "What specific"];
+                  let nextStepsStart = -1;
+                  
+                  for (const keyword of nextStepsKeywords) {
+                    const index = content.indexOf(keyword, guidanceStart);
+                    if (index > -1 && (nextStepsStart === -1 || index < nextStepsStart)) {
+                      nextStepsStart = index;
+                    }
+                  }
+                  
+                  if (nextStepsStart > -1) {
+                    guidance = content.substring(guidanceStart, nextStepsStart).trim();
+                    nextSteps = content.substring(nextStepsStart).trim();
+                  } else {
+                    guidance = content.substring(guidanceStart).trim();
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        console.log("Generic sections found:", {
+          hasGreeting: !!greeting,
+          hasAssessment: !!assessment,
+          hasGuidance: !!guidance,
+          hasNextSteps: !!nextSteps
+        });
+        
+        return (
+          <div className="flex flex-col space-y-4">
+            {greeting && (
+              <div className="text-teal-300 font-medium flex items-start gap-2">
+                <CheckCircle2 size={18} className="text-teal-400 mt-1 flex-shrink-0" />
+                <div><MarkdownRenderer content={greeting} /></div>
+              </div>
+            )}
+            
+            {assessment && (
+              <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-amber-400" />
+                  Assessment
+                </h4>
+                <MarkdownRenderer content={assessment} />
+              </div>
+            )}
+            
+            {guidance && (
+              <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-teal-400 font-medium mb-2 flex items-center gap-2">
+                  <Info size={16} className="text-teal-400" />
+                  Guidance
+                </h4>
+                <MarkdownRenderer content={guidance} />
+              </div>
+            )}
+            
+            {nextSteps && (
+              <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
+                  <BookOpen size={16} className="text-blue-400" />
+                  Next Steps
+                </h4>
+                <MarkdownRenderer content={nextSteps} />
+              </div>
+            )}
+          </div>
+        );
+      }
+      
+      // Fallback to original content
+      return <MarkdownRenderer content={content} />;
+      
+    } catch (error) {
+      console.error('Error formatting structured message:', error);
+      // Return original content if formatting fails
+      return <MarkdownRenderer content={content} />;
+    }
+  };
+
+  // Add a debugging utility to detect when we're in Phase 2
+  useEffect(() => {
+    if (phase === "phase2" || (typeof phase === 'string' && phase.includes("phase2"))) {
+      console.log("Currently in Phase 2 - TaskAnalysis & ResourceIdentification", { phase });
+    }
+  }, [phase]);
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Chat Messages */}
+      <div
+        id="chat-container"
+        className="flex-1 overflow-y-auto p-4 space-y-4 relative mx-auto w-full max-w-4xl"
+        style={{ height: height, maxHeight: height }}
+      >
+        {messages.map((message, index) => {
+          // Skip typing indicators
+          if (message.isTyping) {
+            return (
+              <div key={message.id} className="flex items-start">
+                <div className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full mr-2 bg-teal-900/50 animate-glow">
+                  <Bot className="h-5 w-5 text-teal-400" />
+                </div>
+                <div className="p-4 bg-slate-800/80 border border-teal-500/30 rounded-lg w-[80%] max-w-[80%] shadow-lg animate-pulse-slow">
+                  <div className="text-sm text-white/90 mb-3 flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 mr-2">
+                      <svg className="animate-spin w-5 h-5 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                    <span className="mr-2 font-medium bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-cyan-300 animate-shimmer">{loadingText}</span>
+                  </div>
+                  
+                  {/* Beautiful gradient progress bar with smooth movement */}
+                  <div className="w-full h-2 bg-slate-700/50 rounded-full overflow-hidden mb-3 p-0.5">
+                    <div className="h-full rounded-full animate-progress-pulse"></div>
+                  </div>
+                  
+                  {/* Enhanced neural network visualization */}
+                  <div className="flex justify-center items-center gap-1.5 mt-3 py-1 bg-slate-800/80 rounded-full">
+                    {[...Array(7)].map((_, i) => (
+                      <div 
+                        key={i} 
+                        className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-teal-400 to-cyan-300"
+                        style={{ 
+                          animation: `pulseDelayed 1.5s ease-in-out ${i * 0.12}s infinite`,
+                          opacity: 0.5 + (i * 0.05)
+                        }}
+                      ></div>
+                    ))}
+                  </div>
+                  
+                  {/* Neural connection lines */}
+                  <div className="flex justify-between py-1 mt-2 px-3">
+                    <div className="flex flex-col space-y-0.5">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="w-6 h-0.5 bg-teal-500/20 rounded-full animate-shimmer"></div>
+                      ))}
+                    </div>
+                    <div className="flex flex-col space-y-0.5">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="w-6 h-0.5 bg-cyan-500/20 rounded-full animate-shimmer" 
+                             style={{ animationDelay: `${i * 0.2}s` }}></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`flex ${message.sender === "user" ? "justify-end" : "items-start"} message-card`}
+              style={{scrollMarginTop: '1rem'}}
+            >
+              {message.sender === "bot" && (
+                <div className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full mr-2 bg-teal-900/50">
+                  <Bot className="h-5 w-5 text-teal-400" />
+                </div>
+              )}
+
+              <div className={`${message.sender === "bot" ? "max-w-[80%]" : "max-w-[75%]"}`}>
+                <div className={`p-2.5 rounded-lg ${message.sender === "bot" ? "bg-slate-800/80 border border-teal-500/20" : "bg-purple-900/30 border border-purple-500/30 text-sm"}`}>
+                  {typeof message.content === "string" ? (
+                    message.type === "text" || !message.type ? (
+                      <div className={`${message.sender === "bot" ? "text-white/90" : "text-white/90 text-sm leading-tight"}`}>
+                        {message.sender === "bot" ? (
+                          // Apply structured formatting to ALL bot messages
+                          formatStructuredMessage(message.content)
+                        ) : (
+                          <MarkdownRenderer content={message.content} className={message.sender === "user" ? "extra-compact" : ""} />
+                        )}
+                        
+                        {/* Conditional Scaffold Step Indicator */}
+                        {message.scaffoldStep && message.scaffoldTotalSteps && (
+                          <div className="mt-3 pt-3 border-t border-slate-700/50">
+                            <div className="flex items-center justify-between text-xs text-white/60">
+                              <span>Step {message.scaffoldStep} of {message.scaffoldTotalSteps}</span>
+                              {message.scaffoldHint && (
+                                <span className="text-teal-400">{message.scaffoldHint}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Character limit indicator */}
+                        {message.characterLimit && (
+                          <div className="mt-2 text-xs text-white/50">
+                            Character limit: {message.characterLimit}
+                          </div>
+                        )}
+                        
+                        {/* Evaluation components - only when needed */}
+                        {message.evaluationScores && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            transition={{ duration: 0.5 }}
+                            className="mt-4 pt-3 border-t border-slate-700/50"
+                          >
+                            <div className="space-y-2">
+                              {/* Score Progress */}
+                              {message.evaluationScores.overall && (
+                                <div>
+                                  <div className="flex justify-between text-xs text-white/60 mb-1">
+                                    <span>Overall Quality</span>
+                                    <span>{message.evaluationScores.overall.toFixed(1)}/3.0</span>
+                                  </div>
+                                  <div className="relative h-1.5 bg-slate-700 rounded-full overflow-hidden w-full">
+                                    <div
+                                      className={`absolute top-0 left-0 bottom-0 ${getProgressBar(message.evaluationScores.overall)}`}
+                                      style={{ width: `${(message.evaluationScores.overall / 3) * 100}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Improvement Tips */}
+                              {message.evaluationScores.criteria && message.evaluationScores.criteria.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-slate-700/30 text-xs text-white/60">
+                                  <p className="font-medium mb-1">Improvement focus:</p>
+                                  <ul className="space-y-1">
+                                    {message.evaluationScores.criteria.map((criterion, idx) => (
+                                      <li key={idx} className="flex gap-2">
+                                        <span className="text-teal-400">{criterion.name}:</span>
+                                        <span>{getImprovementTip(criterion.name, criterion.score)}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {/* Support Level Indicator */}
+                              {message.evaluationScores.supportLevel && (
+                                <div className="mt-2 pt-2 border-t border-slate-700/30 text-xs">
+                                  <p className="text-white/60 font-medium mb-1">Current support level:</p>
+                                  <p className="text-teal-400">{getSupportMessage(message.evaluationScores.supportLevel, message.evaluationScores.overall || 2)}</p>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    ) : (
+                      // Handle other message types (video, scaffold, etc.)
+                      <div>
+                        {message.type === "video" && videoComponent}
+                        {message.type === "quiz" && quizComponent}
+                        {message.type === "feedback" && feedbackComponent}
+                        {message.type === "summary" && summaryComponent}
+                      </div>
+                    )
+                  ) : (
+                    <div>{message.content}</div>
+                  )}
+                </div>
+                <div className={`text-xs mt-0.5 opacity-50 ${message.sender === "user" ? "text-right" : ""}`}>
+                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+
+              {message.sender === "user" && (
+                <div className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full ml-2 bg-purple-900/50">
+                  <User className="h-4 w-4 text-purple-400" />
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
+
+        {children}
+      </div>
+      
+      {/* User Input */}
+      {allowInput && (
+        <div className="p-4 border-t border-slate-700/50 bg-gray-900/70 rounded-b-lg sticky bottom-0">
+          <div className="flex items-end gap-2">
+            <div className="flex-1 relative">
               <Textarea
-                id="chat-message-input"
-                name="chat-message"
+                placeholder="Type your message..."
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your response..."
-                className="min-h-[80px] flex-1 bg-slate-800/50 border border-indigo-500/30 text-white resize-none"
-                disabled={isTyping}
+                className="w-full bg-slate-800/80 border-slate-700 focus:border-teal-500/50 placeholder-white/30 text-white resize-none py-3 pr-20"
+                rows={2}
+                maxLength={maxMessageLength + 10} // Add a little buffer
               />
-              <Button
-                onClick={handleSendMessage}
-                className={`bg-indigo-600 hover:bg-indigo-700 h-10 w-10 rounded-full p-0 flex items-center justify-center ${
-                  isTyping ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                disabled={isTyping || userInput.length === 0 || userInput.length > maxMessageLength}
-              >
-                <Send className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            {/* Character limit warning */}
-            {userInput.length > maxMessageLength && (
-              <div className="mt-2 text-xs text-red-400">
-                Your message exceeds the maximum allowed length. Please shorten it.
+              <div className={`absolute bottom-2 right-2 text-xs ${charactersRemaining < 50 ? 'text-red-400' : 'text-white/50'}`}>
+                {charactersRemaining}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Always visible Continue button */}
-        {alwaysShowContinue && onPhaseComplete && (
-          <div className="border-t border-indigo-500/30 p-4 flex justify-center">
+            </div>
             <Button
-              onClick={() => {
-                if (!onPhaseComplete) return;
-                
-                const nextStep = getNextPhaseInSequence(phase);
-                
-                // For Phase 4, if it's a task transition within the phase
-                if (phase === "phase4" && 
-                    (nextStep === "short_term_goals" || nextStep === "contingency_strategies")) {
-                  // Send with score info to maintain progress tracking
-                  onPhaseComplete(`${nextStep}:score:2.5`);
-                } else {
-                  // Regular phase transition
-                  onPhaseComplete(nextStep);
-                }
-              }}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 flex items-center gap-2 px-6"
+              disabled={!userInput.trim() || userInput.length > maxMessageLength}
+              onClick={handleSendMessage}
+              className={`px-4 h-10 flex-shrink-0 ${!userInput.trim() || userInput.length > maxMessageLength ? 'opacity-50 cursor-not-allowed' : ''} bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white`}
             >
-              {phase === "phase4" && (component === "long_term_goals" || component === "short_term_goals") 
-                ? "Continue" 
-                : "Continue to Next Phase"}
-              <ArrowRight className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           </div>
-        )}
+        </div>
+      )}
 
-        {children}
-      </CardContent>
-    </Card>
+      {/* Continue Button (for phases that need it at the bottom) */}
+      {showContinueButton && (
+        <div className="p-4 border-t border-slate-700/50 bg-slate-900/90 text-center">
+          <Button
+            onClick={() => onContinue && onContinue()}
+            className="px-8 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white"
+          >
+            Continue <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+    </div>
   )
 } 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Target, Sparkles, Trophy, CheckCircle, ArrowRight, ListTodo } from "lucide-react"
+import { Target, Sparkles, Trophy, CheckCircle, ArrowRight, ListTodo, ChevronRight, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button" 
 import ModuleBar from "@/components/module-bar"
 
@@ -132,6 +132,31 @@ export default function Phase4Content() {
     shortTermGoals: 0,
     contingencyStrategies: 0
   })
+  const [currentCardIndex, setCurrentCardIndex] = useState(0) // Track the current card
+
+  // Define the cards for easy reference
+  const cards = [
+    { id: "intro", title: "Strategic Planning" },
+    { id: "mcii", title: "MCII: Your Psychological Superpower" },
+    { id: "tasks", title: "Your Learning Planning Tasks" },
+  ]
+
+  // Function to navigate to the next card
+  const nextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1)
+    } else {
+      // If we're on the last card, go to the first task
+      navigateToTask("long_term_goals")
+    }
+  }
+
+  // Function to navigate to the previous card
+  const prevCard = () => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex(currentCardIndex - 1)
+    }
+  }
   
   // Load user data on component mount
   useEffect(() => {
@@ -170,15 +195,32 @@ export default function Phase4Content() {
 
   // Navigate to specific task
   const navigateToTask = (task: string) => {
-    router.push(`/phase4/${task}`)
+    // Convert underscores to hyphens to match folder structure
+    const formattedTask = task.replace(/_/g, '-')
+    router.push(`/phase4/${formattedTask}`)
   }
 
   // Check if all tasks are complete
-  const allTasksComplete = Object.values(taskProgress).every(score => score >= 2.5)
+  const allTasksComplete = Object.values(taskProgress).every(score => score >= 2.5) && 
+    taskProgress.longTermGoals >= 2.5 && 
+    taskProgress.shortTermGoals >= 2.5 && 
+    taskProgress.contingencyStrategies >= 2.5
 
   // Continue to next phase if all tasks are complete
   const continueToNextPhase = () => {
     router.push('/phase5')
+  }
+
+  // Reset task progress (for testing purposes)
+  const resetProgress = () => {
+    const resetValues = {
+      longTermGoals: 0,
+      shortTermGoals: 0,
+      contingencyStrategies: 0
+    }
+    
+    setTaskProgress(resetValues)
+    localStorage.setItem("solbot_phase4_progress", JSON.stringify(resetValues))
   }
 
   return (
@@ -200,10 +242,10 @@ export default function Phase4Content() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-gray-900/95 backdrop-blur-md border-b border-orange-500/20 py-3 px-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-            <ListTodo className="h-7 w-7 text-orange-500 mr-2" />
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-              Strategic Learning Plan
-            </h1>
+            <Target className="h-6 w-6 text-orange-500 mr-2" />
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text">
+              Strategic Planning
+            </h2>
           </div>
         </div>
       </div>
@@ -215,144 +257,259 @@ export default function Phase4Content() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto"
         >
-          <Card className="bg-gray-900/60 backdrop-blur-md border border-orange-500/30 shadow-xl mb-6">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                <ListTodo className="h-8 w-8 text-orange-500" />
-                <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                  Strategic Learning Plan
-                </span>
-              </CardTitle>
-            </CardHeader>
+          {/* Intro Card */}
+          {currentCardIndex === 0 && (
+            <Card className="bg-gray-900/60 backdrop-blur-md border border-orange-500/30 shadow-xl mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
+                  <Target className="h-8 w-8 text-orange-500" />
+                  <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
+                    Strategic Planning
+                  </span>
+                </CardTitle>
+              </CardHeader>
 
-            <CardContent>
-              <div className="text-white/80 space-y-4 mb-6">
-                <p>
-                  {userName ? `Welcome ${userName}!` : "Welcome!"} In this phase, you'll develop a comprehensive learning plan through three strategic tasks:
-                </p>
-                
-                {/* Add MCII component here first */}
-                <MCIIStrategyGuide />
-                
-                <div className="bg-gray-800/50 p-4 rounded-lg border border-orange-500/20 space-y-6">
-                  {/* Long-term Goals Task Card */}
-                  <div 
-                    className={`p-4 rounded-lg cursor-pointer transition-all duration-300 ${
-                      taskProgress.longTermGoals >= 2.5 
-                        ? "bg-gradient-to-r from-green-900/40 to-green-800/40 border border-green-500/40" 
-                        : "bg-gradient-to-r from-gray-900/40 to-gray-800/40 border border-orange-500/20 hover:border-orange-400/40"
-                    }`}
-                    onClick={() => navigateToTask('long-term-goals')}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-full ${taskProgress.longTermGoals >= 2.5 ? "bg-green-800/50" : "bg-orange-900/50"}`}>
-                          <Sparkles className="h-5 w-5 text-orange-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg text-white">Task 1: Long-term Learning Goals</h3>
-                          <p className="text-sm text-white/70">Define your aspirational learning targets</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        {taskProgress.longTermGoals >= 2.5 ? (
-                          <CheckCircle className="h-6 w-6 text-green-400" />
-                        ) : (
-                          <ArrowRight className="h-5 w-5 text-orange-400" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Short-term Goals Task Card */}
-                  <div 
-                    className={`p-4 rounded-lg cursor-pointer transition-all duration-300 ${
-                      taskProgress.shortTermGoals >= 2.5 
-                        ? "bg-gradient-to-r from-green-900/40 to-green-800/40 border border-green-500/40" 
-                        : "bg-gradient-to-r from-gray-900/40 to-gray-800/40 border border-orange-500/20 hover:border-orange-400/40"
-                    }`}
-                    onClick={() => navigateToTask('short-term-goals')}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-full ${taskProgress.shortTermGoals >= 2.5 ? "bg-green-800/50" : "bg-orange-900/50"}`}>
-                          <Target className="h-5 w-5 text-orange-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg text-white">Task 2: SMART Objectives</h3>
-                          <p className="text-sm text-white/70">Create specific, measurable short-term goals</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        {taskProgress.shortTermGoals >= 2.5 ? (
-                          <CheckCircle className="h-6 w-6 text-green-400" />
-                        ) : (
-                          <ArrowRight className="h-5 w-5 text-orange-400" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Contingency Strategies Task Card */}
-                  <div 
-                    className={`p-4 rounded-lg cursor-pointer transition-all duration-300 ${
-                      taskProgress.contingencyStrategies >= 2.5 
-                        ? "bg-gradient-to-r from-green-900/40 to-green-800/40 border border-green-500/40" 
-                        : "bg-gradient-to-r from-gray-900/40 to-gray-800/40 border border-orange-500/20 hover:border-orange-400/40"
-                    }`}
-                    onClick={() => navigateToTask('contingency-strategies')}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-full ${taskProgress.contingencyStrategies >= 2.5 ? "bg-green-800/50" : "bg-orange-900/50"}`}>
-                          <Sparkles className="h-5 w-5 text-orange-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg text-white">Task 3: Contingency Strategies</h3>
-                          <p className="text-sm text-white/70">Prepare obstacle-handling techniques</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        {taskProgress.contingencyStrategies >= 2.5 ? (
-                          <CheckCircle className="h-6 w-6 text-green-400" />
-                        ) : (
-                          <ArrowRight className="h-5 w-5 text-orange-400" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {allTasksComplete && (
-                  <div className="mt-8 text-center">
-                    <div className="bg-gradient-to-r from-green-900/50 to-green-800/50 p-4 rounded-lg border border-green-500/40 mb-4">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <Trophy className="h-6 w-6 text-amber-400" />
-                        <h3 className="font-bold text-lg text-white">All Tasks Complete!</h3>
-                      </div>
-                      <p className="text-white/80">You've successfully created a comprehensive strategic learning plan.</p>
-                    </div>
-                    <Button 
-                      onClick={continueToNextPhase}
-                      className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-6 py-2 rounded-full"
-                    >
-                      Continue to Phase 5
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-
-                <div className="bg-gray-900/60 border border-orange-500/30 p-3 rounded-lg mt-4 flex items-start gap-3">
-                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-orange-900/60 flex items-center justify-center text-orange-400 animate-pulse">
-                    ↑
-                  </div>
-                  <p className="text-white/80 text-sm">
-                    <span className="text-amber-300 font-medium">Ready to get started?</span> Click the <span className="text-orange-300 font-semibold">Task 1: Long-term Learning Goals</span> card above to begin your learning plan journey!
+              <CardContent>
+                <div className="text-white/80 space-y-4 mb-6">
+                  <p className="text-center text-lg">
+                    {userName ? `Welcome, ${userName} Ren!` : "Welcome!"} In Phase 4, you'll create a strategic learning plan that connects your goals to effective action steps.
                   </p>
+                  
+                  <div className="bg-gradient-to-r from-orange-900/30 to-amber-900/30 p-4 rounded-lg border border-orange-500/30">
+                    <p className="text-white/90 text-base">
+                      You'll learn about the powerful <span className="text-orange-300 font-medium">MCII (Mental Contrasting with Implementation Intentions)</span> approach to goal setting and planning, which has been shown to <span className="text-orange-200 font-medium">double or triple goal achievement rates</span>.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gray-800/50 p-4 rounded-lg border border-orange-500/20">
+                    <h3 className="text-orange-300 font-medium mb-3">In This Phase You'll Create:</h3>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-2">
+                        <Target className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                        <span>Long-term learning goals</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <ListTodo className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                        <span>Short-term SMART objectives</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Sparkles className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                        <span>Contingency strategies for obstacles</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+
+              <CardFooter className="flex justify-between pt-2">
+                <div></div> {/* Empty div for spacing */}
+                <Button 
+                  onClick={nextCard}
+                  className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
+                >
+                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+
+          {/* MCII Card */}
+          {currentCardIndex === 1 && (
+            <Card className="bg-gray-900/60 backdrop-blur-md border border-orange-500/30 shadow-xl mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
+                  <span className="text-orange-400 text-2xl">🧠</span>
+                  <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
+                    MCII: Your Psychological Superpower
+                  </span>
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-orange-900/30 to-amber-900/30 p-4 rounded-lg border border-orange-500/30">
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      <span className="text-orange-300 font-medium">Mental Contrasting with Implementation Intentions (MCII)</span> is a powerful 
+                      evidence-based strategy shown to <span className="text-orange-200">double or triple your chances of achieving your goals</span>. 
+                      It works by harnessing both your imagination and practical planning abilities.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gray-800/60 p-4 rounded-lg border border-orange-500/20">
+                    <div className="mb-4">
+                      <h4 className="text-orange-300 font-medium mb-2 flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full flex items-center justify-center bg-gradient-to-r from-orange-600 to-orange-700 text-white text-xs font-bold">1</div>
+                        Mental Contrasting
+                      </h4>
+                      <ul className="space-y-2 text-sm pl-8">
+                        <li className="list-disc text-orange-400">
+                          <span className="text-white/80"><span className="text-orange-200 font-medium">First, visualize success</span> - Imagine achieving your goal in vivid detail. How would it feel? What benefits would you enjoy?</span>
+                        </li>
+                        <li className="list-disc text-orange-400">
+                          <span className="text-white/80"><span className="text-orange-200 font-medium">Then, identify obstacles</span> - What specific challenges might prevent you from reaching this goal?</span>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-orange-300 font-medium mb-2 flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full flex items-center justify-center bg-gradient-to-r from-orange-600 to-orange-700 text-white text-xs font-bold">2</div>
+                        Implementation Intentions
+                      </h4>
+                      <div className="p-3 bg-slate-800/70 rounded border border-orange-500/20 text-sm mb-2">
+                        <p className="text-white/90 italic mb-1 text-center">Formula:</p>
+                        <p className="text-white/90 text-center font-medium">"If <span className="text-orange-300">[obstacle occurs]</span>, then I will <span className="text-green-300">[specific action]</span>"</p>
+                      </div>
+                      <p className="text-white/80 text-sm pl-8">This creates an automatic mental link that triggers your planned response when you face obstacles.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/20 rounded-lg border border-blue-500/30 p-4">
+                    <h4 className="text-blue-300 font-medium mb-2">Example: Applying MCII to Your Learning</h4>
+                    <ol className="space-y-2 text-sm pl-5">
+                      <li className="flex items-start gap-2">
+                        <span className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-900/60 flex items-center justify-center text-blue-400 text-xs">1</span>
+                        <span className="text-white/80"><span className="text-blue-200 font-medium">Visualize success:</span> Imagine mastering difficult concepts and feeling confident during exams.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-900/60 flex items-center justify-center text-blue-400 text-xs">2</span>
+                        <span className="text-white/80"><span className="text-blue-200 font-medium">Identify obstacles:</span> You often get distracted by social media when studying.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-900/60 flex items-center justify-center text-blue-400 text-xs">3</span>
+                        <span className="text-white/80"><span className="text-blue-200 font-medium">Create implementation intention:</span> "If I feel the urge to check social media, then I will put my phone in another room and focus for 25 minutes."</span>
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex justify-between pt-2">
+                <Button 
+                  onClick={prevCard}
+                  variant="outline" 
+                  className="border-orange-500/50 text-orange-400 hover:bg-orange-950/50"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" /> Back
+                </Button>
+                <Button 
+                  onClick={nextCard}
+                  className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
+                >
+                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+          
+          {/* Tasks Card */}
+          {currentCardIndex === 2 && (
+            <Card className="bg-gray-900/60 backdrop-blur-md border border-orange-500/30 shadow-xl mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
+                  <ListTodo className="h-8 w-8 text-orange-500" />
+                  <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
+                    Your Learning Planning Tasks
+                  </span>
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent>
+                <div className="space-y-5">
+                  <p className="text-white/80 text-center">
+                    You'll complete three tasks to create your strategic learning plan:
+                  </p>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="relative overflow-hidden group rounded-lg">
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-600/10 group-hover:from-amber-500/20 group-hover:to-orange-600/20 rounded-lg transition-all duration-300"></div>
+                      <div className="p-4 bg-gray-800/50 rounded-lg border border-orange-500/30 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-900/60 flex items-center justify-center text-orange-400 text-xl">1</div>
+                          <div>
+                            <h3 className="text-orange-300 font-medium text-lg mb-1">Long-term Learning Goals</h3>
+                            <p className="text-white/80 text-sm">Define your big-picture learning objectives that inspire and motivate you.</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            onClick={() => navigateToTask("long_term_goals")}
+                            variant="ghost"
+                            className="text-orange-400 hover:text-orange-300 hover:bg-orange-950/50"
+                            size="sm"
+                          >
+                            {taskProgress.longTermGoals > 0 ? "Continue" : "Start"} <ArrowRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="relative overflow-hidden group rounded-lg">
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-600/10 group-hover:from-amber-500/20 group-hover:to-orange-600/20 rounded-lg transition-all duration-300"></div>
+                      <div className="p-4 bg-gray-800/50 rounded-lg border border-orange-500/30 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-900/60 flex items-center justify-center text-orange-400 text-xl">2</div>
+                          <div>
+                            <h3 className="text-orange-300 font-medium text-lg mb-1">Short-term SMART Objectives</h3>
+                            <p className="text-white/80 text-sm">Create specific, measurable steps that lead to your long-term goals.</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            onClick={() => navigateToTask("short_term_goals")}
+                            variant="ghost"
+                            className="text-orange-400 hover:text-orange-300 hover:bg-orange-950/50"
+                            size="sm"
+                          >
+                            {taskProgress.shortTermGoals > 0 ? "Continue" : "Start"} <ArrowRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="relative overflow-hidden group rounded-lg">
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-600/10 group-hover:from-amber-500/20 group-hover:to-orange-600/20 rounded-lg transition-all duration-300"></div>
+                      <div className="p-4 bg-gray-800/50 rounded-lg border border-orange-500/30 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange-900/60 flex items-center justify-center text-orange-400 text-xl">3</div>
+                          <div>
+                            <h3 className="text-orange-300 font-medium text-lg mb-1">Contingency Strategies</h3>
+                            <p className="text-white/80 text-sm">Develop plans to overcome obstacles using the "if-then" implementation intentions.</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            onClick={() => navigateToTask("contingency_strategies")}
+                            variant="ghost"
+                            className="text-orange-400 hover:text-orange-300 hover:bg-orange-950/50"
+                            size="sm"
+                          >
+                            {taskProgress.contingencyStrategies > 0 ? "Continue" : "Start"} <ArrowRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex justify-between pt-2">
+                <Button 
+                  onClick={prevCard}
+                  variant="outline" 
+                  className="border-orange-500/50 text-orange-400 hover:bg-orange-950/50"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" /> Back
+                </Button>
+                <Button 
+                  onClick={() => navigateToTask("long_term_goals")}
+                  className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white"
+                >
+                  Start Tasks <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
         </motion.div>
       </div>
       

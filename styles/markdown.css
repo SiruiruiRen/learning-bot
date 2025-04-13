@@ -1,32 +1,32 @@
 /* Styles for markdown content */
 .markdown-content {
   color: white;
-  line-height: 1.6;
+  line-height: 1.3;
 }
 
 /* Headings */
 .markdown-content h1 {
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  color: #a78bfa;
+  margin-top: 0.6rem;
+  margin-bottom: 0.3rem;
+  color: white;
 }
 
 .markdown-content h2 {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 600;
-  margin-top: 0.75rem;
-  margin-bottom: 0.5rem;
-  color: #818cf8;
+  margin-top: 0.5rem;
+  margin-bottom: 0.3rem;
+  color: white;
 }
 
 .markdown-content h3 {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin-top: 0.75rem;
-  margin-bottom: 0.25rem;
-  color: #93c5fd;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+  color: white;
 }
 
 .markdown-content h4, 
@@ -34,14 +34,14 @@
 .markdown-content h6 {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-top: 0.75rem;
-  margin-bottom: 0.25rem;
-  color: #bae6fd;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+  color: white;
 }
 
 /* Paragraphs */
 .markdown-content p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 /* Links */
@@ -59,13 +59,13 @@
 /* Lists */
 .markdown-content ul,
 .markdown-content ol {
-  margin-top: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0.15rem;
+  margin-bottom: 0.3rem;
   padding-left: 1.5rem;
 }
 
 .markdown-content li {
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.05rem;
 }
 
 .markdown-content ul {
@@ -152,11 +152,11 @@
 
 /* Compact content variant */
 .compact-content {
-  line-height: 1.4;
+  line-height: 1.15;
 }
 
 .compact-content p {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.15rem;
 }
 
 .compact-content h1,
@@ -165,18 +165,19 @@
 .compact-content h4,
 .compact-content h5,
 .compact-content h6 {
-  margin-top: 0.6rem;
-  margin-bottom: 0.2rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.1rem;
 }
 
 .compact-content ul,
 .compact-content ol {
-  margin-top: 0.15rem;
-  margin-bottom: 0.35rem;
+  margin-top: 0.05rem;
+  margin-bottom: 0.15rem;
+  padding-left: 1.25rem;
 }
 
 .compact-content li {
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.05rem;
 }
 
 .compact-content blockquote {
@@ -186,4 +187,40 @@
 .compact-content pre,
 .compact-content table {
   margin-bottom: 0.5rem;
+}
+
+/* Extra compact variant for user messages */
+.extra-compact {
+  line-height: 1.1;
+  font-size: 0.9rem;
+}
+
+.extra-compact p {
+  margin-bottom: 0.1rem;
+}
+
+.extra-compact h1 {
+  font-size: 1.3rem;
+}
+
+.extra-compact h2 {
+  font-size: 1.15rem;
+}
+
+.extra-compact h3, 
+.extra-compact h4,
+.extra-compact h5, 
+.extra-compact h6 {
+  font-size: 1rem;
+}
+
+.extra-compact ul,
+.extra-compact ol {
+  margin-top: 0.03rem;
+  margin-bottom: 0.1rem;
+  padding-left: 1.1rem;
+}
+
+.extra-compact li {
+  margin-bottom: 0.03rem;
 } 

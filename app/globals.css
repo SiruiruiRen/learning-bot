@@ -146,3 +146,148 @@
   }
 }
 
+/* Chat animation keyframes */
+@keyframes pulseDelayed {
+  0% { transform: scaleY(0.4); opacity: 0.3; }
+  50% { transform: scaleY(1.3); opacity: 1; }
+  100% { transform: scaleY(0.4); opacity: 0.3; }
+}
+  
+@keyframes progress-pulse {
+  0% { transform: translateX(-100%); width: 100%; }
+  50% { transform: translateX(0%); width: 50%; }
+  100% { transform: translateX(100%); width: 100%; }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 3px rgba(80, 230, 200, 0.3); }
+  50% { box-shadow: 0 0 8px rgba(80, 230, 200, 0.6); }
+  100% { box-shadow: 0 0 3px rgba(80, 230, 200, 0.3); }
+}
+
+@keyframes rotate-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
+.animate-progress-pulse {
+  animation: progress-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  background-size: 200% 200%;
+  animation-timing-function: ease-in-out;
+  background-image: linear-gradient(45deg, rgba(56, 178, 172, 0.7), rgba(6, 182, 212, 0.9), rgba(16, 185, 129, 0.8), rgba(6, 182, 212, 0.9), rgba(56, 178, 172, 0.7));
+  animation: progress-pulse 2.5s ease-in-out infinite, rotate-gradient 3s linear infinite;
+  box-shadow: 0 0 10px rgba(56, 178, 172, 0.4);
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Add Tailwind animation for pulse if not already defined */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Enhanced typing indicator styling with engaging animations */
+.typing-indicator {
+  background-color: rgba(20, 30, 48, 0.9);
+  will-change: transform;
+  width: auto;
+  border-radius: 16px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  position: relative;
+  animation: 2s bulge infinite ease-out;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(94, 234, 212, 0.4);
+  min-width: 80px;
+  backdrop-filter: blur(5px);
+}
+
+.typing-indicator::before {
+  content: attr(data-message);
+  position: absolute;
+  top: -30px;
+  left: 0;
+  background-color: rgba(20, 30, 45, 0.95);
+  color: #5eead4;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInOut 4s infinite ease-in-out;
+  white-space: nowrap;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  overflow: visible;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border-left: 2px solid #5eead4;
+  z-index: 20;
+}
+
+.typing-indicator span {
+  height: 8px;
+  width: 8px;
+  float: left;
+  margin: 0 2px;
+  background-color: #5eead4;
+  display: block;
+  border-radius: 50%;
+  opacity: 0.6;
+  filter: drop-shadow(0 0 3px rgba(94, 234, 212, 0.6));
+}
+
+.typing-indicator span:nth-of-type(1) {
+  animation: 1s blink infinite 0.3333s;
+}
+
+.typing-indicator span:nth-of-type(2) {
+  animation: 1s blink infinite 0.6666s;
+}
+
+.typing-indicator span:nth-of-type(3) {
+  animation: 1s blink infinite 0.9999s;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes bulge {
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  20%, 80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
