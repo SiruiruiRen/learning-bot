@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase client with error handling
+let supabase: any = null;
+try {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.warn('Supabase URL or key missing, database features will be disabled');
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+}
 
 // Maximum number of retries for backend API calls
 const MAX_RETRIES = 2;
@@ -235,6 +246,12 @@ export async function GET(request: NextRequest) {
 
 // Helper function to get existing messages for a conversation
 async function getExistingMessages(conversationId: string) {
+  // Return empty array if Supabase is not initialized
+  if (!supabase) {
+    console.warn('Supabase not available, cannot fetch messages');
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('conversations')
@@ -243,6 +260,7 @@ async function getExistingMessages(conversationId: string) {
       .single();
     
     if (error) {
+      console.error('Supabase error:', error);
       return [];
     }
     
