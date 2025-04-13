@@ -7,20 +7,24 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  poweredByHeader: false,
+  images: {
+    domains: ['cdn.anthropic.com', 'placehold.co'],
+    unoptimized: process.env.NODE_ENV === 'production',
+  },
   eslint: {
+    // This disables ESLint during builds, which is necessary for Vercel deployment
     ignoreDuringBuilds: true,
   },
   typescript: {
+    // This disables TypeScript checks during builds, which helps with Vercel deployment
     ignoreBuildErrors: true,
   },
-  images: {
-    unoptimized: true,
-    domains: ['i.pravatar.cc', 'picsum.photos', 'loremflickr.com', 'fastly.picsum.photos', 'images.unsplash.com', 'randomuser.me'],
-  },
   experimental: {
-    webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
+    serverActions: {
+      allowedOrigins: ["localhost:3004"],
+    },
   },
   serverExternalPackages: ['@prisma/client'],
   webpack: (config) => {
