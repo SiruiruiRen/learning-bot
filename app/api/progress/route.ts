@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Check if database is enabled
+const isDatabaseEnabled = process.env.DATABASE_ENABLED !== 'false';
+
 // Initialize Supabase client with error handling
 let supabase: any = null;
 try {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-  
-  if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Supabase client initialized successfully');
+  if (isDatabaseEnabled) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    
+    if (supabaseUrl && supabaseKey) {
+      supabase = createClient(supabaseUrl, supabaseKey);
+      console.log('Supabase client initialized successfully');
+    } else {
+      console.warn('Supabase URL or key missing in progress API, database features will be disabled');
+    }
   } else {
-    console.warn('Supabase URL or key missing in progress API, database features will be disabled');
+    console.log('Database functionality is explicitly disabled by DATABASE_ENABLED=false');
   }
 } catch (error) {
   console.error('Failed to initialize Supabase client in progress API:', error);
@@ -19,12 +26,37 @@ try {
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if Supabase is initialized
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database connection unavailable' },
-        { status: 503 }
-      );
+    // Check if database features are enabled
+    if (!isDatabaseEnabled || !supabase) {
+      // Return mock data for initial deployment
+      return NextResponse.json([
+        {
+          id: 'mock-course-1',
+          started_at: new Date().toISOString(),
+          completed_at: null,
+          current_phase_id: 'phase-1',
+          courses: {
+            id: 'course-1',
+            title: 'Example Course',
+            description: 'A mock course for demonstration'
+          },
+          phases: [
+            {
+              id: 'progress-1',
+              started_at: new Date().toISOString(),
+              completed_at: null,
+              current_scaffolding_level: 1,
+              status: 'in_progress',
+              learning_phases: {
+                id: 'phase-1',
+                name: 'Introduction Phase',
+                description: 'Learn the basics',
+                sequence_order: 1
+              }
+            }
+          ]
+        }
+      ]);
     }
 
     const userId = request.nextUrl.searchParams.get('userId');
@@ -114,12 +146,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if Supabase is initialized
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database connection unavailable' },
-        { status: 503 }
-      );
+    // Check if database features are enabled
+    if (!isDatabaseEnabled || !supabase) {
+      // Return success with mock data for initial deployment
+      return NextResponse.json({
+        success: true,
+        progressId: 'mock-progress-' + Date.now(),
+        status: 'in_progress',
+        scaffoldingLevel: 1
+      });
     }
 
     const data = await request.json();

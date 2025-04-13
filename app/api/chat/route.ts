@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Check if database is enabled
+const isDatabaseEnabled = process.env.DATABASE_ENABLED !== 'false';
+
 // Initialize Supabase client with error handling
 let supabase: any = null;
 try {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-  
-  if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Supabase client initialized successfully');
+  if (isDatabaseEnabled) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    
+    if (supabaseUrl && supabaseKey) {
+      supabase = createClient(supabaseUrl, supabaseKey);
+      console.log('Supabase client initialized successfully');
+    } else {
+      console.warn('Supabase URL or key missing, database features will be disabled');
+    }
   } else {
-    console.warn('Supabase URL or key missing, database features will be disabled');
+    console.log('Database functionality is explicitly disabled by DATABASE_ENABLED=false');
   }
 } catch (error) {
   console.error('Failed to initialize Supabase client:', error);
@@ -246,9 +253,9 @@ export async function GET(request: NextRequest) {
 
 // Helper function to get existing messages for a conversation
 async function getExistingMessages(conversationId: string) {
-  // Return empty array if Supabase is not initialized
-  if (!supabase) {
-    console.warn('Supabase not available, cannot fetch messages');
+  // Return empty array if database is disabled or Supabase is not initialized
+  if (!isDatabaseEnabled || !supabase) {
+    console.warn('Database disabled or not available, cannot fetch messages');
     return [];
   }
 
