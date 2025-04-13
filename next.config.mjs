@@ -26,14 +26,9 @@ const nextConfig = {
       allowedOrigins: ["localhost:3004"],
     },
   },
-  serverExternalPackages: ['@prisma/client'],
   webpack: (config) => {
     config.resolve.fallback = { fs: false, net: false, tls: false };
     return config;
-  },
-  // Override the default port to avoid conflict with backend
-  env: {
-    PORT: "3000"
   },
 }
 
