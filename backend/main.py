@@ -8,33 +8,11 @@ import logging
 from dotenv import load_dotenv
 import datetime
 
-# Add the project root to the Python path to fix imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Try to import the keep_warm module
-try:
-    from backend.utils.keep_warm import start_warmup_thread
-except ImportError:
-    try:
-        from utils.keep_warm import start_warmup_thread
-    except ImportError:
-        # Define a dummy function if the module can't be imported
-        def start_warmup_thread():
-            print("Warmup module not found, skipping...")
-
-# Try to import using both styles to ensure compatibility
-try:
-    # First try relative imports (works when running from project root)
-    from backend.routes.chat import router as chat_router
-    from backend.routes.user import router as user_router
-    from backend.routes.scores import router as scores_router
-    from backend.utils.db import init_db, close_db
-except ImportError:
-    # Fallback to direct imports (works when running directly in backend dir)
-    from routes.chat import router as chat_router
-    from routes.user import router as user_router
-    from routes.scores import router as scores_router
-    from utils.db import init_db, close_db
+# Add project root and backend directory to the Python path to fix imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+sys.path.append(project_root)
+sys.path.append(current_dir)
 
 # Load environment variables
 load_dotenv()
@@ -47,6 +25,39 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("solbot")
+
+# Import conditionally based on environment
+try:
+    # Try importing the keep_warm module
+    try:
+        logger.info("Attempting to import from backend package...")
+        from backend.utils.keep_warm import start_warmup_thread
+        # If this succeeds, we're likely running from project root
+        from backend.routes.chat import router as chat_router
+        from backend.routes.user import router as user_router
+        from backend.routes.scores import router as scores_router
+        from backend.utils.db import init_db, close_db
+        logger.info("Successfully imported modules from backend package")
+    except ImportError as e:
+        logger.info(f"Backend package import failed: {e}, trying direct import...")
+        # If that fails, try direct import (running from backend dir)
+        from utils.keep_warm import start_warmup_thread
+        from routes.chat import router as chat_router
+        from routes.user import router as user_router
+        from routes.scores import router as scores_router
+        from utils.db import init_db, close_db
+        logger.info("Successfully imported modules directly")
+except Exception as e:
+    logger.error(f"All import attempts failed: {e}")
+    # Define dummy functions if imports fail
+    def start_warmup_thread():
+        logger.warning("Using dummy warmup thread function")
+    def init_db():
+        logger.warning("Using dummy init_db function")
+    def close_db():
+        logger.warning("Using dummy close_db function")
+    # But we still need routers, so raise the error
+    raise
 
 # Startup and shutdown events
 @asynccontextmanager
