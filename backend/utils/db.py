@@ -11,7 +11,7 @@ create_client = None
 Client = None
 
 try:
-    # Try to import supabase - use a different import style to ensure global variables are assigned
+    # Try to import supabase - use proper technique to get global references
     from supabase import create_client as _create_client, Client as _Client
     # Explicitly assign to module level variables
     create_client = _create_client
@@ -74,7 +74,7 @@ def init_db():
     """Initialize the database connection or fallback to memory storage"""
     global _supabase_client, _using_memory_db
     
-    # First check if supabase package is available and create_client is defined
+    # First check if Supabase package is available and create_client is defined
     if not supabase_available or create_client is None:
         logger.warning("Supabase package not properly installed or create_client not defined. Using in-memory storage.")
         _using_memory_db = True
@@ -116,7 +116,11 @@ def close_db():
 
 def get_db() -> Optional[Client]:
     """Get the database client if available"""
-    global _supabase_client
+    global _supabase_client, supabase_available
+    
+    if not supabase_available:
+        logger.debug("Supabase package not available")
+        return None
     
     if not _using_memory_db and _supabase_client is None:
         init_db()

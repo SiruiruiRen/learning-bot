@@ -24,7 +24,7 @@ load_dotenv()
 logger = logging.getLogger("solbot.llm")
 
 # Get API key from environment - IMPORTANT: Must be named ANTHROPIC_API_KEY 
-# Make sure your environment variable is named "ANTHROPIC_API_KEY" (not CLAUDE_API_KEY)
+# The correct environment variable name is "ANTHROPIC_API_KEY" (not CLAUDE_API_KEY)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 # Hard-code the model to ensure we use the right version
 CLAUDE_MODEL = "claude-3-5-sonnet-20241022"
