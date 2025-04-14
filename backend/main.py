@@ -6,9 +6,21 @@ import os
 import sys
 import logging
 from dotenv import load_dotenv
+import datetime
 
 # Add the project root to the Python path to fix imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Try to import the keep_warm module
+try:
+    from backend.utils.keep_warm import start_warmup_thread
+except ImportError:
+    try:
+        from utils.keep_warm import start_warmup_thread
+    except ImportError:
+        # Define a dummy function if the module can't be imported
+        def start_warmup_thread():
+            print("Warmup module not found, skipping...")
 
 # Try to import using both styles to ensure compatibility
 try:
@@ -44,6 +56,12 @@ async def lifespan(app: FastAPI):
     init_db()
     logger.info("Database initialized")
     logger.info("Using simplified direct LLM architecture")
+    
+    # Start the warmup thread to keep the service from sleeping
+    if os.environ.get("ENABLE_WARMUP", "true").lower() == "true":
+        logger.info("Starting warmup service...")
+        start_warmup_thread()
+    
     yield
     # Shutdown: cleanup resources
     logger.info("SoLBot backend shutting down...")
@@ -85,7 +103,12 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    """Health check endpoint accessible to external monitoring services."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "version": "1.0.0"
+    }
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8081))
