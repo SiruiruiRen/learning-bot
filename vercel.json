@@ -4,11 +4,6 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["sfo1"],
-  "functions": {
-    "app/api/**/*": {
-      "maxDuration": 300
-    }
-  },
   "rewrites": [
     { 
       "source": "/api/chat/:path*", 
