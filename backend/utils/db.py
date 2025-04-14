@@ -4,12 +4,17 @@ import json
 import uuid
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+
+# Import Supabase with better error handling
 try:
     from supabase import create_client, Client
+    supabase_available = True
 except ImportError:
     # Create placeholder Client type for type hinting
     class Client:
         pass
+    supabase_available = False
+    logging.getLogger("solbot.db").warning("Supabase package not properly installed. Using in-memory storage.")
 
 from dotenv import load_dotenv
 
@@ -32,7 +37,8 @@ _memory_db = {
     "users": {},
     "messages": [],
     "criterion_scores": [],
-    "phase_progress": {}
+    "phase_progress": {},
+    "user_data": []  # Add a user_data array for in-memory storage
 }
 
 # Add a scaffolding level cache at the top of the file
@@ -462,4 +468,111 @@ def get_messages(user_id: str, conversation_id: str, limit: int = 5) -> List[Dic
         return result
     except Exception as e:
         logger.error(f"Error fetching messages: {e}")
-        return [] 
+        return []
+
+def save_user_data(user_id: str, data_type: str, value: str, metadata: dict = None) -> Dict[str, Any]:
+    """Save user data to the database or memory store
+    
+    Args:
+        user_id: ID of the user
+        data_type: Type of data being stored (e.g., 'event', 'preference')
+        value: Value to store (can be any string)
+        metadata: Optional metadata as a dictionary
+        
+    Returns:
+        Dictionary with the saved data
+    """
+    # Generate a unique ID
+    data_id = str(uuid.uuid4())
+    timestamp = datetime.now().isoformat()
+    
+    # Create the data object
+    data_obj = {
+        "id": data_id,
+        "user_id": user_id,
+        "data_type": data_type,
+        "value": value,
+        "metadata": metadata or {},
+        "created_at": timestamp
+    }
+    
+    if _using_memory_db:
+        # Store in memory
+        logger.info(f"Storing user data in memory: {data_type} for {user_id}")
+        _memory_db["user_data"].append(data_obj)
+        return data_obj
+    
+    # Try to store in Supabase
+    db = get_db()
+    if db is None:
+        # Fall back to memory storage if db connection failed
+        logger.warning(f"Database unavailable, storing user data in memory: {data_type} for {user_id}")
+        _memory_db["user_data"].append(data_obj)
+        return data_obj
+        
+    try:
+        # Insert into Supabase
+        response = db.table("user_data").insert({
+            "user_id": user_id,
+            "data_type": data_type,
+            "value": value,
+            "metadata": json.dumps(metadata) if metadata else None
+        }).execute()
+        
+        if response.data:
+            return response.data[0]
+        return data_obj
+    except Exception as e:
+        logger.error(f"Error saving user data: {e}")
+        # Fall back to memory storage
+        _memory_db["user_data"].append(data_obj)
+        return data_obj
+
+def get_user_data(user_id: str, data_type: str = None) -> List[Dict[str, Any]]:
+    """Retrieve user data from the database or memory store
+    
+    Args:
+        user_id: ID of the user
+        data_type: Optional filter by data type
+        
+    Returns:
+        List of user data items
+    """
+    if _using_memory_db:
+        # Retrieve from memory
+        data = _memory_db["user_data"]
+        # Filter by user_id and optionally data_type
+        filtered_data = [item for item in data if item["user_id"] == user_id]
+        if data_type:
+            filtered_data = [item for item in filtered_data if item["data_type"] == data_type]
+        return filtered_data
+    
+    # Try to retrieve from Supabase
+    db = get_db()
+    if db is None:
+        # Fall back to memory storage if db connection failed
+        data = _memory_db["user_data"]
+        filtered_data = [item for item in data if item["user_id"] == user_id]
+        if data_type:
+            filtered_data = [item for item in filtered_data if item["data_type"] == data_type]
+        return filtered_data
+        
+    try:
+        # Query from Supabase
+        query = db.table("user_data").select("*").eq("user_id", user_id)
+        if data_type:
+            query = query.eq("data_type", data_type)
+        
+        response = query.order("created_at", desc=True).execute()
+        
+        if response.data:
+            return response.data
+        return []
+    except Exception as e:
+        logger.error(f"Error retrieving user data: {e}")
+        # Fall back to memory storage
+        data = _memory_db["user_data"]
+        filtered_data = [item for item in data if item["user_id"] == user_id]
+        if data_type:
+            filtered_data = [item for item in filtered_data if item["data_type"] == data_type]
+        return filtered_data 
