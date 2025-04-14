@@ -4,12 +4,25 @@ import json
 import uuid
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+
+# Define global variables at module level
+supabase_available = False
+create_client = None
+Client = None
+
 try:
-    from supabase import create_client, Client
-except ImportError:
-    # Create placeholder Client type for type hinting
+    # Try to import supabase - use proper technique to get global references
+    from supabase import create_client as _create_client, Client as _Client
+    # Explicitly assign to module level variables
+    create_client = _create_client
+    Client = _Client
+    supabase_available = True
+    logging.getLogger("solbot.db").info("Supabase package successfully imported")
+except ImportError as e:
+    # Create placeholder for type hints
     class Client:
         pass
+    logging.getLogger("solbot.db").warning(f"Supabase package import failed: {e}. Using in-memory storage.")
 
 from dotenv import load_dotenv
 
@@ -23,7 +36,7 @@ supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 
 # Global client
-_supabase_client: Client = None
+_supabase_client: Optional[Client] = None
 # Set to False to use Supabase
 _using_memory_db = os.getenv("USE_MEMORY_DB", "false").lower() == "true"
 
@@ -32,7 +45,8 @@ _memory_db = {
     "users": {},
     "messages": [],
     "criterion_scores": [],
-    "phase_progress": {}
+    "phase_progress": {},
+    "user_data": []  # Add a user_data array for in-memory storage
 }
 
 # Add a scaffolding level cache at the top of the file
@@ -60,6 +74,12 @@ def init_db():
     """Initialize the database connection or fallback to memory storage"""
     global _supabase_client, _using_memory_db
     
+    # First check if Supabase package is available and create_client is defined
+    if not supabase_available or create_client is None:
+        logger.warning("Supabase package not properly installed or create_client not defined. Using in-memory storage.")
+        _using_memory_db = True
+        return
+    
     # Check if we should use memory DB
     if _using_memory_db:
         logger.info("Using in-memory storage for database operations")
@@ -71,8 +91,17 @@ def init_db():
         return
     
     try:
+        # Create Supabase client
+        logger.info(f"Initializing database connection to {supabase_url}")
         _supabase_client = create_client(supabase_url, supabase_key)
         logger.info("Database connection initialized successfully")
+        
+        # Test connection with a simple query
+        try:
+            test_response = _supabase_client.table("user_data").select("count", count="exact").limit(1).execute()
+            logger.info(f"Database connection test successful. Count: {test_response.count}")
+        except Exception as test_err:
+            logger.warning(f"Database connection test failed: {test_err}")
     except Exception as e:
         logger.warning(f"Failed to initialize database connection: {e}. Using in-memory storage.")
         _using_memory_db = True
@@ -87,7 +116,11 @@ def close_db():
 
 def get_db() -> Optional[Client]:
     """Get the database client if available"""
-    global _supabase_client
+    global _supabase_client, supabase_available
+    
+    if not supabase_available:
+        logger.debug("Supabase package not available")
+        return None
     
     if not _using_memory_db and _supabase_client is None:
         init_db()
