@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: solbot-backend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && PYTHONPATH=$PYTHONPATH:$(pwd)/.. python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAUDE_MODEL
+        value: claude-3-5-sonnet-20241022
+      - key: USE_MEMORY_DB
+        value: true
+      - key: ENABLE_WARMUP
+        value: true
+      - key: SERVICE_URL
+        fromService:
+          type: web
+          name: solbot-backend
+          property: url
+      - key: PING_INTERVAL
+        value: 600 

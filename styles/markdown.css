@@ -1,0 +1,226 @@
+/* Styles for markdown content */
+.markdown-content {
+  color: white;
+  line-height: 1.3;
+}
+
+/* Headings */
+.markdown-content h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 0.6rem;
+  margin-bottom: 0.3rem;
+  color: white;
+}
+
+.markdown-content h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.3rem;
+  color: white;
+}
+
+.markdown-content h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+  color: white;
+}
+
+.markdown-content h4, 
+.markdown-content h5, 
+.markdown-content h6 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+  color: white;
+}
+
+/* Paragraphs */
+.markdown-content p {
+  margin-bottom: 0.3rem;
+}
+
+/* Links */
+.markdown-content a {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.markdown-content a:hover {
+  color: #bae6fd;
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin-top: 0.15rem;
+  margin-bottom: 0.3rem;
+  padding-left: 1.5rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.05rem;
+}
+
+.markdown-content ul {
+  list-style-type: disc;
+}
+
+.markdown-content ul ul {
+  list-style-type: circle;
+}
+
+.markdown-content ol {
+  list-style-type: decimal;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 4px solid #6366f1;
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 0.5rem;
+  color: #a5b4fc;
+  font-style: italic;
+}
+
+/* Code */
+.markdown-content code {
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content pre {
+  background-color: rgba(30, 41, 59, 0.8);
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.9em;
+  color: #e2e8f0;
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.markdown-content th {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #e0e7ff;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.5rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.markdown-content td {
+  padding: 0.5rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.markdown-content tr:nth-child(even) {
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Horizontal rule */
+.markdown-content hr {
+  border: 0;
+  height: 1px;
+  background-color: rgba(99, 102, 241, 0.3);
+  margin: 1.5rem 0;
+}
+
+/* Compact content variant */
+.compact-content {
+  line-height: 1.15;
+}
+
+.compact-content p {
+  margin-bottom: 0.15rem;
+}
+
+.compact-content h1,
+.compact-content h2,
+.compact-content h3,
+.compact-content h4,
+.compact-content h5,
+.compact-content h6 {
+  margin-top: 0.4rem;
+  margin-bottom: 0.1rem;
+}
+
+.compact-content ul,
+.compact-content ol {
+  margin-top: 0.05rem;
+  margin-bottom: 0.15rem;
+  padding-left: 1.25rem;
+}
+
+.compact-content li {
+  margin-bottom: 0.05rem;
+}
+
+.compact-content blockquote {
+  margin-bottom: 0.35rem;
+}
+
+.compact-content pre,
+.compact-content table {
+  margin-bottom: 0.5rem;
+}
+
+/* Extra compact variant for user messages */
+.extra-compact {
+  line-height: 1.1;
+  font-size: 0.9rem;
+}
+
+.extra-compact p {
+  margin-bottom: 0.1rem;
+}
+
+.extra-compact h1 {
+  font-size: 1.3rem;
+}
+
+.extra-compact h2 {
+  font-size: 1.15rem;
+}
+
+.extra-compact h3, 
+.extra-compact h4,
+.extra-compact h5, 
+.extra-compact h6 {
+  font-size: 1rem;
+}
+
+.extra-compact ul,
+.extra-compact ol {
+  margin-top: 0.03rem;
+  margin-bottom: 0.1rem;
+  padding-left: 1.1rem;
+}
+
+.extra-compact li {
+  margin-bottom: 0.03rem;
+} 

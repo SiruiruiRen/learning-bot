@@ -1,0 +1,3 @@
+"""
+SoLBot Prompt Engineering Package
+""" 
