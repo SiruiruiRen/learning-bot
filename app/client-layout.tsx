@@ -5,6 +5,7 @@ import type React from "react"
 import { ThemeProvider } from "@/components/theme-provider"
 import HomeButton from "@/components/home-button"
 import { usePathname } from "next/navigation"
+import { UserDataTracker } from "@/components/UserDataTracker"
 
 export default function ClientLayout({
   children,
@@ -20,6 +21,7 @@ export default function ClientLayout({
     >
       {children}
       <HomeButtonWrapper />
+      <UserDataTracker />
     </ThemeProvider>
   )
 }

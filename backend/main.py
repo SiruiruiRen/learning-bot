@@ -36,6 +36,7 @@ try:
         from backend.routes.chat import router as chat_router
         from backend.routes.user import router as user_router
         from backend.routes.scores import router as scores_router
+        from backend.routes.user_data import router as user_data_router
         from backend.utils.db import init_db, close_db
         logger.info("Successfully imported modules from backend package")
     except ImportError as e:
@@ -45,6 +46,7 @@ try:
         from routes.chat import router as chat_router
         from routes.user import router as user_router
         from routes.scores import router as scores_router
+        from routes.user_data import router as user_data_router
         from utils.db import init_db, close_db
         logger.info("Successfully imported modules directly")
 except Exception as e:
@@ -109,6 +111,7 @@ app.add_middleware(
 app.include_router(chat_router)  # Remove prefix for the chat router, as it already has tags
 app.include_router(user_router, prefix="/api/user", tags=["user"])
 app.include_router(scores_router, prefix="/api/scores", tags=["scores"])
+app.include_router(user_data_router, prefix="/api/user-data", tags=["user_data"])
 
 @app.get("/")
 async def root():
