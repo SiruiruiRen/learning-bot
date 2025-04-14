@@ -24,7 +24,7 @@ load_dotenv()
 logger = logging.getLogger("solbot.llm")
 
 # Get API key from environment
-CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 # Hard-code the model to ensure we use the right version
 CLAUDE_MODEL = "claude-3-5-sonnet-20241022"
 
@@ -33,7 +33,7 @@ logger.info(f"Using Claude model: {CLAUDE_MODEL}")
 # Initialize Anthropic client with increased timeout
 try:
     client = AsyncAnthropic(
-        api_key=CLAUDE_API_KEY,
+        api_key=ANTHROPIC_API_KEY,
         timeout=60.0  # Increase timeout to 60 seconds
     )
     logger.info(f"Anthropic client initialized with model: {CLAUDE_MODEL}")

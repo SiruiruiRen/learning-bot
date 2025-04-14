@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 # Fix Supabase import with proper error handling
+# Define variables at module level
 supabase_available = False
 create_client = None
 Client = None
@@ -13,6 +14,7 @@ Client = None
 try:
     # Try to import supabase
     from supabase import create_client, Client
+    # Simply set the flag to True if import succeeds
     supabase_available = True
     logging.getLogger("solbot.db").info("Supabase package successfully imported")
 except ImportError as e:
@@ -69,7 +71,7 @@ def format_uuid(val, prefix="id_"):
 
 def init_db():
     """Initialize the database connection or fallback to memory storage"""
-    global _supabase_client, _using_memory_db, supabase_available
+    global _supabase_client, _using_memory_db
     
     # First check if supabase package is available
     if not supabase_available:
