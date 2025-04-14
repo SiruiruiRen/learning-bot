@@ -93,6 +93,8 @@ origins = [
     "https://sol-bot-seven.vercel.app", # Vercel domain
     "https://learning-bot.vercel.app",   # Alternate Vercel domain
     "https://solbot.vercel.app",         # Another possible Vercel domain
+    "https://sol-kfr2d09v1-rensirui-uncedus-projects.vercel.app", # Current Vercel domain
+    "*"  # Allow all origins temporarily for testing
 ]
 
 app.add_middleware(
