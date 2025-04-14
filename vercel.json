@@ -4,6 +4,11 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["sfo1"],
+  "functions": {
+    "app/api/**/*": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     { 
       "source": "/api/chat/:path*", 
@@ -11,6 +16,8 @@
     }
   ],
   "env": {
-    "BACKEND_URL": "https://solbot-backend.onrender.com"
+    "BACKEND_URL": "https://solbot-backend.onrender.com",
+    "DATABASE_ENABLED": "true",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://xuscdqhwztntycrtrdbl.supabase.co"
   }
 } 
