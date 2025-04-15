@@ -31,6 +31,9 @@ export default function KnowledgeCheck({
   const [submitted, setSubmitted] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [showCompleteButton, setShowCompleteButton] = useState(false)
+  
+  // Determine if this is the final question
+  const isFinalQuestion = questionNumber === totalQuestions
 
   const handleSubmit = () => {
     if (!selectedOption) return
@@ -40,16 +43,15 @@ export default function KnowledgeCheck({
     setSubmitted(true)
 
     if (correct) {
-      // Show the complete button after a brief delay if the answer is correct
-      setTimeout(() => {
+      // For the last question, always show the Complete button
+      if (isFinalQuestion) {
         setShowCompleteButton(true)
-      }, 1000)
-      
-      // Also attempt to auto-advance after a delay (fallback)
-      setTimeout(() => {
-        // We keep this as a fallback, but now we also have the manual button
-        onComplete()
-      }, 1500)
+      } else {
+        // For non-final questions, auto-advance after a delay
+        setTimeout(() => {
+          onComplete()
+        }, 2000)
+      }
     }
   }
 
@@ -63,19 +65,12 @@ export default function KnowledgeCheck({
     onComplete()
   }
 
-  // If the user has been on a correct answer for more than 3 seconds, show the complete button
+  // Clean up the timer if the component unmounts
   useEffect(() => {
-    let timer: NodeJS.Timeout
-    if (submitted && isCorrect) {
-      timer = setTimeout(() => {
-        setShowCompleteButton(true)
-      }, 3000)
-    }
-    
     return () => {
-      if (timer) clearTimeout(timer)
+      // Nothing to clean up in the new implementation
     }
-  }, [submitted, isCorrect])
+  }, [])
 
   return (
     <Card className="bg-slate-800/50 border border-indigo-500/30">
@@ -182,13 +177,13 @@ export default function KnowledgeCheck({
             ) : (
               <div className="text-emerald-400 text-sm font-medium flex items-center">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                {questionNumber < totalQuestions ? "Moving to next question..." : "Completing quiz..."}
+                {!isFinalQuestion ? "Moving to next question..." : ""}
               </div>
             )}
           </div>
           
-          {/* Manual continue button when correct answer is selected */}
-          {submitted && isCorrect && showCompleteButton && (
+          {/* Only show Complete & Continue button on the final question when answered correctly */}
+          {submitted && isCorrect && isFinalQuestion && (
             <Button
               onClick={handleManualComplete}
               className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 shadow-lg"
