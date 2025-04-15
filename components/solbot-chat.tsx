@@ -503,7 +503,7 @@ Let me know if you have any specific questions about this topic!`,
             const data = await response.json()
             // Normalize the response format to handle both wrapped and unwrapped responses
             
-            console.log('Raw API response:', data)
+            console.log('Raw API response:', JSON.stringify(data, null, 2))
             
             // Handle successful responses with data wrapper
             if (data.success === true && data.data) {
@@ -905,6 +905,9 @@ For assistance, you can:
     if (!content || typeof content !== 'string') return <MarkdownRenderer content={content} />;
     
     try {
+      // Log the content we're trying to format for debugging
+      console.log("Content being formatted:", content);
+      
       // Special handling for Claude markdown messages
       if (content.includes("```") || content.includes("- ") || content.includes("* ") || content.includes("1. ")) {
         console.log("Detected markdown content in message");
@@ -915,7 +918,7 @@ For assistance, you can:
       if (phase === "phase2") {
         console.log("Using emergency direct Phase 2 formatting");
         
-        // Hard-coded section detection based on the actual content we see in Phase 2
+        // Hard-coded section detection based on the actual content pattern we see in Phase 2
         const parts = {
           greeting: "",
           assessment: "",
@@ -923,131 +926,88 @@ For assistance, you can:
           nextSteps: ""
         };
         
-        // Find greeting section
-        if (content.includes("Hi there!") || content.includes("👋 I see you're interested in")) {
-          const greetingEnd = content.indexOf("Looking at your");
-          if (greetingEnd > 0) {
-            parts.greeting = content.substring(0, greetingEnd).trim();
-          }
-        }
+        // Debug full content
+        console.log("Full message content for debugging:", content);
         
-        // Find assessment section - this must contain the bullet points with warnings
-        if (content.includes("Looking at your learning objective")) {
-          const assessmentStart = content.indexOf("Looking at your");
+        // The structure typically follows:
+        // 1. Greeting
+        // 2. Assessment (starts with "Looking at your learning objective and resources:")
+        // 3. To strengthen your... guidance section (may not have a clear marker)
+        // 4. Next Steps (often starts with numbered list, "Please revise", "What specific", etc.)
+        
+        // Find assessment section
+        const assessmentStart = content.indexOf("Looking at your");
+        console.log("Assessment section starts at:", assessmentStart);
+        if (assessmentStart > 0) {
+          // Everything before assessment is greeting
+          parts.greeting = content.substring(0, assessmentStart).trim();
+          
+          // Find the end of the assessment section - typically ends before the next section starts
+          // This could be at "To strengthen" or some other guidance section starter
+          const assessmentEndMarkers = ["To strengthen", "What specific", "Remember,", "Good choice", "Please revise", "Your project"];
           let assessmentEnd = -1;
           
-          // Find where assessment ends and guidance begins
-          const possibleEndMarkers = [
-            "Here's a template", 
-            "Since this is", 
-            "Let me help", 
-            "I'll help you"
-          ];
-          
-          for (const marker of possibleEndMarkers) {
-            const index = content.indexOf(marker);
-            if (index > assessmentStart && (assessmentEnd === -1 || index < assessmentEnd)) {
-              assessmentEnd = index;
+          for (const marker of assessmentEndMarkers) {
+            const index = content.indexOf(marker, assessmentStart);
+            if (index > -1) {
+              console.log(`Assessment end marker found: "${marker}" at position ${index}`);
+              if (assessmentEnd === -1 || index < assessmentEnd) {
+                assessmentEnd = index;
+              }
             }
           }
           
-          if (assessmentStart > -1 && assessmentEnd > assessmentStart) {
+          console.log("Assessment section ends at:", assessmentEnd);
+          
+          if (assessmentEnd > assessmentStart) {
             parts.assessment = content.substring(assessmentStart, assessmentEnd).trim();
-          }
-        }
-        
-        // Find guidance section - contains the template
-        const possibleGuidanceStarts = [
-          "Here's a template", 
-          "Since this is", 
-          "Let me help", 
-          "I'll help you"
-        ];
-        
-        let guidanceStart = -1;
-        for (const marker of possibleGuidanceStarts) {
-          const index = content.indexOf(marker);
-          if (index > -1 && (guidanceStart === -1 || index < guidanceStart)) {
-            guidanceStart = index;
-          }
-        }
-        
-        // Find next steps section - typically starts with a prompt to revise
-        const possibleNextStepsMarkers = [
-          "📝 Please", 
-          "Please revise", 
-          "Remember,", 
-          "What specific"
-        ];
-        
-        let nextStepsStart = -1;
-        for (const marker of possibleNextStepsMarkers) {
-          const index = content.indexOf(marker);
-          if (index > guidanceStart && (nextStepsStart === -1 || index < nextStepsStart)) {
-            nextStepsStart = index;
-          }
-        }
-        
-        if (guidanceStart > -1 && nextStepsStart > guidanceStart) {
-          parts.guidance = content.substring(guidanceStart, nextStepsStart).trim();
-          parts.nextSteps = content.substring(nextStepsStart).trim();
-        } else if (guidanceStart > -1) {
-          parts.guidance = content.substring(guidanceStart).trim();
-        }
-        
-        // If we somehow failed to parse all sections, use a brute force approach
-        if (!parts.assessment || !parts.guidance) {
-          console.log("Falling back to manual section splitting for Phase 2");
-          
-          // Manual section splitting as a last resort
-          const lines = content.split('\n');
-          let currentSection = 'greeting';
-          
-          // Reset parts
-          parts.greeting = "";
-          parts.assessment = "";
-          parts.guidance = "";
-          parts.nextSteps = "";
-          
-          for (const line of lines) {
-            // Detect section transitions based on content
-            if (line.includes("Looking at your")) {
-              currentSection = 'assessment';
-            } else if (line.includes("Here's a template") || line.includes("Learning Task:")) {
-              currentSection = 'guidance';
-            } else if (line.includes("📝 Please") || line.includes("Remember,")) {
-              currentSection = 'nextSteps';
+            
+            // Now find where the next steps section starts
+            const nextStepsMarkers = ["Please revise", "📝 Please", "Remember,", "What specific", "2-3 specific"];
+            let nextStepsStart = -1;
+            
+            // Check for numbered lists after the assessment (likely guidance content)
+            // Example: "1. What specific automation tasks"
+            const numberedListMatch = content.substring(assessmentEnd).match(/\d+\.\s*\w+/);
+            if (numberedListMatch && numberedListMatch.index !== undefined) {
+              const potentialNextSteps = assessmentEnd + numberedListMatch.index;
+              console.log(`Numbered list found at position ${potentialNextSteps}, content: "${content.substring(potentialNextSteps, potentialNextSteps + 30)}..."`);
+              if (nextStepsStart === -1 || potentialNextSteps < nextStepsStart) {
+                nextStepsStart = potentialNextSteps;
+              }
             }
             
-            // Add line to current section
-            if (currentSection === 'greeting') {
-              parts.greeting += line + '\n';
-            } else if (currentSection === 'assessment') {
-              parts.assessment += line + '\n';
-            } else if (currentSection === 'guidance') {
-              parts.guidance += line + '\n';
-            } else if (currentSection === 'nextSteps') {
-              parts.nextSteps += line + '\n';
+            // Check for explicit next steps markers
+            for (const marker of nextStepsMarkers) {
+              const index = content.indexOf(marker, assessmentEnd);
+              if (index > -1) {
+                console.log(`Next steps marker found: "${marker}" at position ${index}`);
+                if (nextStepsStart === -1 || index < nextStepsStart) {
+                  nextStepsStart = index;
+                }
+              }
+            }
+            
+            console.log("Next steps section starts at:", nextStepsStart);
+            
+            if (nextStepsStart > assessmentEnd) {
+              // Everything between assessment end and next steps is guidance
+              parts.guidance = content.substring(assessmentEnd, nextStepsStart).trim();
+              parts.nextSteps = content.substring(nextStepsStart).trim();
+            } else {
+              // If we can't find next steps, assume everything after assessment is guidance
+              parts.guidance = content.substring(assessmentEnd).trim();
             }
           }
-          
-          // Trim whitespace
-          parts.greeting = parts.greeting.trim();
-          parts.assessment = parts.assessment.trim();
-          parts.guidance = parts.guidance.trim();
-          parts.nextSteps = parts.nextSteps.trim();
         }
         
-        // Debugging logs
-        console.log("Phase 2 emergency sections found:", {
+        console.log("Phase 2 sections detected:", {
           hasGreeting: !!parts.greeting,
           hasAssessment: !!parts.assessment,
           hasGuidance: !!parts.guidance,
           hasNextSteps: !!parts.nextSteps,
-          greetingChars: parts.greeting?.length || 0,
           assessmentChars: parts.assessment?.length || 0,
-          guidanceChars: parts.guidance?.length || 0,
-          nextStepsChars: parts.nextSteps?.length || 0
+          guidanceChars: parts.guidance?.length || 0
         });
         
         // Always have at least an empty div to trigger rendering
