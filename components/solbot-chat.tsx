@@ -908,228 +908,173 @@ For assistance, you can:
       // Log the content we're trying to format for debugging
       console.log("Content being formatted:", content);
 
-      // First try to detect if plain text sections exist (without markdown)
-      // These regex patterns look for common text headers
-      const plainAssessmentRegex = /(\n|^)(?:Assessment|Looking at your learning objective).*?(\n|$)/i;
-      const plainGuidanceRegex = /(\n|^)(?:Guidance|Let's develop this|Here's a template|Since we're starting).*?(\n|$)/i; 
-      const plainNextStepsRegex = /(\n|^)(?:Next Steps|Please revise).*?(\n|$)/i;
+      // Check for common section indicators
+      const hasAssessment = content.includes("Looking at your") || 
+                           content.includes("⚠️") || 
+                           content.includes("Task Identification");
       
-      // Also look for markdown headers with optional emojis
-      const mdAssessmentRegex = /(\n|^)##\s*(?:[\p{Emoji}]*\s*)?Assessment.*?(\n|$)/iu;
-      const mdGuidanceRegex = /(\n|^)##\s*(?:[\p{Emoji}]*\s*)?Guidance.*?(\n|$)/iu; 
-      const mdNextStepsRegex = /(\n|^)##\s*(?:[\p{Emoji}]*\s*)?Next\s*Steps.*?(\n|$)/iu;
+      const hasGuidance = content.includes("Let's develop") || 
+                         content.includes("Here's a template") || 
+                         content.includes("template") || 
+                         content.includes("```") ||
+                         content.includes("Since we're starting");
       
-      // Check for both plain text and markdown headers
-      const assessmentMatch = content.match(mdAssessmentRegex) || content.match(plainAssessmentRegex);
-      const guidanceMatch = content.match(mdGuidanceRegex) || content.match(plainGuidanceRegex);
-      const nextStepsMatch = content.match(mdNextStepsRegex) || content.match(plainNextStepsRegex);
+      const hasNextSteps = content.includes("Please revise") || 
+                          content.includes("Remember") || 
+                          content.includes("Next") || 
+                          content.includes("📝");
       
-      console.log("Section matches:", {
-        assessment: assessmentMatch?.[0],
-        guidance: guidanceMatch?.[0],
-        nextSteps: nextStepsMatch?.[0]
-      });
-      
-      // Special case: Check for yellow warning triangles which usually indicate Assessment section
-      const hasWarningTriangle = content.includes("⚠️");
-      // Special case: Check for code block which often indicates Guidance section
-      const hasCodeBlock = content.includes("```");
-      // Special case: Check for common next steps phrases
-      const hasNextStepsIndicator = content.includes("📝") || content.includes("revise") || content.includes("template");
-      
-      // If no section headings found, but we have indicators, manually add sections
-      if ((!assessmentMatch && !guidanceMatch && !nextStepsMatch) && 
-          (hasWarningTriangle || hasCodeBlock || hasNextStepsIndicator)) {
-        console.log("No explicit headers found, but section indicators detected");
-        // Use custom simplified approach for these cases
-        return createManualSections(content, hasWarningTriangle, hasCodeBlock, hasNextStepsIndicator);
+      // If no section indicators found, just render as is
+      if (!hasAssessment && !hasGuidance && !hasNextSteps) {
+        return <MarkdownRenderer content={content} />;
       }
       
-      // Initialize section content
-      let preamble = "";
-      let assessmentSection = "";
-      let guidanceSection = "";
-      let nextStepsSection = "";
+      // For simplicity in this version, we'll try to find natural section breaks
+      const lines = content.split('\n');
       
-      // Extract each section content based on matches
-      let sections: {index: number, match: RegExpMatchArray | null, section: string}[] = [];
+      // Track the sections
+      let sections: {
+        preamble: string[];
+        assessment: string[];
+        guidance: string[];
+        nextSteps: string[];
+      } = {
+        preamble: [],
+        assessment: [],
+        guidance: [],
+        nextSteps: []
+      };
       
-      if (assessmentMatch?.index !== undefined) {
-        sections.push({index: assessmentMatch.index, match: assessmentMatch, section: "assessment"});
-      }
+      // Detect section transitions
+      let currentSection: 'preamble' | 'assessment' | 'guidance' | 'nextSteps' = "preamble";
+      let foundAssessment = false;
+      let foundGuidance = false;
+      let foundNextSteps = false;
       
-      if (guidanceMatch?.index !== undefined) {
-        sections.push({index: guidanceMatch.index, match: guidanceMatch, section: "guidance"});
-      }
-      
-      if (nextStepsMatch?.index !== undefined) {
-        sections.push({index: nextStepsMatch.index, match: nextStepsMatch, section: "nextSteps"});
-      }
-      
-      // Sort sections by their index in the text
-      sections.sort((a, b) => a.index - b.index);
-      
-      // Extract the preamble (content before the first section)
-      if (sections.length > 0) {
-        preamble = content.substring(0, sections[0].index).trim();
-      } else {
-        // If no sections found, everything is preamble
-        preamble = content;
-      }
-      
-      // Extract content for each section
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i];
-        const nextSectionIndex = i < sections.length - 1 ? sections[i + 1].index : content.length;
-        const sectionContent = content.substring(section.index, nextSectionIndex);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
         
-        if (section.section === "assessment") {
-          assessmentSection = sectionContent;
-        } else if (section.section === "guidance") {
-          guidanceSection = sectionContent;
-        } else if (section.section === "nextSteps") {
-          nextStepsSection = sectionContent;
+        // Detect transitions to Assessment section
+        if (!foundAssessment && 
+            (line.includes("Looking at your") || 
+             line.includes("⚠️") || 
+             line.includes("Task Identification"))) {
+          currentSection = "assessment";
+          foundAssessment = true;
+          // Skip the line containing "Looking at your" to avoid duplication
+          if (line.includes("Looking at your")) {
+            continue;
+          }
         }
+        // Detect transitions to Guidance section
+        else if (foundAssessment && !foundGuidance &&
+                (line.startsWith("Let's develop") || 
+                 line.startsWith("Here's a template") || 
+                 line.startsWith("Since we're starting") ||
+                 line.includes("template"))) {
+          currentSection = "guidance";
+          foundGuidance = true;
+          // Skip this line to avoid duplication
+          continue;
+        }
+        // Detect transitions to Next Steps section
+        else if ((foundAssessment || foundGuidance) && !foundNextSteps &&
+                (line.startsWith("Please revise") || 
+                 line.startsWith("Remember") || 
+                 line.startsWith("Next") || 
+                 line.includes("📝"))) {
+          currentSection = "nextSteps";
+          foundNextSteps = true;
+          // Skip this line to avoid duplication
+          continue;
+        }
+        
+        // Add line to current section
+        sections[currentSection].push(line);
       }
       
-      console.log("Extracted sections:", {
-        preamble: preamble?.substring(0, 50) + "...",
-        assessment: assessmentSection?.substring(0, 50) + "...",
-        guidance: guidanceSection?.substring(0, 50) + "...",
-        nextSteps: nextStepsSection?.substring(0, 50) + "..."
-      });
+      // If sections are suspiciously empty, use fallback partitioning
+      if (foundAssessment && sections.assessment.length < 2) {
+        // Determine a reasonable split point for assessment
+        const splitPoint = Math.floor(lines.length / 3);
+        sections.assessment = lines.slice(0, splitPoint);
+        if (foundGuidance || hasGuidance) {
+          const secondSplit = Math.floor(lines.length * 2 / 3);
+          sections.guidance = lines.slice(splitPoint, secondSplit);
+          sections.nextSteps = lines.slice(secondSplit);
+        } else {
+          sections.guidance = lines.slice(splitPoint);
+        }
+      } else if (!foundAssessment && (hasAssessment || hasGuidance || hasNextSteps)) {
+        // Fallback to rough thirds
+        const firstThird = Math.floor(lines.length / 3);
+        const secondThird = Math.floor(lines.length * 2 / 3);
+        
+        sections.assessment = lines.slice(0, firstThird);
+        sections.guidance = lines.slice(firstThird, secondThird);
+        sections.nextSteps = lines.slice(secondThird);
+      }
       
-      // Return a styled component with each section properly colored
+      // Prepare section content with explicit headings
+      let assessmentContent = "";
+      let guidanceContent = "";
+      let nextStepsContent = "";
+      let preambleContent = sections.preamble.join('\n');
+      
+      if (sections.assessment.length > 0) {
+        assessmentContent = sections.assessment.join('\n');
+      }
+      
+      if (sections.guidance.length > 0) {
+        guidanceContent = sections.guidance.join('\n');
+      }
+      
+      if (sections.nextSteps.length > 0) {
+        nextStepsContent = sections.nextSteps.join('\n');
+      }
+      
+      // Render the custom formatted message
       return (
-        <div className="formatted-message space-y-3">
-          {preamble && (
-            <div>
-              <MarkdownRenderer content={preamble} />
+        <div className="formatted-message space-y-5">
+          {preambleContent && (
+            <div className="text-white/90">
+              <MarkdownRenderer content={preambleContent} />
             </div>
           )}
           
-          {assessmentSection && (
-            <div className="border-l-4 border-amber-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <div className="text-amber-400 font-medium text-lg mb-2">Assessment</div>
-              <MarkdownRenderer content={assessmentSection} />
+          {assessmentContent && (
+            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/30 rounded-md">
+              <h2 className="text-amber-400 text-xl font-medium mb-3">Assessment</h2>
+              <div className="text-white/90">
+                <MarkdownRenderer content={assessmentContent} />
+              </div>
             </div>
           )}
           
-          {guidanceSection && (
-            <div className="border-l-4 border-teal-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <div className="text-teal-400 font-medium text-lg mb-2">Guidance</div>
-              <MarkdownRenderer content={guidanceSection} />
+          {guidanceContent && (
+            <div className="border-l-4 border-teal-500 pl-3 py-3 bg-slate-800/30 rounded-md">
+              <h2 className="text-teal-400 text-xl font-medium mb-3">Guidance</h2>
+              <div className="text-white/90">
+                <MarkdownRenderer content={guidanceContent} />
+              </div>
             </div>
           )}
           
-          {nextStepsSection && (
-            <div className="border-l-4 border-blue-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <div className="text-blue-400 font-medium text-lg mb-2">Next Steps</div>
-              <MarkdownRenderer content={nextStepsSection} />
+          {nextStepsContent && (
+            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/30 rounded-md">
+              <h2 className="text-blue-400 text-xl font-medium mb-3">Next Steps</h2>
+              <div className="text-white/90">
+                <MarkdownRenderer content={nextStepsContent} />
+              </div>
             </div>
           )}
         </div>
       );
-      
     } catch (error) {
       console.error('Error formatting structured message:', error);
       // Return original content if formatting fails
       return <MarkdownRenderer content={content} />;
     }
-  };
-  
-  // Helper function to manually create sections based on content indicators
-  const createManualSections = (content: string, hasAssessment: boolean, hasGuidance: boolean, hasNextSteps: boolean) => {
-    // Split content by common dividers
-    const lines = content.split('\n');
-    let currentSection = "preamble";
-    let sections: {[key: string]: string[]} = {
-      preamble: [],
-      assessment: [],
-      guidance: [],
-      nextSteps: []
-    };
-    
-    // First pass: identify section boundaries based on content indicators
-    let foundAssessment = false;
-    let foundGuidance = false;
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      
-      // Assessment section usually starts with warning triangles or "Task Identification"
-      if (!foundAssessment && (line.includes("⚠️") || line.includes("Task Identification") || 
-          line.includes("Looking at your"))) {
-        currentSection = "assessment";
-        foundAssessment = true;
-      }
-      // Guidance section usually has templates, code blocks or structural elements
-      else if (!foundGuidance && foundAssessment && 
-               (line.includes("template") || line.includes("```") || 
-                line.includes("Let me help") || line.includes("Let's develop") ||
-                line.includes("Here's a"))) {
-        currentSection = "guidance";
-        foundGuidance = true;
-      }
-      // Next steps usually at the end with specific phrases
-      else if (foundGuidance && (line.includes("revise") || line.includes("Next") || 
-               line.includes("📝") || line.includes("Remember") || 
-               line.includes("Please"))) {
-        currentSection = "nextSteps";
-      }
-      
-      sections[currentSection].push(line);
-    }
-    
-    // If we didn't find any sections but we know they should exist, do a simpler split
-    if (!foundAssessment && !foundGuidance && (hasAssessment || hasGuidance || hasNextSteps)) {
-      // Rough heuristic: divide content into thirds
-      const third = Math.floor(lines.length / 3);
-      
-      if (hasAssessment) {
-        sections.assessment = lines.slice(0, third);
-      }
-      
-      if (hasGuidance) {
-        sections.guidance = lines.slice(third, third * 2);
-      }
-      
-      if (hasNextSteps) {
-        sections.nextSteps = lines.slice(third * 2);
-      }
-    }
-    
-    // Return the manually created sections
-    return (
-      <div className="formatted-message space-y-3">
-        {sections.preamble.length > 0 && (
-          <div>
-            <MarkdownRenderer content={sections.preamble.join('\n')} />
-          </div>
-        )}
-        
-        {sections.assessment.length > 0 && (
-          <div className="border-l-4 border-amber-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
-            <div className="text-amber-400 font-medium text-lg mb-2">Assessment</div>
-            <MarkdownRenderer content={sections.assessment.join('\n')} />
-          </div>
-        )}
-        
-        {sections.guidance.length > 0 && (
-          <div className="border-l-4 border-teal-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
-            <div className="text-teal-400 font-medium text-lg mb-2">Guidance</div>
-            <MarkdownRenderer content={sections.guidance.join('\n')} />
-          </div>
-        )}
-        
-        {sections.nextSteps.length > 0 && (
-          <div className="border-l-4 border-blue-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
-            <div className="text-blue-400 font-medium text-lg mb-2">Next Steps</div>
-            <MarkdownRenderer content={sections.nextSteps.join('\n')} />
-          </div>
-        )}
-      </div>
-    );
   };
 
   // Add a debugging utility to detect when we're in Phase 2
