@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { PlayCircle, CheckCircle, Brain, MoveRight, Sparkles, BookMarked, ChevronRight, ChevronLeft, ChevronUp, ChevronDown } from "lucide-react"
+import { PlayCircle, CheckCircle, Brain, MoveRight, Sparkles, BookMarked, ChevronRight, ChevronLeft, ChevronUp, ChevronDown, HelpCircle, AlertCircle, ArrowRight } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 import KnowledgeCheck from "./knowledge-check"
 import { Bot } from "lucide-react"
 import SolBotChat from "@/components/solbot-chat"
@@ -219,6 +221,7 @@ export default function Phase3Content() {
     icon: <BookMarked className="h-10 w-10 text-purple-400" />,
   }
 
+  // Handle moving to next question
   const handleKnowledgeCheckComplete = () => {
     if (currentQuestionIndex < knowledgeChecks.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
@@ -239,6 +242,161 @@ export default function Phase3Content() {
   const handleComplete = () => {
     router.push("/phase4")
   }
+
+  // Knowledge Check Component
+  const KnowledgeCheckQuiz = () => {
+    const currentQuestion = knowledgeChecks[currentQuestionIndex];
+    const [selectedOption, setSelectedOption] = useState<string | null>(null);
+    const [submitted, setSubmitted] = useState(false);
+    const [isCorrect, setIsCorrect] = useState(false);
+    
+    // Reset component state when question changes
+    useEffect(() => {
+      setSelectedOption(null);
+      setSubmitted(false);
+      setIsCorrect(false);
+    }, [currentQuestionIndex]);
+    
+    const handleSubmit = () => {
+      if (!selectedOption) return;
+      
+      const correct = selectedOption === currentQuestion.correctAnswer;
+      setIsCorrect(correct);
+      setSubmitted(true);
+    };
+    
+    const handleTryAgain = () => {
+      setSelectedOption(null);
+      setSubmitted(false);
+    };
+    
+    const handleNext = () => {
+      if (currentQuestionIndex < knowledgeChecks.length - 1) {
+        setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+      } else {
+        setQuizCompleted(true);
+      }
+    };
+    
+    return (
+      <Card className="bg-slate-800/50 border border-indigo-500/30">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                <HelpCircle className="h-5 w-5 text-indigo-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Knowledge Check {currentQuestionIndex + 1}</h3>
+            </div>
+            <span className="text-sm text-white/60">
+              Question {currentQuestionIndex + 1} of {knowledgeChecks.length}
+            </span>
+          </div>
+
+          <p className="text-white/90 mb-6">{currentQuestion.question}</p>
+
+          <RadioGroup
+            value={selectedOption || ""}
+            onValueChange={setSelectedOption}
+            className="space-y-3"
+            disabled={submitted}
+          >
+            {currentQuestion.options.map((option, index) => (
+              <div
+                key={index}
+                className={`flex items-start space-x-2 rounded-lg border p-3 transition-colors ${
+                  submitted && option === currentQuestion.correctAnswer
+                    ? "border-emerald-500/50 bg-emerald-500/10"
+                    : submitted && option === selectedOption
+                      ? "border-red-500/50 bg-red-500/10"
+                      : "border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10"
+                }`}
+              >
+                <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
+                <div className="flex-1">
+                  <Label
+                    htmlFor={`option-${index}`}
+                    className={`text-sm font-medium ${
+                      submitted && option === currentQuestion.correctAnswer
+                        ? "text-emerald-400"
+                        : submitted && option === selectedOption
+                          ? "text-red-400"
+                          : "text-white/80"
+                    }`}
+                  >
+                    {option}
+                  </Label>
+                </div>
+                {submitted && option === currentQuestion.correctAnswer && (
+                  <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                )}
+                {submitted && option === selectedOption && option !== currentQuestion.correctAnswer && (
+                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                )}
+              </div>
+            ))}
+          </RadioGroup>
+
+          {submitted && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`mt-6 p-4 rounded-lg ${
+                isCorrect ? "bg-emerald-500/20 border border-emerald-500/30" : "bg-red-500/20 border border-red-500/30"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                {isCorrect ? (
+                  <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                )}
+                <div>
+                  <h4 className={`font-bold ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
+                    {isCorrect ? "Correct!" : "Not quite right"}
+                  </h4>
+                  <p className="text-white/80 mt-1">{currentQuestion.explanation}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          <div className="mt-6 flex justify-between items-center">
+            <div>
+              {!submitted ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!selectedOption}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/30 disabled:opacity-50"
+                >
+                  Submit Answer
+                </Button>
+              ) : !isCorrect ? (
+                <Button
+                  onClick={handleTryAgain}
+                  variant="outline"
+                  className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
+                >
+                  Try Again
+                </Button>
+              ) : null}
+            </div>
+            
+            {/* Next/Complete button for correct answers */}
+            {submitted && isCorrect && (
+              <Button
+                onClick={handleNext}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 shadow-lg"
+              >
+                {currentQuestionIndex < knowledgeChecks.length - 1 ? "Next Question" : "Complete Quiz"} <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-slate-900 to-slate-800 text-white py-8">
@@ -359,15 +517,7 @@ export default function Phase3Content() {
                   <div className="text-white/80 mb-4">
                     <p>Let's test your understanding of these evidence-based learning strategies.</p>
                   </div>
-                  <KnowledgeCheck 
-                    questionNumber={currentQuestionIndex + 1}
-                    question={knowledgeChecks[currentQuestionIndex].question}
-                    options={knowledgeChecks[currentQuestionIndex].options}
-                    correctAnswer={knowledgeChecks[currentQuestionIndex].correctAnswer}
-                    explanation={knowledgeChecks[currentQuestionIndex].explanation}
-                    onComplete={handleKnowledgeCheckComplete}
-                    totalQuestions={knowledgeChecks.length}
-                  />
+                  <KnowledgeCheckQuiz />
                 </div>
               )}
               
