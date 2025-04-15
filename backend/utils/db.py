@@ -29,13 +29,15 @@ load_dotenv()
 logger = logging.getLogger("solbot.db")
 
 # Supabase configuration
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+
+logger.info(f"Supabase URL available: {supabase_url is not None}, Supabase Key available: {supabase_key is not None}")
 
 # Global client
 _supabase_client: Optional[Client] = None
 # Set to False to use Supabase
-_using_memory_db = os.getenv("USE_MEMORY_DB", "false").lower() == "true"
+_using_memory_db = os.environ.get("USE_MEMORY_DB", "false").lower() == "true"
 
 # In-memory database fallback
 _memory_db = {
@@ -71,9 +73,9 @@ def init_db():
     """Initialize the database connection or fallback to memory storage"""
     global _supabase_client, _using_memory_db
     
-    # First check if the supabase module is available globally
-    if not supabase_available or 'create_client' not in globals() or globals()['create_client'] is None:
-        logger.warning("Supabase package not properly installed or create_client not defined. Using in-memory storage.")
+    # First check if the supabase package is available
+    if not supabase_available:
+        logger.warning("Supabase package not properly installed. Using in-memory storage.")
         _using_memory_db = True
         return
     
@@ -81,6 +83,9 @@ def init_db():
     if _using_memory_db:
         logger.info("Using in-memory storage for database operations")
         return
+    
+    # Log environment variable status
+    logger.info(f"Supabase URL available: {supabase_url is not None}, Supabase Key available: {supabase_key is not None}")
     
     if not supabase_url or not supabase_key:
         logger.warning("Supabase credentials not found. Using in-memory storage.")
@@ -115,8 +120,8 @@ def get_db() -> Optional[Client]:
     """Get the database client if available"""
     global _supabase_client, supabase_available
     
-    if not supabase_available or 'create_client' not in globals() or globals()['create_client'] is None:
-        logger.debug("Supabase package not available or create_client not defined")
+    if not supabase_available:
+        logger.debug("Supabase package not available")
         return None
     
     if not _using_memory_db and _supabase_client is None:
