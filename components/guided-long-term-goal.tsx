@@ -678,7 +678,7 @@ I'll guide you through a series of questions that will help you create a meaning
                 onClick={() => onComplete && onComplete("phase2/smart")}
                 className="bg-purple-600 hover:bg-purple-500"
               >
-                Continue <ArrowRight size={16} className="ml-2" />
+                Next Phase <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           </div>

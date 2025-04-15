@@ -1533,7 +1533,7 @@ For assistance, you can:
             onClick={() => onContinue && onContinue()}
             className="px-8 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white"
           >
-            Continue <ArrowRight className="h-4 w-4 ml-1" />
+            Next Phase <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       )}

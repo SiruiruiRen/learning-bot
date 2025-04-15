@@ -814,7 +814,7 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
                 onClick={() => onComplete && onComplete("phase3")}
                 className="bg-teal-600 hover:bg-teal-500"
               >
-                Continue <ArrowRight size={16} className="ml-2" />
+                Next Phase <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           </div>

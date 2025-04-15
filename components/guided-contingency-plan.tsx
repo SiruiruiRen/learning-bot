@@ -689,7 +689,7 @@ I'll guide you through creating implementation intentions that will help you ant
                 onClick={() => onComplete && onComplete("phase5")}
                 className="bg-emerald-600 hover:bg-emerald-500"
               >
-                Continue <ArrowRight size={16} className="ml-2" />
+                Next Phase <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           </div>

@@ -693,7 +693,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
                 onClick={() => onComplete && onComplete("summary")}
                 className="bg-indigo-600 hover:bg-indigo-500"
               >
-                Continue <ArrowRight size={16} className="ml-2" />
+                Next Phase <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           </div>
