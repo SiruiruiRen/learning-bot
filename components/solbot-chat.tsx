@@ -961,8 +961,6 @@ For assistance, you can:
           
           if (assessmentEnd > assessmentStart) {
             parts.assessment = content.substring(assessmentStart, assessmentEnd).trim();
-            // Clean section headers from assessment
-            parts.assessment = parts.assessment.replace(/^Assessment\s*\n+/i, "");
             
             // Now find where the next steps section starts
             const nextStepsMarkers = ["Please revise", "📝 Please", "Remember,", "What specific", "2-3 specific"];
@@ -996,16 +994,9 @@ For assistance, you can:
               // Everything between assessment end and next steps is guidance
               parts.guidance = content.substring(assessmentEnd, nextStepsStart).trim();
               parts.nextSteps = content.substring(nextStepsStart).trim();
-              
-              // Clean section headers
-              parts.guidance = parts.guidance.replace(/^Guidance\s*\n+/i, "");
-              parts.nextSteps = parts.nextSteps.replace(/^Next\s+Steps\s*\n+/i, "");
             } else {
               // If we can't find next steps, assume everything after assessment is guidance
               parts.guidance = content.substring(assessmentEnd).trim();
-              
-              // Clean section headers
-              parts.guidance = parts.guidance.replace(/^Guidance\s*\n+/i, "");
             }
           }
         }
@@ -1031,18 +1022,21 @@ For assistance, you can:
             
             {parts.assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h5 className="text-amber-400 text-sm font-medium mb-1">Assessment</h5>
                 <MarkdownRenderer content={parts.assessment} />
               </div>
             )}
             
             {parts.guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h5 className="text-teal-400 text-sm font-medium mb-1">Guidance</h5>
                 <MarkdownRenderer content={parts.guidance} />
               </div>
             )}
             
             {parts.nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <h5 className="text-blue-400 text-sm font-medium mb-1">Next Steps</h5>
                 <MarkdownRenderer content={parts.nextSteps} />
               </div>
             )}
@@ -1095,17 +1089,20 @@ For assistance, you can:
             )}
             {sections.assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <MarkdownRenderer content={sections.assessment.replace(/^Assessment\s*\n+/i, "")} />
+                <h5 className="text-amber-400 text-sm font-medium mb-1">Assessment</h5>
+                <MarkdownRenderer content={sections.assessment} />
               </div>
             )}
             {sections.guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <MarkdownRenderer content={sections.guidance.replace(/^Guidance\s*\n+/i, "")} />
+                <h5 className="text-teal-400 text-sm font-medium mb-1">Guidance</h5>
+                <MarkdownRenderer content={sections.guidance} />
               </div>
             )}
             {sections.nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <MarkdownRenderer content={sections.nextSteps.replace(/^Next\s+Steps\s*\n+/i, "")} />
+                <h5 className="text-blue-400 text-sm font-medium mb-1">Next Steps</h5>
+                <MarkdownRenderer content={sections.nextSteps} />
               </div>
             )}
           </div>
@@ -1238,19 +1235,22 @@ For assistance, you can:
             
             {assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <MarkdownRenderer content={assessment.replace(/^Assessment\s*\n+/i, "")} />
+                <h5 className="text-amber-400 text-sm font-medium mb-1">Assessment</h5>
+                <MarkdownRenderer content={assessment} />
               </div>
             )}
             
             {guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <MarkdownRenderer content={guidance.replace(/^Guidance\s*\n+/i, "")} />
+                <h5 className="text-teal-400 text-sm font-medium mb-1">Guidance</h5>
+                <MarkdownRenderer content={guidance} />
               </div>
             )}
             
             {nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <MarkdownRenderer content={nextSteps.replace(/^Next\s+Steps\s*\n+/i, "")} />
+                <h5 className="text-blue-400 text-sm font-medium mb-1">Next Steps</h5>
+                <MarkdownRenderer content={nextSteps} />
               </div>
             )}
           </div>
