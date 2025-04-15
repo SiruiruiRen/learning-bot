@@ -910,6 +910,7 @@ For assistance, you can:
 
       // Check for common section indicators
       const hasAssessment = content.includes("Looking at your") || 
+                           content.includes("\u26A0") || // Unicode for ⚠️
                            content.includes("⚠️") || 
                            content.includes("Task Identification");
       
@@ -922,10 +923,24 @@ For assistance, you can:
       const hasNextSteps = content.includes("Please revise") || 
                           content.includes("Remember") || 
                           content.includes("Next") || 
-                          content.includes("📝");
+                          content.includes("📝") ||
+                          content.includes("\uD83D\uDCCB"); // Unicode for 📝
+      
+      // Log section indicators for debugging
+      console.log("Section indicators detected:", {
+        hasAssessment,
+        hasGuidance,
+        hasNextSteps,
+        containsWarningTriangle: content.includes("⚠️"),
+        containsTemplate: content.includes("template"),
+        containsCodeBlock: content.includes("```"),
+        containsLooking: content.includes("Looking at your"),
+        fullContent: content.substring(0, 100) + "..."
+      });
       
       // If no section indicators found, just render as is
       if (!hasAssessment && !hasGuidance && !hasNextSteps) {
+        console.log("No section indicators found, rendering original content");
         return <MarkdownRenderer content={content} />;
       }
       

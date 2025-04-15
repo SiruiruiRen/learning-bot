@@ -30,7 +30,16 @@ const MarkdownRenderer = ({ content, className = '' }: MarkdownRendererProps) =>
         const rawHTML = marked.parse(content, markedOptions) as string;
         console.log("Generated HTML:", rawHTML);
         
+        // Configure DOMPurify to allow h2 tags and other formatting
+        DOMPurify.setConfig({
+          ADD_TAGS: ['h2', 'h1', 'h3'],
+          FORBID_TAGS: [],
+          FORBID_ATTR: []
+        });
+        
         const sanitizedHTML = DOMPurify.sanitize(rawHTML);
+        console.log("Sanitized HTML:", sanitizedHTML);
+        
         markdownRef.current.innerHTML = sanitizedHTML;
       } catch (error) {
         console.error('Error parsing markdown:', error);
