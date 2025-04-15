@@ -270,18 +270,6 @@ export default function Phase1Content() {
             className="mt-6 p-4 rounded-md bg-green-800/20 border border-green-600/40"
           >
             <p className="text-white">{feedback}</p>
-            
-            {quizCompleted && (
-              <div className="mt-4">
-                <Button
-                  onClick={handleComplete}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md flex items-center gap-2"
-                >
-                  Continue to Next Phase
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
           </motion.div>
         )}
       </motion.div>
