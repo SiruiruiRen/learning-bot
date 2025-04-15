@@ -17,21 +17,21 @@
   font-size: 1.35rem;
   font-weight: 600;
   margin-top: 0.5rem;
-  margin-bottom: 0.3rem;
-  color: white;
+  margin-bottom: 0.5rem;
+  color: #14b8a6; /* Default teal color for h2 */
 }
 
-/* Add specific styles for section headings */
+/* Section-specific heading colors */
 .markdown-content h2:contains("Assessment") {
-  color: #f59e0b; /* amber-500 */
+  color: #f59e0b !important; /* amber-500 */
 }
 
 .markdown-content h2:contains("Guidance") {
-  color: #14b8a6; /* teal-500 */
+  color: #14b8a6 !important; /* teal-500 */
 }
 
 .markdown-content h2:contains("Next Steps") {
-  color: #3b82f6; /* blue-500 */
+  color: #3b82f6 !important; /* blue-500 */
 }
 
 .markdown-content h3 {
