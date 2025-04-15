@@ -44,7 +44,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     );
   }
   
-  // Extract sections using simple approach
+  // Extract sections using section headers pattern
   const sections: {[key: string]: string} = {
     intro: "",
     assessment: "",
@@ -52,46 +52,46 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     nextSteps: ""
   };
   
-  // Basic section extraction
+  // Improved section extraction
   const lines = cleanedContent.split('\n');
   let currentSection = "intro";
   
   for (const line of lines) {
-    // Check for section indicators more intelligently
-    if ((currentSection === "intro" && (
+    // Check for explicit section headers first
+    if (line.match(/^#+\s*Assessment/i) || line.match(/^Assessment:/i)) {
+      currentSection = "assessment";
+      continue; // Skip the header line
+    }
+    else if (line.match(/^#+\s*Guidance/i) || line.match(/^Guidance:/i)) {
+      currentSection = "guidance";
+      continue; // Skip the header line
+    }
+    else if (line.match(/^#+\s*Next\s*Steps/i) || line.match(/^Next\s*Steps:/i)) {
+      currentSection = "nextSteps";
+      continue; // Skip the header line
+    }
+    // Then check for implicit section indicators
+    else if (currentSection === "intro" && (
          line.includes("Looking at your") || 
          line.includes("⚠️") || 
          line.match(/Progress Checks:/) || 
-         line.includes("Assessment"))) ||
-        (line.includes("## Assessment"))) {
+         line.includes("Assessment"))) {
       currentSection = "assessment";
-      // Don't skip the line if it contains actual content we want to display
-      if (line.trim() === "## Assessment") {
-        continue; // Only skip pure markdown headers
-      }
     }
-    else if ((currentSection !== "intro" && !currentSection.includes("nextSteps") && (
+    else if (currentSection !== "intro" && !currentSection.includes("nextSteps") && (
               line.includes("Complete this template") || 
               line.includes("Since your") ||
               line.includes("Since we're") ||
               line.match(/PROGRESS METRICS:/) ||
-              line.includes("template:"))) ||
-             (line.includes("## Guidance"))) {
+              line.includes("template:"))) {
       currentSection = "guidance";
-      if (line.trim() === "## Guidance") {
-        continue;
-      }
     }
-    else if ((line.includes("Please revise") || 
+    else if (line.includes("Please revise") || 
               line.includes("Remember") || 
               line.includes("📝") ||
               line.match(/^\d+\.\s+If\s+\_+/) ||
-              line.includes("revise your")) ||
-             (line.includes("## Next Steps"))) {
+              line.includes("revise your")) {
       currentSection = "nextSteps";
-      if (line.trim() === "## Next Steps") {
-        continue;
-      }
     }
     
     // Add line to current section
@@ -103,7 +103,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     sections[key] = sections[key].trim();
   });
   
-  // Return formatted content with colored sections
+  // Return formatted content with colored sections and explicit section headers
   return (
     <div className="flex flex-col space-y-3">
       {sections.intro && (
