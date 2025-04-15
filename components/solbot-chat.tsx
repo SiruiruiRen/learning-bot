@@ -908,31 +908,96 @@ For assistance, you can:
       // Log the content we're trying to format for debugging
       console.log("Content being formatted:", content);
 
-      // Preprocess Claude's content to properly format headings
-      let formattedContent = content;
+      // Instead of using markdown headings, we'll extract sections and apply custom styling
+      let sections: { [key: string]: string } = {};
+      let currentSection = "preamble";
+      sections[currentSection] = "";
+
+      // Split content into lines for processing
+      const lines = content.split('\n');
       
-      // Detect and convert plain text section headings to markdown headings
-      // Only formatting the core required headlines as specified in final_prompts.py
-      const sectionPatterns = [
-        // Match Assessment patterns (with optional emoji and colon)
-        { regex: /(\n|^)Assessment(?:\s*:)?(?:\n|$)/g, replacement: "$1## Assessment$2" },
-        // Match Guidance patterns
-        { regex: /(\n|^)Guidance(?:\s*:)?(?:\n|$)/g, replacement: "$1## Guidance$2" },
-        // Match Next Steps patterns
-        { regex: /(\n|^)Next Steps(?:\s*:)?(?:\n|$)/g, replacement: "$1## Next Steps$2" },
-        // Match Greeting patterns
-        { regex: /(\n|^)Greeting(?:\s*:)?(?:\n|$)/g, replacement: "$1## Greeting$2" }
-      ];
+      for (const line of lines) {
+        // Check for section headers - using looser matching for various formats
+        if (line.trim() === "Assessment" || line.includes("Looking at your learning objective")) {
+          currentSection = "assessment";
+          sections[currentSection] = sections[currentSection] || "";
+          // Don't add the heading line itself to the section content
+          continue;
+        } 
+        else if (line.trim() === "Guidance" || line.includes("Let's develop this further")) {
+          currentSection = "guidance";
+          sections[currentSection] = sections[currentSection] || "";
+          continue;
+        }
+        else if (line.trim() === "Next Steps" || line.includes("Please revise")) {
+          currentSection = "nextSteps";
+          sections[currentSection] = sections[currentSection] || "";
+          continue;
+        }
+        else if (line.trim() === "Greeting") {
+          currentSection = "greeting";
+          sections[currentSection] = sections[currentSection] || "";
+          continue;
+        }
+        
+        // Add line to current section
+        sections[currentSection] += line + "\n";
+      }
       
-      // Apply each pattern
-      sectionPatterns.forEach(pattern => {
-        formattedContent = formattedContent.replace(pattern.regex, pattern.replacement);
+      // Trim whitespace from all sections
+      Object.keys(sections).forEach(key => {
+        sections[key] = sections[key].trim();
       });
       
-      console.log("Applied section formatting, result:", formattedContent);
+      // If we didn't extract any sections, return the original markdown
+      if (Object.keys(sections).length <= 1 && !sections.assessment && !sections.guidance && !sections.nextSteps) {
+        console.log("No sections extracted, using original markdown rendering");
+        return <MarkdownRenderer content={content} />;
+      }
       
-      // Render the preprocessed content with markdown formatting
-      return <MarkdownRenderer content={formattedContent} />;
+      // Return a styled component with each section properly colored and formatted
+      return (
+        <div className="formatted-message space-y-5">
+          {sections.preamble && (
+            <div className="text-white/90">
+              <MarkdownRenderer content={sections.preamble} />
+            </div>
+          )}
+          
+          {sections.greeting && (
+            <div className="text-teal-300">
+              <MarkdownRenderer content={sections.greeting} />
+            </div>
+          )}
+          
+          {sections.assessment && (
+            <div>
+              <div className="text-amber-400 font-medium text-lg mb-2">Assessment</div>
+              <div className="border-l-2 border-amber-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <MarkdownRenderer content={sections.assessment} />
+              </div>
+            </div>
+          )}
+          
+          {sections.guidance && (
+            <div>
+              <div className="text-teal-400 font-medium text-lg mb-2">Guidance</div>
+              <div className="border-l-2 border-teal-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <MarkdownRenderer content={sections.guidance} />
+              </div>
+            </div>
+          )}
+          
+          {sections.nextSteps && (
+            <div>
+              <div className="text-blue-400 font-medium text-lg mb-2">Next Steps</div>
+              <div className="border-l-2 border-blue-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+                <MarkdownRenderer content={sections.nextSteps} />
+              </div>
+            </div>
+          )}
+        </div>
+      );
       
     } catch (error) {
       console.error('Error formatting structured message:', error);
