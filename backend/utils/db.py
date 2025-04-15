@@ -11,11 +11,8 @@ create_client = None
 Client = None
 
 try:
-    # Try to import supabase - use proper technique to get global references
-    from supabase import create_client as _create_client, Client as _Client
-    # Explicitly assign to module level variables
-    create_client = _create_client
-    Client = _Client
+    # Import directly without aliasing to avoid scoping issues
+    from supabase import create_client, Client
     supabase_available = True
     logging.getLogger("solbot.db").info("Supabase package successfully imported")
 except ImportError as e:
@@ -74,8 +71,8 @@ def init_db():
     """Initialize the database connection or fallback to memory storage"""
     global _supabase_client, _using_memory_db
     
-    # First check if Supabase package is available and create_client is defined
-    if not supabase_available or create_client is None:
+    # First check if the supabase module is available globally
+    if not supabase_available or 'create_client' not in globals() or globals()['create_client'] is None:
         logger.warning("Supabase package not properly installed or create_client not defined. Using in-memory storage.")
         _using_memory_db = True
         return
@@ -118,8 +115,8 @@ def get_db() -> Optional[Client]:
     """Get the database client if available"""
     global _supabase_client, supabase_available
     
-    if not supabase_available:
-        logger.debug("Supabase package not available")
+    if not supabase_available or 'create_client' not in globals() or globals()['create_client'] is None:
+        logger.debug("Supabase package not available or create_client not defined")
         return None
     
     if not _using_memory_db and _supabase_client is None:
