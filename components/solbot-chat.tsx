@@ -900,7 +900,7 @@ For assistance, you can:
     return phaseSequence[currentIndex + 1];
   };
 
-  // Format message with Claude's native headlines
+  // Format message with preprocessing for Claude's headlines
   const formatStructuredMessage = (content: string) => {
     if (!content || typeof content !== 'string') return <MarkdownRenderer content={content} />;
     
@@ -908,9 +908,24 @@ For assistance, you can:
       // Log the content we're trying to format for debugging
       console.log("Content being formatted:", content);
 
-      // Simple and clean approach - let Claude's output format be rendered directly
-      // Claude is already instructed to include section headers in its responses
-      return <MarkdownRenderer content={content} />;
+      // Preprocess Claude's content to properly format headings
+      let formattedContent = content;
+      
+      // Detect and convert plain text section headings to markdown headings
+      // These patterns match standalone "Assessment", "Guidance", etc. text lines
+      const sectionPatterns = [
+        { regex: /^Assessment(?:\s*\n+|$)/m, replacement: "## Assessment\n" },
+        { regex: /^Guidance(?:\s*\n+|$)/m, replacement: "## Guidance\n" },
+        { regex: /^Next Steps(?:\s*\n+|$)/m, replacement: "## Next Steps\n" }
+      ];
+      
+      // Apply each pattern
+      sectionPatterns.forEach(pattern => {
+        formattedContent = formattedContent.replace(pattern.regex, pattern.replacement);
+      });
+      
+      // Render the preprocessed content with markdown formatting
+      return <MarkdownRenderer content={formattedContent} />;
       
     } catch (error) {
       console.error('Error formatting structured message:', error);
