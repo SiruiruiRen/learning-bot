@@ -979,43 +979,23 @@ For assistance, you can:
       }
       
       // Extract section headers for display
-      let assessmentHeader = "Assessment";
-      let guidanceHeader = "Guidance";
-      let nextStepsHeader = "Next Steps";
+      const assessmentHeader = assessmentMatch?.[0]?.trim() || "Assessment";
+      const guidanceHeader = guidanceMatch?.[0]?.trim() || "Guidance";
+      const nextStepsHeader = nextStepsMatch?.[0]?.trim() || "Next Steps";
       
-      // Extract actual headers from matches if they exist
-      if (assessmentMatch && assessmentMatch[2]) {
-        assessmentHeader = assessmentMatch[2].trim();
-      }
-      
-      if (guidanceMatch && guidanceMatch[2]) {
-        guidanceHeader = guidanceMatch[2].trim();
-      }
-      
-      if (nextStepsMatch && nextStepsMatch[2]) {
-        nextStepsHeader = nextStepsMatch[2].trim();
-      }
+      console.log("Section headers extracted:", {
+        assessment: assessmentHeader,
+        guidance: guidanceHeader,
+        nextSteps: nextStepsHeader
+      });
       
       // Debug the sections detected
       console.log("Sections detected:", {
-        preamble: preambleContent.substring(0, 50) + "...",
-        assessment: assessmentContent.substring(0, 50) + "...",
-        guidance: guidanceContent.substring(0, 50) + "...",
-        nextSteps: nextStepsContent.substring(0, 50) + "..."
+        preamble: preambleContent?.substring(0, 50) + "...",
+        assessment: assessmentContent?.substring(0, 50) + "...",
+        guidance: guidanceContent?.substring(0, 50) + "...",
+        nextSteps: nextStepsContent?.substring(0, 50) + "..."
       });
-      
-      // Build the full section content, including the header line
-      if (assessmentContent && assessmentMatch && assessmentMatch[0]) {
-        assessmentContent = assessmentMatch[0].trim() + "\n" + assessmentContent;
-      }
-      
-      if (guidanceContent && guidanceMatch && guidanceMatch[0]) {
-        guidanceContent = guidanceMatch[0].trim() + "\n" + guidanceContent;
-      }
-      
-      if (nextStepsContent && nextStepsMatch && nextStepsMatch[0]) {
-        nextStepsContent = nextStepsMatch[0].trim() + "\n" + nextStepsContent;
-      }
       
       // Return a styled component with each section properly colored and formatted
       return (
@@ -1026,25 +1006,40 @@ For assistance, you can:
             </div>
           )}
           
-          {assessmentContent && (
+          {(assessmentContent || assessmentHeader) && (
             <div className="mt-4">
-              <div className="border-l-4 border-amber-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <div className="border-l-4 border-amber-500/70 pl-3 py-2 pb-3 bg-slate-800/30 rounded-md">
+                {assessmentHeader && (
+                  <div className="text-amber-400 font-medium text-lg mb-2">
+                    {assessmentHeader.replace(/Looking at your.*?:/i, "Assessment").replace(/^.*?(Assessment).*?$/i, "$1")}
+                  </div>
+                )}
                 <MarkdownRenderer content={assessmentContent} />
               </div>
             </div>
           )}
           
-          {guidanceContent && (
+          {(guidanceContent || guidanceHeader) && (
             <div className="mt-4">
-              <div className="border-l-4 border-teal-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <div className="border-l-4 border-teal-500/70 pl-3 py-2 pb-3 bg-slate-800/30 rounded-md">
+                {guidanceHeader && (
+                  <div className="text-teal-400 font-medium text-lg mb-2">
+                    {guidanceHeader.replace(/Let['']s develop this.*/i, "Guidance").replace(/^.*?(Guidance).*?$/i, "$1").replace(/Since we['']re starting.*/i, "Guidance")}
+                  </div>
+                )}
                 <MarkdownRenderer content={guidanceContent} />
               </div>
             </div>
           )}
           
-          {nextStepsContent && (
+          {(nextStepsContent || nextStepsHeader) && (
             <div className="mt-4">
-              <div className="border-l-4 border-blue-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <div className="border-l-4 border-blue-500/70 pl-3 py-2 pb-3 bg-slate-800/30 rounded-md">
+                {nextStepsHeader && (
+                  <div className="text-blue-400 font-medium text-lg mb-2">
+                    {nextStepsHeader.replace(/Please revise.*/i, "Next Steps").replace(/^.*?(Next Steps).*?$/i, "$1")}
+                  </div>
+                )}
                 <MarkdownRenderer content={nextStepsContent} />
               </div>
             </div>
