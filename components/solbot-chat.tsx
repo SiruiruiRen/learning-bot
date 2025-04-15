@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
 import MarkdownRenderer from "./markdown-renderer"
 import { getNextPhase } from "@/lib/phase-data"
 import ChatMessageParser from "@/components/chat-message-parser"
+import { formatMessageContent } from "@/lib/message-formatter"
 
 export interface Message {
   id: number
@@ -1012,8 +1013,8 @@ For assistance, you can:
                     message.type === "text" || !message.type ? (
                       <div className={`${message.sender === "bot" ? "text-white/90" : "text-white/90 text-sm leading-tight"}`}>
                         {message.sender === "bot" ? (
-                          // Apply structured formatting to ALL bot messages
-                          formatStructuredMessage(message.content)
+                          // Use the shared formatter utility
+                          formatMessageContent(message.content, phase)
                         ) : (
                           <MarkdownRenderer content={message.content} className={message.sender === "user" ? "extra-compact" : ""} />
                         )}
