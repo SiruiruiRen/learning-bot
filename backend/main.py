@@ -5,7 +5,6 @@ import uvicorn
 import os
 import sys
 import logging
-from dotenv import load_dotenv
 import datetime
 
 # Add project root and backend directory to the Python path to fix imports
@@ -13,9 +12,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 sys.path.append(project_root)
 sys.path.append(current_dir)
-
-# Load environment variables
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -31,8 +27,9 @@ try:
     # Try importing the keep_warm module
     try:
         logger.info("Attempting to import from backend package...")
+        # Import config first to ensure environment is loaded
+        from backend.utils.config import get_config
         from backend.utils.keep_warm import start_warmup_thread
-        # If this succeeds, we're likely running from project root
         from backend.routes.chat import router as chat_router
         from backend.routes.user import router as user_router
         from backend.routes.scores import router as scores_router
@@ -42,6 +39,8 @@ try:
     except ImportError as e:
         logger.info(f"Backend package import failed: {e}, trying direct import...")
         # If that fails, try direct import (running from backend dir)
+        # Import config first to ensure environment is loaded
+        from utils.config import get_config
         from utils.keep_warm import start_warmup_thread
         from routes.chat import router as chat_router
         from routes.user import router as user_router
@@ -61,17 +60,20 @@ except Exception as e:
     # But we still need routers, so raise the error
     raise
 
+# Get configuration
+config = get_config()
+
 # Startup and shutdown events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: initialize resources
-    logger.info("SoLBot backend starting up...")
+    logger.info(f"SoLBot backend starting up in {config.environment} environment...")
     init_db()
     logger.info("Database initialized")
     logger.info("Using simplified direct LLM architecture")
     
     # Start the warmup thread to keep the service from sleeping
-    if os.environ.get("ENABLE_WARMUP", "true").lower() == "true":
+    if config.get("ENABLE_WARMUP", True):
         logger.info("Starting warmup service...")
         start_warmup_thread()
     
@@ -115,7 +117,10 @@ app.include_router(user_data_router, prefix="/api/user-data", tags=["user_data"]
 
 @app.get("/")
 async def root():
-    return {"message": "SoLBot API is running"}
+    return {
+        "message": "SoLBot API is running",
+        "environment": config.environment
+    }
 
 @app.get("/health")
 async def health():
@@ -123,9 +128,10 @@ async def health():
     return {
         "status": "healthy",
         "timestamp": datetime.datetime.now().isoformat(),
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "environment": config.environment
     }
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8081))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True) 
+    port = int(config.get("PORT", 8081))
+    uvicorn.run("main:app", host=config.get("HOST", "0.0.0.0"), port=port, reload=config.get("DEBUG", True)) 
