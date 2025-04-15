@@ -1022,21 +1022,21 @@ For assistance, you can:
             
             {parts.assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-amber-400 text-sm font-medium mb-2">Assessment</div>
+                <div className="text-amber-400 text-xs font-medium mb-1">Assessment</div>
                 <MarkdownRenderer content={parts.assessment} />
               </div>
             )}
             
             {parts.guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-teal-400 text-sm font-medium mb-2">Guidance</div>
+                <div className="text-teal-400 text-xs font-medium mb-1">Guidance</div>
                 <MarkdownRenderer content={parts.guidance} />
               </div>
             )}
             
             {parts.nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-blue-400 text-sm font-medium mb-2">Next Steps</div>
+                <div className="text-blue-400 text-xs font-medium mb-1">Next Steps</div>
                 <MarkdownRenderer content={parts.nextSteps} />
               </div>
             )}
@@ -1089,19 +1089,19 @@ For assistance, you can:
             )}
             {sections.assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-amber-400 text-sm font-medium mb-2">Assessment</div>
+                <div className="text-amber-400 text-xs font-medium mb-1">Assessment</div>
                 <MarkdownRenderer content={sections.assessment} />
               </div>
             )}
             {sections.guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-teal-400 text-sm font-medium mb-2">Guidance</div>
+                <div className="text-teal-400 text-xs font-medium mb-1">Guidance</div>
                 <MarkdownRenderer content={sections.guidance} />
               </div>
             )}
             {sections.nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-blue-400 text-sm font-medium mb-2">Next Steps</div>
+                <div className="text-blue-400 text-xs font-medium mb-1">Next Steps</div>
                 <MarkdownRenderer content={sections.nextSteps} />
               </div>
             )}
@@ -1235,21 +1235,21 @@ For assistance, you can:
             
             {assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-amber-400 text-sm font-medium mb-2">Assessment</div>
+                <div className="text-amber-400 text-xs font-medium mb-1">Assessment</div>
                 <MarkdownRenderer content={assessment} />
               </div>
             )}
             
             {guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-teal-400 text-sm font-medium mb-2">Guidance</div>
+                <div className="text-teal-400 text-xs font-medium mb-1">Guidance</div>
                 <MarkdownRenderer content={guidance} />
               </div>
             )}
             
             {nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <div className="text-blue-400 text-sm font-medium mb-2">Next Steps</div>
+                <div className="text-blue-400 text-xs font-medium mb-1">Next Steps</div>
                 <MarkdownRenderer content={nextSteps} />
               </div>
             )}
