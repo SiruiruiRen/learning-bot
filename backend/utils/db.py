@@ -26,19 +26,47 @@ except ImportError as e:
 
 from dotenv import load_dotenv
 
+# Try to import our config module
+try:
+    from .config import get_config
+    config_available = True
+except ImportError:
+    config_available = False
+
 # Load environment variables if not already loaded
 load_dotenv()
 
 logger = logging.getLogger("solbot.db")
 
-# Supabase configuration
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
+# Set defaults from either config system or environment variables
+if config_available:
+    config = get_config()
+    # Supabase configuration
+    supabase_url = config.get("SUPABASE_URL")
+    supabase_key = config.get("SUPABASE_KEY")
+    # Default to config's USE_MEMORY_DB setting
+    _using_memory_db = config.get("USE_MEMORY_DB", False)
+    
+    logger.info(f"Using configuration from {config.environment} environment")
+    if _using_memory_db:
+        logger.info("Using in-memory database (from config)")
+    else:
+        logger.info(f"Using Supabase database at {supabase_url}")
+else:
+    # Supabase configuration from environment
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_KEY")
+    # Set to False to use Supabase
+    _using_memory_db = os.getenv("USE_MEMORY_DB", "false").lower() == "true"
+    
+    logger.info("Using configuration from environment variables")
+    if _using_memory_db:
+        logger.info("Using in-memory database (from environment)")
+    else:
+        logger.info(f"Using Supabase database at {supabase_url}")
 
 # Global client
 _supabase_client: Optional[Client] = None
-# Set to False to use Supabase
-_using_memory_db = os.getenv("USE_MEMORY_DB", "false").lower() == "true"
 
 # In-memory database fallback
 _memory_db = {

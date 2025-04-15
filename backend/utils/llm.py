@@ -16,6 +16,12 @@ import traceback
 import uuid
 import datetime
 
+# Try to import our config module
+try:
+    from .config import get_config
+    config_available = True
+except ImportError:
+    config_available = False
 
 # Load environment variables
 load_dotenv()
@@ -23,11 +29,19 @@ load_dotenv()
 # Configure logging
 logger = logging.getLogger("solbot.llm")
 
-# Get API key from environment - IMPORTANT: Must be named ANTHROPIC_API_KEY 
-# The correct environment variable name is "ANTHROPIC_API_KEY" (not CLAUDE_API_KEY)
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-# Hard-code the model to ensure we use the right version
-CLAUDE_MODEL = "claude-3-5-sonnet-20241022"
+# Get configuration settings from config system or environment variables
+if config_available:
+    config = get_config()
+    # Get API key and model from configuration
+    ANTHROPIC_API_KEY = config.get("ANTHROPIC_API_KEY")
+    CLAUDE_MODEL = config.get("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+    logger.info(f"Using configuration from {config.environment} environment")
+else:
+    # Get API key and model from environment variables
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+    # Hard-code the model to ensure we use the right version
+    CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+    logger.info("Using configuration from environment variables")
 
 logger.info(f"Using Claude model: {CLAUDE_MODEL}")
 
