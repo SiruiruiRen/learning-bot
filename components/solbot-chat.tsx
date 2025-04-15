@@ -905,10 +905,10 @@ For assistance, you can:
     if (!content || typeof content !== 'string') return <MarkdownRenderer content={content} />;
     
     try {
-      // Simplest approach: just render the content with some styling
-      // Keep Claude's original formatting and just add a border
+      // Simplest approach: preserve the original markdown and let the renderer handle it
+      // Just add a subtle left border for visual structure
       return (
-        <div className="border-l-4 border-teal-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+        <div className="border-l-4 border-teal-500/40 pl-3 rounded-md">
           <MarkdownRenderer content={content} />
         </div>
       );
