@@ -8,6 +8,7 @@ import { Check, ArrowRight, Send, User, Bot, AlertTriangle, CheckCircle2, Info, 
 import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import { v4 as uuidv4 } from 'uuid'
+import { formatMessageContent } from "@/lib/message-formatter"
 
 interface GuidedShortTermGoalProps {
   userId: string
@@ -301,7 +302,7 @@ Timeline: ${responses["timeline"] || ""}
     }
   }
   
-  // Process chat message to convert markdown
+  // Process chat message to convert markdown - simplified to only handle confirmation
   const processMessageContent = (content: string) => {
     // Special case for confirmation messages to display the SMART goal properly
     if (content.includes("Thank you for your responses! Here is your complete SMART goal")) {
@@ -339,97 +340,8 @@ Timeline: ${responses["timeline"] || ""}
       );
     }
     
-    // Remove instructor metadata from the message (appears as HTML comments)
-    let cleanedContent = content.replace(/<!--\s*INSTRUCTOR_METADATA[\s\S]*?-->/g, '');
-    
-    // Determine if the message has sections based on its content
-    const hasAssessment = content.includes("## Assessment") || content.includes("Assessment") || content.includes("Looking at your");
-    const hasGuidance = content.includes("## Guidance") || content.includes("Guidance") || content.includes("Here's a template") || 
-      content.includes("SMART goal") || content.includes("Since this needs more structure") || 
-      content.includes("Template") || content.includes("Specific Goal Template");
-    const hasNextSteps = content.includes("## Next Steps") || content.includes("Next Steps") || content.includes("Please revise");
-    
-    // If we detect this is a message with sections, format it properly with colored borders
-    if (hasAssessment || hasGuidance || hasNextSteps) {
-      // Split the content into sections
-      const sections: {[key: string]: string} = {
-        intro: "",
-        assessment: "",
-        guidance: "",
-        nextSteps: ""
-      };
-      
-      // Process the content to identify sections
-      const lines = cleanedContent.split('\n');
-      let currentSection = "intro";
-      
-      // Parse message by line to extract sections
-      for (const line of lines) {
-        // Check for section markers and transition to that section
-        if (line.includes("## Assessment") || line.includes("Looking at your") || 
-            line.match(/^Assessment\b/) || line.includes("⚠️ Assessment")) {
-          currentSection = "assessment";
-          // Skip the ## Assessment line itself if present
-          if (line.trim() === "## Assessment") continue;
-        }
-        else if (line.includes("## Guidance") || line.includes("Here's a template") || 
-                line.includes("SMART goal") || line.includes("Since this needs more structure") || 
-                line.includes("Template") || line.includes("Specific Goal Template") ||
-                line.includes("Try this template") || line.includes("Let's strengthen your plan")) {
-          currentSection = "guidance";
-          // Skip the ## Guidance line itself if present
-          if (line.trim() === "## Guidance") continue;
-        }
-        else if (line.includes("## Next Steps") || line.includes("Next Steps") || 
-                line.includes("Please revise") || line.match(/^📝 Next Steps/)) {
-          currentSection = "nextSteps";
-          // Skip the ## Next Steps line itself if present
-          if (line.trim() === "## Next Steps") continue;
-        }
-        
-        // Add line to current section
-        sections[currentSection] += line + '\n';
-      }
-      
-      // Clean up each section by trimming
-      Object.keys(sections).forEach(key => {
-        sections[key] = sections[key].trim();
-      });
-      
-      // Format with colored borders and sections
-      return (
-        <div className="flex flex-col space-y-4">
-          {sections.intro && (
-            <div className="text-blue-200">{sections.intro}</div>
-          )}
-          
-          {sections.assessment && (
-            <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <MarkdownRenderer content={sections.assessment} />
-            </div>
-          )}
-          
-          {sections.guidance && (
-            <div className="border-l-2 border-emerald-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <MarkdownRenderer content={sections.guidance} />
-            </div>
-          )}
-          
-          {sections.nextSteps && (
-            <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <MarkdownRenderer content={sections.nextSteps} />
-            </div>
-          )}
-        </div>
-      );
-    }
-    
-    // For messages with no special formatting, just render the cleaned content
-    return (
-      <div className="border-l-2 border-blue-500 pl-3 py-2 rounded-md">
-        <MarkdownRenderer content={cleanedContent} />
-      </div>
-    );
+    // For all other messages, use the shared formatter
+    return formatMessageContent(content, phase);
   }
 
   // Reset and start over the process
@@ -567,7 +479,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
               <CardContent className="p-3">
                 <div className="text-sm">
                   {typeof message.content === 'string' 
-                    ? processMessageContent(message.content) 
+                    ? processMessageContent(message.content)
                     : message.content}
                 </div>
               </CardContent>
