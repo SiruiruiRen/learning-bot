@@ -442,30 +442,18 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
           
           {assessment && (
             <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-400" />
-                Assessment
-              </h4>
               <MarkdownRenderer content={assessment} />
             </div>
           )}
           
           {guidance && (
             <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <h4 className="text-teal-400 font-medium mb-2 flex items-center gap-2">
-                <Info size={16} className="text-teal-400" />
-                Guidance
-              </h4>
               <MarkdownRenderer content={guidance} />
             </div>
           )}
           
           {nextSteps && (
             <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
-                <BookOpen size={16} className="text-blue-400" />
-                Next Steps
-              </h4>
               <MarkdownRenderer content={nextSteps} />
             </div>
           )}
@@ -486,9 +474,6 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
       const createSection = (title: string, content: string, borderColor: string) => {
         return content ? (
           <div className={`border-l-2 border-${borderColor}-500 pl-3 py-2 bg-slate-800/30 rounded-md my-2`}>
-            <h4 className={`text-${borderColor}-400 font-medium mb-2 flex items-center gap-2`}>
-              {title}
-            </h4>
             <div className="whitespace-pre-wrap"><MarkdownRenderer content={content} /></div>
           </div>
         ) : null;

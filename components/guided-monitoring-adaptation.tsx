@@ -416,30 +416,18 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
           
           {sections.assessment && (
             <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-400" />
-                Assessment
-              </h4>
               <MarkdownRenderer content={sections.assessment} />
             </div>
           )}
           
           {sections.guidance && (
-            <div className="border-l-2 border-indigo-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <h4 className="text-indigo-400 font-medium mb-2 flex items-center gap-2">
-                <Info size={16} className="text-indigo-400" />
-                Guidance
-              </h4>
+            <div className="border-l-2 border-emerald-500 pl-3 py-2 bg-slate-800/30 rounded-md">
               <MarkdownRenderer content={sections.guidance} />
             </div>
           )}
           
           {sections.nextSteps && (
             <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
-                <BookOpen size={16} className="text-blue-400" />
-                Next Steps
-              </h4>
               <MarkdownRenderer content={sections.nextSteps} />
             </div>
           )}

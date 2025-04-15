@@ -1062,30 +1062,18 @@ For assistance, you can:
             
             {parts.assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
-                  <AlertTriangle size={16} className="text-amber-400" />
-                  Assessment
-                </h4>
                 <MarkdownRenderer content={parts.assessment} />
               </div>
             )}
             
             {parts.guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-teal-400 font-medium mb-2 flex items-center gap-2">
-                  <Info size={16} className="text-teal-400" />
-                  Guidance
-                </h4>
                 <MarkdownRenderer content={parts.guidance} />
               </div>
             )}
             
             {parts.nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
-                  <BookOpen size={16} className="text-blue-400" />
-                  Next Steps
-                </h4>
                 <MarkdownRenderer content={parts.nextSteps} />
               </div>
             )}
@@ -1138,28 +1126,16 @@ For assistance, you can:
             )}
             {sections.assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
-                  <AlertTriangle size={16} className="text-amber-400" />
-                  Assessment
-                </h4>
                 <MarkdownRenderer content={sections.assessment} />
               </div>
             )}
             {sections.guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-teal-400 font-medium mb-2 flex items-center gap-2">
-                  <Info size={16} className="text-teal-400" />
-                  Guidance
-                </h4>
                 <MarkdownRenderer content={sections.guidance} />
               </div>
             )}
             {sections.nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
-                  <BookOpen size={16} className="text-blue-400" />
-                  Next Steps
-                </h4>
                 <MarkdownRenderer content={sections.nextSteps} />
               </div>
             )}
@@ -1293,30 +1269,18 @@ For assistance, you can:
             
             {assessment && (
               <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-amber-400 font-medium mb-2 flex items-center gap-2">
-                  <AlertTriangle size={16} className="text-amber-400" />
-                  Assessment
-                </h4>
                 <MarkdownRenderer content={assessment} />
               </div>
             )}
             
             {guidance && (
               <div className="border-l-2 border-teal-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-teal-400 font-medium mb-2 flex items-center gap-2">
-                  <Info size={16} className="text-teal-400" />
-                  Guidance
-                </h4>
                 <MarkdownRenderer content={guidance} />
               </div>
             )}
             
             {nextSteps && (
               <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-                <h4 className="text-blue-400 font-medium mb-2 flex items-center gap-2">
-                  <BookOpen size={16} className="text-blue-400" />
-                  Next Steps
-                </h4>
                 <MarkdownRenderer content={nextSteps} />
               </div>
             )}
