@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { AlertCircle, CheckCircle, HelpCircle } from "lucide-react"
+import { AlertCircle, CheckCircle, HelpCircle, ArrowRight } from "lucide-react"
 
 interface KnowledgeCheckProps {
   questionNumber: number
@@ -30,6 +30,7 @@ export default function KnowledgeCheck({
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
+  const [showCompleteButton, setShowCompleteButton] = useState(false)
 
   const handleSubmit = () => {
     if (!selectedOption) return
@@ -39,7 +40,14 @@ export default function KnowledgeCheck({
     setSubmitted(true)
 
     if (correct) {
+      // Show the complete button after a brief delay if the answer is correct
       setTimeout(() => {
+        setShowCompleteButton(true)
+      }, 1000)
+      
+      // Also attempt to auto-advance after a delay (fallback)
+      setTimeout(() => {
+        // We keep this as a fallback, but now we also have the manual button
         onComplete()
       }, 1500)
     }
@@ -48,7 +56,26 @@ export default function KnowledgeCheck({
   const handleTryAgain = () => {
     setSelectedOption(null)
     setSubmitted(false)
+    setShowCompleteButton(false)
   }
+
+  const handleManualComplete = () => {
+    onComplete()
+  }
+
+  // If the user has been on a correct answer for more than 3 seconds, show the complete button
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (submitted && isCorrect) {
+      timer = setTimeout(() => {
+        setShowCompleteButton(true)
+      }, 3000)
+    }
+    
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [submitted, isCorrect])
 
   return (
     <Card className="bg-slate-800/50 border border-indigo-500/30">
@@ -134,28 +161,40 @@ export default function KnowledgeCheck({
           </motion.div>
         )}
 
-        <div className="mt-6">
-          {!submitted ? (
+        <div className="mt-6 flex justify-between items-center">
+          <div>
+            {!submitted ? (
+              <Button
+                onClick={handleSubmit}
+                disabled={!selectedOption}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/30 disabled:opacity-50"
+              >
+                Submit Answer
+              </Button>
+            ) : !isCorrect ? (
+              <Button
+                onClick={handleTryAgain}
+                variant="outline"
+                className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
+              >
+                Try Again
+              </Button>
+            ) : (
+              <div className="text-emerald-400 text-sm font-medium flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {questionNumber < totalQuestions ? "Moving to next question..." : "Completing quiz..."}
+              </div>
+            )}
+          </div>
+          
+          {/* Manual continue button when correct answer is selected */}
+          {submitted && isCorrect && showCompleteButton && (
             <Button
-              onClick={handleSubmit}
-              disabled={!selectedOption}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/30 disabled:opacity-50"
+              onClick={handleManualComplete}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 shadow-lg"
             >
-              Submit Answer
+              Complete & Continue <ArrowRight className="h-4 w-4" />
             </Button>
-          ) : !isCorrect ? (
-            <Button
-              onClick={handleTryAgain}
-              variant="outline"
-              className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
-            >
-              Try Again
-            </Button>
-          ) : (
-            <div className="text-emerald-400 text-sm font-medium flex items-center">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {questionNumber < totalQuestions ? "Moving to next question..." : "Completing quiz..."}
-            </div>
           )}
         </div>
       </CardContent>
