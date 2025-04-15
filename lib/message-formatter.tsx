@@ -132,14 +132,14 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
         // If we were in a table and hit a non-table line, render the table
         formattedContent.push(
           <div key={`table-${i}`} className="bg-slate-800/40 rounded-md mb-4 overflow-hidden shadow-sm">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse border border-slate-600">
               <tbody>
                 {tableRows.map((row, rowIndex) => (
                   <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? "bg-slate-800/30" : "bg-slate-800/50"}>
-                    <td className="py-2 px-3 border-r border-slate-700 w-1/3 font-medium text-slate-300">
+                    <td className="py-2 px-3 border-r border-slate-600 w-1/3 font-medium text-slate-200">
                       {row.criteriaName}
                     </td>
-                    <td className="py-2 px-3">
+                    <td className="py-2 px-3 border-t border-slate-700">
                       {row.criteriaValue}
                     </td>
                   </tr>
@@ -165,14 +165,14 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     if (isInsideTable && tableRows.length > 0) {
       formattedContent.push(
         <div key="final-table" className="bg-slate-800/40 rounded-md mb-4 overflow-hidden shadow-sm">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse border border-slate-600">
             <tbody>
               {tableRows.map((row, rowIndex) => (
                 <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? "bg-slate-800/30" : "bg-slate-800/50"}>
-                  <td className="py-2 px-3 border-r border-slate-700 w-1/3 font-medium text-slate-300">
+                  <td className="py-2 px-3 border-r border-slate-600 w-1/3 font-medium text-slate-200">
                     {row.criteriaName}
                   </td>
-                  <td className="py-2 px-3">
+                  <td className="py-2 px-3 border-t border-slate-700">
                     {row.criteriaValue}
                   </td>
                 </tr>
@@ -201,7 +201,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       )}
       
       {sections.assessment && (
-        <div className="border-l-4 border-amber-500/70 pl-3 py-3 bg-slate-800/30 rounded-md shadow-md">
+        <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
           <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
             <span className="text-amber-400 mr-2 text-xl">⚠️</span>
             Assessment
@@ -211,19 +211,21 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       )}
       
       {sections.guidance && (
-        <div className="border-l-4 border-teal-500/70 py-3 rounded-md overflow-hidden shadow-md">
-          <div className="text-teal-400 font-medium text-lg mb-2 flex items-center pl-3">
-            <span className="text-teal-400 mr-2 text-xl">💡</span>
-            Guidance
+        <div className="border-l-4 border-teal-500 py-3 rounded-md overflow-hidden shadow-md">
+          <div className="bg-teal-800/20 mb-3 py-2 pl-3 border-b border-teal-500/30">
+            <div className="text-teal-300 font-semibold text-lg flex items-center">
+              <span className="text-teal-300 mr-2 text-xl">💡</span>
+              Guidance
+            </div>
           </div>
-          <div className="bg-slate-800/30 p-4">
+          <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
             <MarkdownRenderer content={sections.guidance} className="prose prose-invert max-w-none text-slate-100" />
           </div>
         </div>
       )}
       
       {sections.nextSteps && (
-        <div className="border-l-4 border-blue-500/70 pl-3 py-3 bg-slate-800/30 rounded-md shadow-md">
+        <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
           <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
             <span className="text-blue-400 mr-2 text-xl">📝</span>
             Next Steps
