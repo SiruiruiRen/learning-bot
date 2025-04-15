@@ -1,39 +1,43 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { marked } from 'marked'
-import DOMPurify from 'isomorphic-dompurify'
+import DOMPurify from 'dompurify'
 
 interface MarkdownRendererProps {
   content: string
   className?: string
 }
 
-export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
-  // Only render on client side to avoid hydration issues
-  const [renderedContent, setRenderedContent] = useState<string>('')
+const MarkdownRenderer = ({ content, className = '' }: MarkdownRendererProps) => {
+  const markdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    try {
-      // Parse markdown to HTML - force string type to resolve TypeScript issues
-      const rawHtml = String(marked(content, {
-        gfm: true,        // GitHub flavored markdown
-        breaks: true      // Convert line breaks to <br>
-      }))
-      
-      // Sanitize the HTML to prevent XSS
-      const cleanHtml = DOMPurify.sanitize(rawHtml)
-      setRenderedContent(cleanHtml)
-    } catch (error) {
-      console.error('Error rendering markdown:', error)
-      setRenderedContent(content) // Fallback to raw content
+    if (markdownRef.current && content) {
+      try {
+        const rawHTML = marked.parse(content, { 
+          async: false,
+          gfm: true, 
+          breaks: true 
+        }) as string
+        const sanitizedHTML = DOMPurify.sanitize(rawHTML)
+        markdownRef.current.innerHTML = sanitizedHTML
+      } catch (error) {
+        console.error('Error parsing markdown:', error)
+        markdownRef.current.textContent = content
+      }
     }
   }, [content])
 
   return (
     <div 
-      className={`markdown-content compact-content ${className}`}
-      dangerouslySetInnerHTML={{ __html: renderedContent }}
+      ref={markdownRef} 
+      className={`markdown-content ${className}`}
+      style={{
+        lineHeight: '1.6',
+      }}
     />
   )
-} 
+}
+
+export default MarkdownRenderer 

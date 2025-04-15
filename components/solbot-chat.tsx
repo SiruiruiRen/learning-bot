@@ -905,6 +905,12 @@ For assistance, you can:
     if (!content || typeof content !== 'string') return <MarkdownRenderer content={content} />;
     
     try {
+      // Special handling for Claude markdown messages
+      if (content.includes("```") || content.includes("- ") || content.includes("* ") || content.includes("1. ")) {
+        console.log("Detected markdown content in message");
+        return <MarkdownRenderer content={content} className="claude-message" />;
+      }
+      
       // For phase 2, use an extremely direct approach targeting the exact content pattern we see
       if (phase === "phase2") {
         console.log("Using emergency direct Phase 2 formatting");
