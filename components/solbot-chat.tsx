@@ -341,7 +341,7 @@ export default function SolBotChat({
         if (!isBackendAlive) {
           // Clear the thinking animation interval
           clearInterval(intervalId);
-          setThinkingIntervalId(null);
+          setThinkingIntervalId(null)
           
           // Remove typing indicator
           setMessages((prev) => prev.filter((msg) => !msg.isTyping))
@@ -912,12 +912,16 @@ For assistance, you can:
       let formattedContent = content;
       
       // Detect and convert plain text section headings to markdown headings
-      // These patterns match standalone "Assessment", "Guidance", etc. text lines
-      // Using word boundaries to ensure we only match the exact words
+      // Only formatting the core required headlines as specified in final_prompts.py
       const sectionPatterns = [
-        { regex: /(\n|^)Assessment(\n|$)/g, replacement: "$1## Assessment$2" },
-        { regex: /(\n|^)Guidance(\n|$)/g, replacement: "$1## Guidance$2" },
-        { regex: /(\n|^)Next Steps(\n|$)/g, replacement: "$1## Next Steps$2" }
+        // Match Assessment patterns (with optional emoji and colon)
+        { regex: /(\n|^)Assessment(?:\s*:)?(?:\n|$)/g, replacement: "$1## Assessment$2" },
+        // Match Guidance patterns
+        { regex: /(\n|^)Guidance(?:\s*:)?(?:\n|$)/g, replacement: "$1## Guidance$2" },
+        // Match Next Steps patterns
+        { regex: /(\n|^)Next Steps(?:\s*:)?(?:\n|$)/g, replacement: "$1## Next Steps$2" },
+        // Match Greeting patterns
+        { regex: /(\n|^)Greeting(?:\s*:)?(?:\n|$)/g, replacement: "$1## Greeting$2" }
       ];
       
       // Apply each pattern
