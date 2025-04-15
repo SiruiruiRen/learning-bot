@@ -65,6 +65,10 @@ def format_uuid(val, prefix="id_"):
     if is_valid_uuid(val):
         return val
     
+    # Remove any 'user-' prefix before generating the UUID
+    if isinstance(val, str) and val.startswith("user-"):
+        val = val.replace("user-", "")
+    
     # Create a deterministic UUID based on the value to ensure consistency
     # This allows us to use the same generated UUID for the same input value
     namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace for URLs
@@ -196,6 +200,31 @@ def save_message(user_id: str, conversation_id: str, role: str, content: str, ph
         if metadata:
             meta_data.update(metadata)
         
+        # Check if we need to create the conversation first
+        try:
+            # Check if the conversation exists
+            conversation_exists = False
+            try:
+                conv_check = db.table("conversations").select("id").eq("id", uuid_conv_id).limit(1).execute()
+                conversation_exists = len(conv_check.data) > 0
+            except Exception as conv_err:
+                logger.warning(f"Error checking for conversation: {conv_err}")
+            
+            # Create conversation if it doesn't exist
+            if not conversation_exists:
+                logger.info(f"Creating conversation with ID: {uuid_conv_id}")
+                try:
+                    conv_data = {
+                        "id": uuid_conv_id,
+                        "user_id": uuid_user_id,
+                        "created_at": "now()"
+                    }
+                    db.table("conversations").insert(conv_data).execute()
+                except Exception as create_err:
+                    logger.error(f"Failed to create conversation: {create_err}")
+        except Exception as check_err:
+            logger.warning(f"Error in conversation check/create: {check_err}")
+        
         # Only include fields that exist in the actual table schema
         data = {
             "id": message_id,
@@ -216,6 +245,11 @@ def save_message(user_id: str, conversation_id: str, role: str, content: str, ph
                 logger.info("Retrying message save without user_id field")
                 response = db.table("messages").insert(data).execute()
                 return response.data[0] if response.data else message
+            elif "violates foreign key constraint" in str(e):
+                logger.error(f"Foreign key violation - conversation may not exist: {uuid_conv_id}")
+                # Fall back to memory storage
+                _memory_db["messages"].append(message)
+                return message
             else:
                 raise
     except Exception as e:
