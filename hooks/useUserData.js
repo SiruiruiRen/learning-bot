@@ -31,6 +31,24 @@ export function useUserData() {
     setError(null);
     
     try {
+      // Try to get email from localStorage if available
+      let userEmail = null;
+      try {
+        userEmail = localStorage.getItem('solbot_user_email');
+      } catch (e) {
+        // Ignore errors accessing localStorage
+      }
+      
+      // Merge with existing metadata
+      const finalMetadata = {
+        ...(metadata || {}),
+      };
+      
+      // Only add email if available
+      if (userEmail) {
+        finalMetadata.email = userEmail;
+      }
+      
       const response = await fetch('/api/user-data', {
         method: 'POST',
         headers: {
@@ -40,7 +58,7 @@ export function useUserData() {
           userId,
           dataType,
           value,
-          metadata
+          metadata: finalMetadata
         }),
       });
       
@@ -114,14 +132,29 @@ export function useUserData() {
    * @returns {Promise<Object>} Result of the operation
    */
   const trackEvent = useCallback(async (userId, eventType, eventData = {}) => {
+    // Try to get email from localStorage if available
+    let userEmail = null;
+    try {
+      userEmail = localStorage.getItem('solbot_user_email');
+    } catch (e) {
+      // Ignore errors accessing localStorage
+    }
+    
+    const metadata = {
+      timestamp: new Date().toISOString(),
+      ...eventData
+    };
+    
+    // Only add email if available
+    if (userEmail) {
+      metadata.email = userEmail;
+    }
+    
     return saveUserData(
       userId,
       'event',
       eventType,
-      {
-        timestamp: new Date().toISOString(),
-        ...eventData
-      }
+      metadata
     );
   }, [saveUserData]);
   

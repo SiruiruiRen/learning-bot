@@ -33,6 +33,7 @@ export default function IntroPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string>("")
   const [userName, setUserName] = useState<string>("")
+  const [userEmail, setUserEmail] = useState<string>("")
   const [userYear, setUserYear] = useState<string>("")
   const [userMajor, setUserMajor] = useState<string>("")
   const [challengingCourse, setChallengingCourse] = useState<string>("")
@@ -60,6 +61,11 @@ export default function IntroPage() {
       if (storedName) {
         setUserName(storedName)
       }
+      
+      const storedEmail = localStorage.getItem("solbot_user_email")
+      if (storedEmail) {
+        setUserEmail(storedEmail)
+      }
     } catch (error) {
       console.error("Error accessing localStorage:", error)
       // Generate a temporary ID that won't be persisted
@@ -70,9 +76,21 @@ export default function IntroPage() {
   const handleSubmit = () => {
     setIsSubmitting(true)
     
+    // Create a safe userId from the name (if provided) or use the existing one
+    let newUserId = userId;
+    if (userName.trim()) {
+      // Create a URL-safe version of the name to use as user ID
+      newUserId = `user-${userName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+      localStorage.setItem("userId", newUserId);
+      setUserId(newUserId);
+    }
+    
     // Save user information to localStorage
     if (userName) {
       localStorage.setItem("solbot_user_name", userName)
+    }
+    if (userEmail) {
+      localStorage.setItem("solbot_user_email", userEmail)
     }
     if (userYear) {
       localStorage.setItem("solbot_user_year", userYear)
@@ -227,6 +245,18 @@ export default function IntroPage() {
                       onChange={(e) => setUserName(e.target.value)}
                       className="bg-slate-800 border-indigo-500/30 focus:border-indigo-400 text-white"
                       placeholder="Your name"
+                    />
+                  </div>
+                  
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-white">What's your email?</Label>
+                    <Input
+                      id="email"
+                      value={userEmail}
+                      onChange={(e) => setUserEmail(e.target.value)}
+                      className="bg-slate-800 border-indigo-500/30 focus:border-indigo-400 text-white"
+                      placeholder="Your email"
                     />
                   </div>
                   

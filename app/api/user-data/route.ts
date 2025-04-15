@@ -70,9 +70,25 @@ export async function POST(request: NextRequest) {
         
         // Create user if doesn't exist
         if (!existingUser && !userError) {
+          // Try to get the email from local storage
+          let userEmail = `${userId}@example.com`;
+          
+          // If we're running in the browser and this is a client-side call
+          if (typeof window !== 'undefined') {
+            const storedEmail = localStorage.getItem('solbot_user_email');
+            if (storedEmail) {
+              userEmail = storedEmail;
+            }
+          }
+          
+          // If metadata contains email, use that instead
+          if (metadata && metadata.email) {
+            userEmail = metadata.email;
+          }
+          
           await supabase.from('users').insert({
             id: userId,
-            email: `${userId}@example.com`,
+            email: userEmail,
             created_at: new Date().toISOString()
           });
         }
