@@ -909,139 +909,105 @@ For assistance, you can:
       console.log("Content being formatted:", content);
 
       // Split content into sections based on known section markers
-      // This regex matches common section patterns with any emoji, formatting variations
-      const assessmentRegex = /(\n|^).*?\b(Assessment|Looking at your learning objective|Looking at your.*?goal|Looking at your SMART goal|Looking at your monitoring|Looking at your implementation intentions)\b.*?(\n|$)/i;
-      const guidanceRegex = /(\n|^).*?\b(Guidance|Let['']s develop this|Since we['']re starting|Given this|Template for|Here['']s a template)\b.*?(\n|$)/i;
-      const nextStepsRegex = /(\n|^).*?\b(Next Steps|Please revise|Next, try to|What specific|Remember[\s,]|Consider:)\b.*?(\n|$)/i;
+      // These regex patterns look for markdown-style headers with optional emojis
+      const assessmentRegex = /(\n|^)##\s*(?:[\p{Emoji}]*\s*)?Assessment.*?(\n|$)/iu;
+      const guidanceRegex = /(\n|^)##\s*(?:[\p{Emoji}]*\s*)?Guidance.*?(\n|$)/iu; 
+      const nextStepsRegex = /(\n|^)##\s*(?:[\p{Emoji}]*\s*)?Next\s*Steps.*?(\n|$)/iu;
       
       // Find the indices of section markers
       const assessmentMatch = content.match(assessmentRegex);
       const guidanceMatch = content.match(guidanceRegex);
       const nextStepsMatch = content.match(nextStepsRegex);
       
-      // Initialize section content
-      let preambleContent = "";
-      let assessmentContent = "";
-      let guidanceContent = "";
-      let nextStepsContent = "";
+      console.log("Section matches:", {
+        assessment: assessmentMatch?.[0],
+        guidance: guidanceMatch?.[0],
+        nextSteps: nextStepsMatch?.[0]
+      });
       
-      // Extract each section content based on matches
-      if (assessmentMatch && assessmentMatch.index !== undefined) {
-        // Everything before assessment is preamble
-        preambleContent = content.substring(0, assessmentMatch.index).trim();
-        
-        const assessmentStart = assessmentMatch.index + assessmentMatch[0].length;
-        
-        // If guidance exists, assessment ends there, otherwise check for next steps
-        if (guidanceMatch && guidanceMatch.index !== undefined) {
-          assessmentContent = content.substring(assessmentStart, guidanceMatch.index).trim();
-          
-          const guidanceStart = guidanceMatch.index + guidanceMatch[0].length;
-          
-          // If next steps exists, guidance ends there, otherwise to the end
-          if (nextStepsMatch && nextStepsMatch.index !== undefined) {
-            guidanceContent = content.substring(guidanceStart, nextStepsMatch.index).trim();
-            nextStepsContent = content.substring(nextStepsMatch.index + nextStepsMatch[0].length).trim();
-          } else {
-            guidanceContent = content.substring(guidanceStart).trim();
-          }
-        } 
-        // No guidance section found
-        else if (nextStepsMatch && nextStepsMatch.index !== undefined) {
-          assessmentContent = content.substring(assessmentStart, nextStepsMatch.index).trim();
-          nextStepsContent = content.substring(nextStepsMatch.index + nextStepsMatch[0].length).trim();
-        } else {
-          assessmentContent = content.substring(assessmentStart).trim();
-        }
-      }
-      // No assessment found but guidance exists
-      else if (guidanceMatch && guidanceMatch.index !== undefined) {
-        preambleContent = content.substring(0, guidanceMatch.index).trim();
-        
-        const guidanceStart = guidanceMatch.index + guidanceMatch[0].length;
-        
-        if (nextStepsMatch && nextStepsMatch.index !== undefined) {
-          guidanceContent = content.substring(guidanceStart, nextStepsMatch.index).trim();
-          nextStepsContent = content.substring(nextStepsMatch.index + nextStepsMatch[0].length).trim();
-        } else {
-          guidanceContent = content.substring(guidanceStart).trim();
-        }
-      }
-      // Only next steps exists
-      else if (nextStepsMatch && nextStepsMatch.index !== undefined) {
-        preambleContent = content.substring(0, nextStepsMatch.index).trim();
-        nextStepsContent = content.substring(nextStepsMatch.index + nextStepsMatch[0].length).trim();
-      }
-      // No sections found
-      else {
-        console.log("No sections detected, rendering as normal markdown");
+      // If no section headings found, just render the markdown as is
+      if (!assessmentMatch && !guidanceMatch && !nextStepsMatch) {
         return <MarkdownRenderer content={content} />;
       }
       
-      // Extract section headers for display
-      const assessmentHeader = assessmentMatch?.[0]?.trim() || "Assessment";
-      const guidanceHeader = guidanceMatch?.[0]?.trim() || "Guidance";
-      const nextStepsHeader = nextStepsMatch?.[0]?.trim() || "Next Steps";
+      // Initialize section content
+      let preamble = "";
+      let assessmentSection = "";
+      let guidanceSection = "";
+      let nextStepsSection = "";
       
-      console.log("Section headers extracted:", {
-        assessment: assessmentHeader,
-        guidance: guidanceHeader,
-        nextSteps: nextStepsHeader
+      // Extract each section content based on matches
+      let sections: {index: number, match: RegExpMatchArray | null, section: string}[] = [];
+      
+      if (assessmentMatch?.index !== undefined) {
+        sections.push({index: assessmentMatch.index, match: assessmentMatch, section: "assessment"});
+      }
+      
+      if (guidanceMatch?.index !== undefined) {
+        sections.push({index: guidanceMatch.index, match: guidanceMatch, section: "guidance"});
+      }
+      
+      if (nextStepsMatch?.index !== undefined) {
+        sections.push({index: nextStepsMatch.index, match: nextStepsMatch, section: "nextSteps"});
+      }
+      
+      // Sort sections by their index in the text
+      sections.sort((a, b) => a.index - b.index);
+      
+      // Extract the preamble (content before the first section)
+      if (sections.length > 0) {
+        preamble = content.substring(0, sections[0].index).trim();
+      } else {
+        // If no sections found, everything is preamble
+        preamble = content;
+      }
+      
+      // Extract content for each section
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        const nextSectionIndex = i < sections.length - 1 ? sections[i + 1].index : content.length;
+        const sectionContent = content.substring(section.index, nextSectionIndex);
+        
+        if (section.section === "assessment") {
+          assessmentSection = sectionContent;
+        } else if (section.section === "guidance") {
+          guidanceSection = sectionContent;
+        } else if (section.section === "nextSteps") {
+          nextStepsSection = sectionContent;
+        }
+      }
+      
+      console.log("Extracted sections:", {
+        preamble: preamble?.substring(0, 50) + "...",
+        assessment: assessmentSection?.substring(0, 50) + "...",
+        guidance: guidanceSection?.substring(0, 50) + "...",
+        nextSteps: nextStepsSection?.substring(0, 50) + "..."
       });
       
-      // Debug the sections detected
-      console.log("Sections detected:", {
-        preamble: preambleContent?.substring(0, 50) + "...",
-        assessment: assessmentContent?.substring(0, 50) + "...",
-        guidance: guidanceContent?.substring(0, 50) + "...",
-        nextSteps: nextStepsContent?.substring(0, 50) + "..."
-      });
-      
-      // Return a styled component with each section properly colored and formatted
+      // Return a styled component with each section properly colored
       return (
-        <div className="formatted-message space-y-5">
-          {preambleContent && (
-            <div className="text-teal-300">
-              <MarkdownRenderer content={preambleContent} />
+        <div className="formatted-message space-y-3">
+          {preamble && (
+            <div>
+              <MarkdownRenderer content={preamble} />
             </div>
           )}
           
-          {(assessmentContent || assessmentHeader) && (
-            <div className="mt-4">
-              <div className="border-l-4 border-amber-500/70 pl-3 py-2 pb-3 bg-slate-800/30 rounded-md">
-                {assessmentHeader && (
-                  <div className="text-amber-400 font-medium text-lg mb-2">
-                    {assessmentHeader.replace(/Looking at your.*?:/i, "Assessment").replace(/^.*?(Assessment).*?$/i, "$1")}
-                  </div>
-                )}
-                <MarkdownRenderer content={assessmentContent} />
-              </div>
+          {assessmentSection && (
+            <div className="border-l-4 border-amber-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <MarkdownRenderer content={assessmentSection} />
             </div>
           )}
           
-          {(guidanceContent || guidanceHeader) && (
-            <div className="mt-4">
-              <div className="border-l-4 border-teal-500/70 pl-3 py-2 pb-3 bg-slate-800/30 rounded-md">
-                {guidanceHeader && (
-                  <div className="text-teal-400 font-medium text-lg mb-2">
-                    {guidanceHeader.replace(/Let['']s develop this.*/i, "Guidance").replace(/^.*?(Guidance).*?$/i, "$1").replace(/Since we['']re starting.*/i, "Guidance")}
-                  </div>
-                )}
-                <MarkdownRenderer content={guidanceContent} />
-              </div>
+          {guidanceSection && (
+            <div className="border-l-4 border-teal-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <MarkdownRenderer content={guidanceSection} />
             </div>
           )}
           
-          {(nextStepsContent || nextStepsHeader) && (
-            <div className="mt-4">
-              <div className="border-l-4 border-blue-500/70 pl-3 py-2 pb-3 bg-slate-800/30 rounded-md">
-                {nextStepsHeader && (
-                  <div className="text-blue-400 font-medium text-lg mb-2">
-                    {nextStepsHeader.replace(/Please revise.*/i, "Next Steps").replace(/^.*?(Next Steps).*?$/i, "$1")}
-                  </div>
-                )}
-                <MarkdownRenderer content={nextStepsContent} />
-              </div>
+          {nextStepsSection && (
+            <div className="border-l-4 border-blue-500/70 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <MarkdownRenderer content={nextStepsSection} />
             </div>
           )}
         </div>
