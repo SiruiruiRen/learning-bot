@@ -21,6 +21,19 @@
   color: white;
 }
 
+/* Add specific styles for section headings */
+.markdown-content h2:contains("Assessment") {
+  color: #f59e0b; /* amber-500 */
+}
+
+.markdown-content h2:contains("Guidance") {
+  color: #14b8a6; /* teal-500 */
+}
+
+.markdown-content h2:contains("Next Steps") {
+  color: #3b82f6; /* blue-500 */
+}
+
 .markdown-content h3 {
   font-size: 1.2rem;
   font-weight: 600;

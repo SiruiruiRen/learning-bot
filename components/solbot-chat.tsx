@@ -913,16 +913,19 @@ For assistance, you can:
       
       // Detect and convert plain text section headings to markdown headings
       // These patterns match standalone "Assessment", "Guidance", etc. text lines
+      // Using word boundaries to ensure we only match the exact words
       const sectionPatterns = [
-        { regex: /^Assessment(?:\s*\n+|$)/m, replacement: "## Assessment\n" },
-        { regex: /^Guidance(?:\s*\n+|$)/m, replacement: "## Guidance\n" },
-        { regex: /^Next Steps(?:\s*\n+|$)/m, replacement: "## Next Steps\n" }
+        { regex: /(\n|^)Assessment(\n|$)/g, replacement: "$1## Assessment$2" },
+        { regex: /(\n|^)Guidance(\n|$)/g, replacement: "$1## Guidance$2" },
+        { regex: /(\n|^)Next Steps(\n|$)/g, replacement: "$1## Next Steps$2" }
       ];
       
       // Apply each pattern
       sectionPatterns.forEach(pattern => {
         formattedContent = formattedContent.replace(pattern.regex, pattern.replacement);
       });
+      
+      console.log("Applied section formatting, result:", formattedContent);
       
       // Render the preprocessed content with markdown formatting
       return <MarkdownRenderer content={formattedContent} />;
