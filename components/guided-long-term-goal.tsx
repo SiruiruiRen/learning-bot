@@ -673,12 +673,12 @@ I'll guide you through a series of questions that will help you create a meaning
                 <Send size={18} />
               </Button>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("phase2/smart")}
                 className="bg-purple-600 hover:bg-purple-500"
               >
-                Next Phase <ArrowRight size={16} className="ml-2" />
+                Next Task <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           </div>

@@ -1528,7 +1528,7 @@ For assistance, you can:
 
       {/* Continue Button (for phases that need it at the bottom) */}
       {showContinueButton && (
-        <div className="p-4 border-t border-slate-700/50 bg-slate-900/90 text-center">
+        <div className="p-4 border-t border-slate-700/50 bg-slate-900/90 flex justify-center">
           <Button
             onClick={() => onContinue && onContinue()}
             className="px-8 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white"

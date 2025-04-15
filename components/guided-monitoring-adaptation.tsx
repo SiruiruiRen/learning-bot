@@ -688,7 +688,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
                 <Send size={18} />
               </Button>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("summary")}
                 className="bg-indigo-600 hover:bg-indigo-500"

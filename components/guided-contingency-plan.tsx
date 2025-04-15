@@ -684,7 +684,7 @@ I'll guide you through creating implementation intentions that will help you ant
                 <Send size={18} />
               </Button>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("phase5")}
                 className="bg-emerald-600 hover:bg-emerald-500"

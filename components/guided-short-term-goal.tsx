@@ -686,12 +686,12 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                 <Send size={18} />
               </Button>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("phase4/ifthen")}
                 className="bg-blue-600 hover:bg-blue-500"
               >
-                Next Phase <ArrowRight size={16} className="ml-2" />
+                Next Task <ArrowRight size={16} className="ml-2" />
               </Button>
             </div>
           </div>

@@ -809,7 +809,7 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
                 <Send size={18} />
               </Button>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("phase3")}
                 className="bg-teal-600 hover:bg-teal-500"
