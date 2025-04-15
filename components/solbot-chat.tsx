@@ -900,7 +900,7 @@ For assistance, you can:
     return phaseSequence[currentIndex + 1];
   };
 
-  // Format message with simple section detection
+  // Format message with Claude's native headlines
   const formatStructuredMessage = (content: string) => {
     if (!content || typeof content !== 'string') return <MarkdownRenderer content={content} />;
     
@@ -908,42 +908,8 @@ For assistance, you can:
       // Log the content we're trying to format for debugging
       console.log("Content being formatted:", content);
 
-      // For phase 2, add section formatting
-      if (phase === "phase2" && content.includes("Looking at your learning objective")) {
-        // Simple section detection without complex parsing
-        let formattedContent = content;
-        
-        // Add markdown headers for key sections if they appear to be present but not formatted
-        if (content.includes("Looking at your") && !content.includes("## Assessment")) {
-          formattedContent = formattedContent.replace(/Looking at your learning objective/g, 
-                                                   "## Assessment\nLooking at your learning objective");
-        }
-        
-        // Add Guidance header before common guidance section starters
-        const guidanceMarkers = ["Since this", "Let me help", "Here's a template", "To strengthen your"];
-        for (const marker of guidanceMarkers) {
-          if (content.includes(marker) && !content.includes("## Guidance")) {
-            formattedContent = formattedContent.replace(new RegExp(marker, 'g'), 
-                                                     "## Guidance\n" + marker);
-            break; // Only add the header once
-          }
-        }
-        
-        // Add Next Steps header before common next steps markers
-        const nextStepsMarkers = ["Please revise", "Remember,", "What specific", "📝 Please"];
-        for (const marker of nextStepsMarkers) {
-          if (content.includes(marker) && !content.includes("## Next Steps")) {
-            formattedContent = formattedContent.replace(new RegExp(marker, 'g'), 
-                                                     "## Next Steps\n" + marker);
-            break; // Only add the header once
-          }
-        }
-        
-        console.log("Added section headers to content");
-        return <MarkdownRenderer content={formattedContent} />;
-      }
-      
-      // For all other messages, just return the rendered markdown directly
+      // Simple and clean approach - let Claude's output format be rendered directly
+      // Claude is already instructed to include section headers in its responses
       return <MarkdownRenderer content={content} />;
       
     } catch (error) {
