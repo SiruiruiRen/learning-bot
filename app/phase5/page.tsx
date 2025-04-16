@@ -210,7 +210,7 @@ export default function Phase5Content() {
           <div className="flex items-center justify-center">
             <BarChart className="h-6 w-6 text-indigo-500 mr-2" />
             <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text">
-              Monitoring & Adaptation
+              Phase 5: Monitoring & Adaptation
             </h2>
           </div>
         </div>

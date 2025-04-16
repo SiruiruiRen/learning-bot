@@ -244,7 +244,7 @@ export default function Phase4Content() {
           <div className="flex items-center justify-center">
             <Target className="h-6 w-6 text-orange-500 mr-2" />
             <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text">
-              Strategic Planning
+              Phase 4: Strategic Planning
             </h2>
           </div>
         </div>

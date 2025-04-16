@@ -431,10 +431,10 @@ export default function Phase3Content() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-purple-500/20 py-3 px-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-            <BookMarked className="h-7 w-7 text-purple-500 mr-2" />
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-              Science of Learning Foundations
-            </h1>
+            <BookMarked className="h-6 w-6 text-purple-500 mr-2" />
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-fuchsia-500 bg-clip-text">
+              Phase 3: Learning Strategies
+            </h2>
           </div>
         </div>
       </div>

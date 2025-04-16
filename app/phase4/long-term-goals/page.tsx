@@ -157,7 +157,7 @@ export default function LongTermGoalsPage() {
             <div className="flex items-center">
               <Sparkles className="h-6 w-6 text-orange-500 mr-2" />
               <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                Long-term Learning Goals
+                Phase 4: Long-term Learning Goals
               </h1>
             </div>
             <div className="w-24"></div> {/* Spacer for centering */}
@@ -177,7 +177,7 @@ export default function LongTermGoalsPage() {
               <CardTitle className="flex items-center justify-center gap-3 text-2xl font-bold text-center">
                 <Sparkles className="h-7 w-7 text-orange-500" />
                 <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                  Phase 4Task 1: Long-term Learning Goals
+                  Task 1: Long-term Learning Goals
                 </span>
               </CardTitle>
             </CardHeader>

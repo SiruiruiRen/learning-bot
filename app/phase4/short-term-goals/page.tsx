@@ -154,7 +154,7 @@ export default function ShortTermGoalsPage() {
             <div className="flex items-center">
               <Target className="h-6 w-6 text-orange-500 mr-2" />
               <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                SMART Objectives
+                Phase 4: SMART Objectives
               </h1>
             </div>
             <div className="w-24"></div> {/* Spacer for centering */}

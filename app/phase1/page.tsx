@@ -312,6 +312,18 @@ export default function Phase1Content() {
       <div className="container mx-auto px-4">
         <ModuleBar currentPhase={1} />
 
+        {/* Fixed Title Header */}
+        <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-indigo-500/20 py-3 px-4">
+          <div className="container mx-auto">
+            <div className="flex items-center justify-center">
+              <BrainCircuit className="h-6 w-6 text-indigo-500 mr-2" />
+              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text">
+                Phase 1: SRL Introduction
+              </h2>
+            </div>
+          </div>
+        </div>
+
         {/* Card navigation indicators */}
         <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-30 flex flex-col gap-2">
           <button 

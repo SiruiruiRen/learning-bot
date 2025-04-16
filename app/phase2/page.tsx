@@ -339,15 +339,15 @@ export default function Phase2Content() {
       </div>
 
       <div className="container mx-auto px-4">
-        <ModuleBar currentPhase={phaseId} />
-        
-        {/* Fixed Phase Title that stays visible when scrolling */}
-        <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-teal-500/20 py-3 px-4">
+        <ModuleBar currentPhase={2} />
+
+        {/* Fixed Title Header */}
+        <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-blue-500/20 py-3 px-4">
           <div className="container mx-auto">
             <div className="flex items-center justify-center">
-              <Target className="h-6 w-6 text-teal-500 mr-2" />
-              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text">
-                Task Analysis & Resource Identification
+              <Target className="h-6 w-6 text-blue-500 mr-2" />
+              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-blue-400 to-sky-500 bg-clip-text">
+                Phase 2: Task Analysis
               </h2>
             </div>
           </div>

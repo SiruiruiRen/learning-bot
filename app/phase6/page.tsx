@@ -21,6 +21,7 @@ import {
   GraduationCap,
   ArrowRight,
   Home,
+  Medal,
 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ModuleBar from "@/components/module-bar"
@@ -289,13 +290,13 @@ export default function Phase6Content() {
       <ModuleBar currentPhase={6} />
 
       {/* Fixed Title Header */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-purple-500/20 py-3 px-4">
+      <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-indigo-500/20 py-3 px-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-            <GraduationCap className="h-7 w-7 text-purple-500 mr-2" />
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-              Your Complete Learning System
-            </h1>
+            <Medal className="h-6 w-6 text-indigo-500 mr-2" />
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text">
+              Phase 6: Learning System Summary
+            </h2>
           </div>
         </div>
       </div>
