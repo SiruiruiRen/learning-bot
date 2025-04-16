@@ -179,6 +179,8 @@ export default function Phase2Content() {
   const [chatInitialized, setChatInitialized] = useState(false)
   const [showResourceSelector, setShowResourceSelector] = useState(false)
   const [currentCardIndex, setCurrentCardIndex] = useState(0) // Track the current card
+  const [videoWatched, setVideoWatched] = useState(false)
+  const [videoLoading, setVideoLoading] = useState(true)
 
   // Define the cards for easy reference
   const cards = [
@@ -205,6 +207,21 @@ export default function Phase2Content() {
     }
   }
 
+  // Function to handle video completion
+  const handleVideoComplete = () => {
+    setVideoWatched(true)
+    // Save to localStorage that user has watched the video
+    try {
+      const stateToSave = {
+        ...JSON.parse(localStorage.getItem(`solbot_phase${phaseId}_state`) || '{}'),
+        videoWatched: true
+      }
+      localStorage.setItem(`solbot_phase${phaseId}_state`, JSON.stringify(stateToSave))
+    } catch (error) {
+      console.error(`Error saving video watched state:`, error)
+    }
+  }
+
   // Load saved state from localStorage on component mount
   const loadSavedState = () => {
     try {
@@ -216,6 +233,7 @@ export default function Phase2Content() {
           if (state.resourcesIdentified !== undefined) setResourcesSelected(state.resourcesIdentified)
           if (state.taskDescription) setTaskDescription(state.taskDescription)
           if (state.selectedResources) setSelectedResources(state.selectedResources)
+          if (state.videoWatched !== undefined) setVideoWatched(state.videoWatched)
         } catch (parseError) {
           console.error(`Error parsing saved state for phase ${phaseId}:`, parseError)
           // Clear corrupted state
@@ -409,22 +427,37 @@ export default function Phase2Content() {
                     
                     {/* Video Player */}
                     <div className="relative aspect-video bg-slate-900 rounded-lg overflow-hidden mb-4 shadow-lg border border-slate-700/50">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="bg-teal-500/20 p-4 rounded-full mb-3 mx-auto w-16 h-16 flex items-center justify-center">
-                            <PlayCircle className="h-8 w-8 text-teal-400" />
-                          </div>
-                          <p className="text-teal-300 text-sm">Video introduction to task analysis</p>
+                      {videoLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 z-10">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div>
                         </div>
-                      </div>
+                      )}
+                      <video
+                        className="w-full h-full"
+                        controls
+                        onLoadedData={() => setVideoLoading(false)}
+                        onCanPlay={() => setVideoLoading(false)}
+                        onEnded={handleVideoComplete}
+                        src="/video/SoL_phase2.mp4"
+                      >
+                        Your browser does not support the video tag.
+                      </video>
                     </div>
                     
                     <div className="text-white/80 text-sm">
-                  
-                      <p className="mt-4 text-teal-300 font-medium flex items-center">
-                        <MessageSquare className="h-4 w-4 mr-2 text-teal-300" />
-                        After watching the video, you'll chat with SolBot to create your personalized Task Analysis & Resource Identification plan.
-                      </p>
+                      {videoWatched ? (
+                        <div className="p-3 bg-teal-900/20 border border-teal-500/20 rounded-lg">
+                          <p className="text-teal-300 font-medium flex items-center">
+                            <CheckCircle className="h-4 w-4 mr-2 text-teal-400" />
+                            Video Completed!
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-teal-300 font-medium flex items-center">
+                          <MessageSquare className="h-4 w-4 mr-2 text-teal-300" />
+                          After watching the video, you'll chat with SolBot to create your personalized Task Analysis & Resource Identification plan.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

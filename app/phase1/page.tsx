@@ -10,6 +10,7 @@ import ModuleBar from "@/components/module-bar"
 import SolBotChat, { Message } from "@/components/solbot-chat"
 import { Textarea } from "@/components/ui/textarea"
 import { v4 as uuidv4 } from 'uuid'
+import React from "react"
 
 export default function Phase1Content() {
   const router = useRouter()
@@ -79,12 +80,6 @@ export default function Phase1Content() {
 
   const handleWatchVideo = () => {
     setWatchingVideo(true)
-    // Simulate video playback with a timer
-    setTimeout(() => {
-      setVideoWatched(true)
-      setWatchingVideo(false)
-      setCurrentStep(2)
-    }, 3000)
   }
 
   const handleStartQuiz = () => {
@@ -126,43 +121,70 @@ export default function Phase1Content() {
     router.push("/phase2")
   }
 
-  const VideoComponent = () => (
-    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900 shadow-xl border border-indigo-500/30">
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <Youtube className="w-16 h-16 text-indigo-400 mb-4" />
-        <h3 className="text-xl font-medium text-white mb-2">Self-Regulated Learning: The 4 Key Stages</h3>
-        <p className="text-slate-300 mb-6 text-center max-w-md">Learn how expert students approach their learning process</p>
-        
-        {!videoWatched ? (
-          <Button 
-            onClick={handleWatchVideo}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md flex items-center gap-2"
-            disabled={watchingVideo}
-          >
-            {watchingVideo ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                Watching Video...
-              </>
-            ) : (
-              <>
-                <PlayCircle className="h-5 w-5" />
-                Watch Video
-              </>
-            )}
-          </Button>
+  const VideoComponent = () => {
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    const handleVideoEnd = () => {
+      setVideoWatched(true);
+      setWatchingVideo(false);
+      setCurrentStep(2);
+    };
+    
+    const handleVideoLoaded = () => {
+      setIsLoading(false);
+    };
+    
+    return (
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-900 shadow-xl border border-indigo-500/30">
+        {!watchingVideo ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <Youtube className="w-16 h-16 text-indigo-400 mb-4" />
+            <h3 className="text-xl font-medium text-white mb-2">Self-Regulated Learning: The 4 Key Stages</h3>
+            <p className="text-slate-300 mb-6 text-center max-w-md">Learn how expert students approach their learning process</p>
+            
+            <Button 
+              onClick={handleWatchVideo}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md flex items-center gap-2"
+            >
+              <PlayCircle className="h-5 w-5" />
+              Watch Video
+            </Button>
+          </div>
         ) : (
+          <>
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 z-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400"></div>
+              </div>
+            )}
+            <video
+              ref={videoRef}
+              className="w-full h-full"
+              controls
+              autoPlay
+              onEnded={handleVideoEnd}
+              onLoadedData={handleVideoLoaded}
+              onCanPlay={() => setIsLoading(false)}
+              src="/video/SoL_phase1.mp4"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </>
+        )}
+        
+        {videoWatched && !watchingVideo && (
           <Button
             onClick={handleStartQuiz}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md flex items-center gap-2"
+            className="absolute bottom-4 right-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md flex items-center gap-2"
           >
             <CheckCircle className="h-5 w-5" />
             Video Completed
           </Button>
         )}
       </div>
-    </div>
-  )
+    );
+  }
 
   const QuizComponent = () => {
     // Move state inside the component to prevent parent re-renders
