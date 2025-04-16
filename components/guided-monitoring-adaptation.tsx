@@ -609,7 +609,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
             </div>
             <div className="flex justify-center">
               <Button
-                onClick={() => onComplete && onComplete("summary")}
+                onClick={() => onComplete && onComplete("/summary")}
                 className="bg-purple-600 hover:bg-purple-500"
               >
                 Next Phase <ArrowRight size={16} className="ml-2" />

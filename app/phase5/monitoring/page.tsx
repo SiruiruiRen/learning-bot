@@ -31,13 +31,19 @@ export default function MonitoringAdaptationPage() {
   }, [])
 
   const handlePhaseComplete = (nextPhase?: string) => {
-    // If no nextPhase provided or it already contains "phase", don't add it again
+    // If no nextPhase provided, default to summary page
     if (!nextPhase) {
-      // Default to summary phase if none provided
-      router.push(`/summary`);
+      router.push("/summary");
       return;
     }
     
+    // If it's an absolute path (starts with /), use it directly
+    if (nextPhase.startsWith("/")) {
+      router.push(nextPhase);
+      return;
+    }
+    
+    // Otherwise, handle relative paths
     if (nextPhase.startsWith("phase")) {
       router.push(`/${nextPhase}`);
     } else {
