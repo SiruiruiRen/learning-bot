@@ -634,7 +634,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-blue-500 min-h-[80px]"
                 rows={3}
               />
@@ -683,7 +683,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                     handleSendChatMessage()
                   }
                 }}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-blue-500 min-h-[80px]"
                 rows={3}
               />

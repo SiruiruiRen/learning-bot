@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     try {
       // Forward the request to the backend with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout (increased from 20s)
       
       const backendResponse = await fetch(fullUrl, {
         method: 'POST',
