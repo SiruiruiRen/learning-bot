@@ -131,7 +131,10 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
            content.includes("Looking at your monitoring & adaptation system") || 
            content.includes("Looking at your long-term goal") ||
            content.includes("👋 Hello") || 
-           content.includes("Hi there! 👋")) {
+           content.includes("Hi there! 👋") ||
+           content.includes("Looking at your") ||
+           content.includes("Task Identification:") ||
+           content.includes("Resource Specificity:")) {
     
     const lines = cleanedContent.split('\n');
     let currentSection = "intro";
@@ -155,7 +158,17 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
           line.includes("• Goal Orientation:") ||
           line.includes("• Visualization:") ||
           line.includes("• Action Plan:") ||
-          line.includes("• Timeline:")) {
+          line.includes("• Timeline:") ||
+          line.trim().startsWith("Task Identification:") ||
+          line.trim().startsWith("Resource Specificity:") ||
+          line.includes("Looking at your learning objective") ||
+          line.trim().startsWith("• ") && (
+            line.includes("Identification") || 
+            line.includes("Specificity") || 
+            line.includes("very broad") || 
+            line.includes("general") || 
+            line.includes("specific skills")
+          )) {
         
         currentSection = "assessment";
         sections[currentSection] += line + '\n';
@@ -167,7 +180,9 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
               !lines[i + 1].includes("Here's a template") && 
               !lines[i + 1].includes("I'll provide a template") &&
               !lines[i + 1].includes("I'll help you") &&
-              !lines[i + 1].includes("Let me help")) {
+              !lines[i + 1].includes("Let me help") &&
+              !lines[i + 1].includes("Try filling in") &&
+              !lines[i + 1].includes("template to help")) {
           i++;
           sections[currentSection] += lines[i] + '\n';
         }
@@ -181,7 +196,10 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
           line.includes("I'll provide a template") ||
           line.includes("I'll help you") ||
           line.includes("Let me help") ||
-          line.includes("template to help")) {
+          line.includes("template to help") ||
+          line.includes("Try filling in") ||
+          line.includes("For example:") ||
+          line.includes("\"I want to learn")) {
         
         currentSection = "guidance";
         sections[currentSection] += line + '\n';
@@ -191,6 +209,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
               !lines[i + 1].includes("Next Steps") && 
               !lines[i + 1].includes("📝 Please revise") && 
               !lines[i + 1].includes("Please revise") &&
+              !lines[i + 1].includes("Remember,") &&
               !lines[i + 1].includes("Remember:")) {
           i++;
           sections[currentSection] += lines[i] + '\n';
@@ -202,6 +221,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       if (line.includes("Next Steps") || 
           line.includes("📝 Please revise") || 
           line.includes("Please revise") ||
+          line.includes("Remember,") ||
           line.includes("Remember:") ||
           line.includes("📝 Next Steps:")) {
         
