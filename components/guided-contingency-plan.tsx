@@ -337,181 +337,64 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       );
     }
     
-    // Force styled sections for contingency strategy feedback messages
-    // IMPORTANT: Apply to ALL contingency-related feedback regardless of message type
-    if (content.includes("Looking at your implementation intentions:") || 
+    // SIMPLEST APPROACH: For any contingency-related message, force the styling with fixed sections
+    if (content.includes("implementation intention") || 
+        content.includes("Looking at your implementation intentions") || 
         content.includes("If-Then Structure:") || 
-        content.includes("implementation intention") ||
-        content.includes("Response Specificity:") ||
-        content.includes("Feasibility:") ||
-        (content.includes("IF") && content.includes("THEN"))) {
+        (content.includes("Feasibility:") && content.includes("Response Specificity:"))) {
       
-      // For debugging - log to see what message we're styling
-      console.log("Applying contingency styling to message:", content.substring(0, 100) + "...");
+      // Get the first line as intro (greeting)
+      const lines = content.split('\n');
+      const intro = lines[0];
       
-      // Create the three main sections
-      let introContent = content.split("Looking at your implementation intentions:")[0].trim();
+      // Just split the rest of the content into three roughly equal parts
+      const remainingContent = content.substring(intro.length).trim();
+      const contentLength = remainingContent.length;
       
-      // Try to identify the assessment section
-      let assessmentContent = "";
-      if (content.includes("Looking at your implementation intentions:")) {
-        const assessmentStart = content.indexOf("Looking at your implementation intentions:");
-        
-        // Find the end of assessment - likely where guidance begins
-        let assessmentEnd = content.length;
-        const possibleEnds = [
-          "Let me help you strengthen", 
-          "Let's build", 
-          "Here's a template",
-          "Let me suggest",
-          "Let's make your",
-          "Here's how you could"
-        ];
-        
-        for (const phrase of possibleEnds) {
-          const idx = content.indexOf(phrase);
-          if (idx > assessmentStart && idx < assessmentEnd) {
-            assessmentEnd = idx;
-          }
-        }
-        
-        assessmentContent = content.substring(assessmentStart, assessmentEnd).trim();
-      } else {
-        // Try to find bullet points with If-Then Structure, Response Specificity, Feasibility
-        const bulletLines = content.split('\n').filter(line => 
-          line.includes("• If-Then Structure:") || 
-          line.includes("• Response Specificity:") || 
-          line.includes("• Feasibility:")
-        );
-        
-        if (bulletLines.length > 0) {
-          assessmentContent = bulletLines.join('\n');
-        }
-      }
+      // Simple splitting by character count into thirds
+      const firstSplit = Math.floor(contentLength / 3);
+      const secondSplit = Math.floor(contentLength * 2 / 3);
       
-      // Find the guidance section - everything after assessment until possible next steps
-      let guidanceContent = "";
-      let nextStepsContent = "";
+      const assessmentContent = remainingContent.substring(0, firstSplit);
+      const guidanceContent = remainingContent.substring(firstSplit, secondSplit);
+      const nextStepsContent = remainingContent.substring(secondSplit);
       
-      // If we found assessment content, look for guidance after it
-      if (assessmentContent) {
-        const assessmentEndIndex = content.indexOf(assessmentContent) + assessmentContent.length;
-        
-        // Find where next steps might begin
-        let nextStepsStartIndex = content.length;
-        const nextStepsPhrases = [
-          "Please revise",
-          "📝 Please",
-          "🚀 Your", 
-          "Now, take some time to revise"
-        ];
-        
-        for (const phrase of nextStepsPhrases) {
-          const idx = content.indexOf(phrase, assessmentEndIndex);
-          if (idx !== -1 && idx < nextStepsStartIndex) {
-            nextStepsStartIndex = idx;
-          }
-        }
-        
-        if (nextStepsStartIndex < content.length) {
-          guidanceContent = content.substring(assessmentEndIndex, nextStepsStartIndex).trim();
-          nextStepsContent = content.substring(nextStepsStartIndex).trim();
-        } else {
-          // No next steps found, so guidance is the rest of the content
-          guidanceContent = content.substring(assessmentEndIndex).trim();
-        }
-      }
-      
-      // If we couldn't identify sections properly, fallback to a simple method
-      // Look at paragraphs and make educated guesses for sections
-      if (!assessmentContent || !guidanceContent) {
-        const paragraphs = content.split('\n\n').filter(p => p.trim());
-        
-        if (paragraphs.length >= 3) {
-          // Typical structure: intro, assessment, guidance, next steps
-          if (!introContent) {
-            introContent = paragraphs[0];
-          }
-          
-          if (!assessmentContent) {
-            // Look for a paragraph with bullet points or warning symbols
-            const assessmentParagraphIndex = paragraphs.findIndex(p => 
-              p.includes("⚠️") || p.includes("💡") || p.includes("✅") ||
-              p.includes("• If-Then") || p.includes("• Response") || p.includes("• Feasibility")
-            );
-            
-            if (assessmentParagraphIndex !== -1) {
-              assessmentContent = paragraphs[assessmentParagraphIndex];
-            } else {
-              // Just use the second paragraph as assessment
-              assessmentContent = paragraphs[1];
-            }
-          }
-          
-          if (!guidanceContent) {
-            // Guidance is typically the longest section with examples
-            const longParagraphs = paragraphs.filter(p => p.length > 100);
-            if (longParagraphs.length > 0) {
-              guidanceContent = longParagraphs[0];
-            } else {
-              // Use the middle paragraphs as guidance
-              if (paragraphs.length > 3) {
-                guidanceContent = paragraphs.slice(2, paragraphs.length - 1).join('\n\n');
-              } else {
-                guidanceContent = paragraphs[2] || "";
-              }
-            }
-          }
-          
-          if (!nextStepsContent && paragraphs.length > 3) {
-            // Last paragraph is often next steps
-            nextStepsContent = paragraphs[paragraphs.length - 1];
-          }
-        }
-      }
-      
-      // Apply the headings and styling to the sections
+      // Force the section headers and apply styling
       return (
         <div className="flex flex-col space-y-4">
-          {introContent && (
+          {intro && (
             <div className="text-white/90">
-              <MarkdownRenderer content={introContent} />
+              <MarkdownRenderer content={intro} />
             </div>
           )}
           
-          {assessmentContent && (
-            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-                Assessment
-              </div>
-              <MarkdownRenderer content={assessmentContent} />
+          <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
+            <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
+              <span className="text-amber-400 mr-2 text-xl">⚠️</span>
+              Assessment
             </div>
-          )}
+            <MarkdownRenderer content={assessmentContent} />
+          </div>
           
-          {guidanceContent && (
-            <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
-              <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
-                <div className="text-purple-300 font-semibold text-lg flex items-center">
-                  <span className="text-purple-300 mr-2 text-xl">📝</span>
-                  Guidance
-                </div>
-              </div>
-              <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
-                <MarkdownRenderer content={guidanceContent} />
+          <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
+            <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
+              <div className="text-purple-300 font-semibold text-lg flex items-center">
+                <span className="text-purple-300 mr-2 text-xl">📝</span>
+                Guidance
               </div>
             </div>
-          )}
+            <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
+              <MarkdownRenderer content={guidanceContent} />
+            </div>
+          </div>
           
-          {nextStepsContent && (
-            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-blue-400 mr-2 text-xl">📝</span>
-                Next Steps
-              </div>
-              <MarkdownRenderer content={nextStepsContent} />
+          <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
+            <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
+              <span className="text-blue-400 mr-2 text-xl">📝</span>
+              Next Steps
             </div>
-          )}
+            <MarkdownRenderer content={nextStepsContent} />
+          </div>
         </div>
       );
     }
