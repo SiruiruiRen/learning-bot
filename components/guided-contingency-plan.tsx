@@ -168,7 +168,7 @@ I'll guide you through creating implementation intentions that will help you ant
         const confirmationMessage: Message = {
           id: uuidv4(),
           sender: "bot",
-          content: `Thank you for your responses! Here are your complete IF-THEN contingency strategies:`,
+          content: `Thank you for your responses! Here is your complete contingency plan:`,
           timestamp: new Date(),
           type: "confirmation"
         }
@@ -301,37 +301,37 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
   
   // Process chat message to convert markdown
   const processMessageContent = (content: string) => {
-    // Special case for confirmation messages to display the IF-THEN strategies properly
-    if (content.includes("Thank you for your responses! Here are your complete IF-THEN contingency strategies")) {
+    // Special case for confirmation messages to display the contingency plan properly
+    if (content.includes("Thank you for your responses! Here is your complete contingency plan")) {
       return (
         <div className="flex flex-col space-y-3">
           <div>{content}</div>
           
-          <div className="bg-slate-800 rounded-md border border-purple-500/50 p-4 mt-2 space-y-4">
+          <div className="bg-slate-800 rounded-md border border-amber-500/50 p-4 mt-2 space-y-4">
             <div className="space-y-2">
-              <h3 className="text-purple-300 font-medium">IF Triggers:</h3>
+              <h3 className="text-amber-300 font-medium">Potential Challenges:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
-                {responses["if_trigger"] || ""}
+                {responses["challenges"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-purple-300 font-medium">THEN Responses:</h3>
+              <h3 className="text-amber-300 font-medium">Risk Assessment:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
-                {responses["then_response"] || ""}
+                {responses["risk_assessment"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-purple-300 font-medium">Feasibility Considerations:</h3>
+              <h3 className="text-amber-300 font-medium">Contingency Strategies:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
-                {responses["feasibility"] || ""}
+                {responses["contingency_strategies"] || ""}
               </div>
             </div>
           </div>
           
           <div className="text-slate-300 mt-2">
-            Are these your complete contingency strategies? If you'd like to make any changes, click "Edit Responses". Otherwise, click "Confirm & Submit" to proceed.
+            Is this your complete contingency plan? If you'd like to make any changes, click "Edit Responses". Otherwise, click "Confirm & Submit" to proceed.
           </div>
         </div>
       );
@@ -423,7 +423,7 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
     
     // For regular messages with no special formatting
     return (
-      <div className="border-l-4 border-purple-500/40 pl-3 rounded">
+      <div className="border-l-4 border-amber-500/40 pl-3 rounded">
         <MarkdownRenderer content={content} />
       </div>
     );

@@ -321,23 +321,23 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
         <div className="flex flex-col space-y-3">
           <div>{content}</div>
           
-          <div className="bg-slate-800 rounded-md border border-purple-500/50 p-4 mt-2 space-y-4">
+          <div className="bg-slate-800 rounded-md border border-blue-500/50 p-4 mt-2 space-y-4">
             <div className="space-y-2">
-              <h3 className="text-purple-300 font-medium">Progress Metrics:</h3>
+              <h3 className="text-blue-300 font-medium">Progress Metrics:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["progress_metrics"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-purple-300 font-medium">Reflection Schedule:</h3>
+              <h3 className="text-blue-300 font-medium">Reflection Schedule:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["reflection_schedule"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-purple-300 font-medium">Adaptation Approach:</h3>
+              <h3 className="text-blue-300 font-medium">Adaptation Approach:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["adaptation_approach"] || ""}
               </div>
@@ -437,7 +437,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
     
     // For regular messages with no special formatting
     return (
-      <div className="border-l-4 border-purple-500/40 pl-3 rounded">
+      <div className="border-l-4 border-amber-500/40 pl-3 rounded">
         <MarkdownRenderer content={content} />
       </div>
     );
