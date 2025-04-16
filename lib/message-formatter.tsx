@@ -22,23 +22,117 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     nextSteps: ""
   };
   
-  // Detect if this is a contingency plan format
-  const isContingencyPlan = 
-    content.includes("Looking at your implementation intentions") || 
-    (content.includes("If-Then Structure:") && content.includes("Response Specificity:") && content.includes("Feasibility:"));
-  
+  // Check for explicitly formatted sections first
+  if (content.includes("## Assessment") || content.includes("## Guidance") || content.includes("## Next Steps")) {
+    // Regular section extraction - look for explicit ## headers
+    const lines = cleanedContent.split('\n');
+    let currentSection = "intro";
+    
+    for (const line of lines) {
+      // Check for exact section headers only
+      if (line.startsWith("## Assessment")) {
+        currentSection = "assessment";
+        continue;
+      }
+      else if (line.startsWith("## Guidance")) {
+        currentSection = "guidance";
+        continue;
+      }
+      else if (line.startsWith("## Next Steps")) {
+        currentSection = "nextSteps";
+        continue;
+      }
+      
+      // Add line to current section
+      sections[currentSection] += line + '\n';
+    }
+  } 
+  // Detect if this is a Claude response for contingency planning
+  else if (content.includes("Looking at your implementation intentions:") || 
+          (content.includes("If-Then Structure:") && content.includes("Response Specificity:") && content.includes("Feasibility:"))) {
+    
+    const lines = cleanedContent.split('\n');
+    let currentSection = "intro";
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Detect assessment section in contingency plan
+      if (line.includes("Looking at your implementation intentions:") || 
+          line.includes("If-Then Structure:") || 
+          line.includes("Response Specificity:") || 
+          line.includes("Feasibility:")) {
+        
+        currentSection = "assessment";
+        sections[currentSection] += line + '\n';
+        
+        // Continue collecting assessment section until we hit guidance
+        while (i + 1 < lines.length && 
+              !lines[i + 1].includes("Let me help you create") && 
+              !lines[i + 1].includes("Let's build") && 
+              !lines[i + 1].includes("Here's a template") &&
+              !lines[i + 1].includes("Let me help")) {
+          i++;
+          sections[currentSection] += lines[i] + '\n';
+        }
+        continue;
+      }
+      
+      // Detect guidance section in contingency plan
+      if (line.includes("Let me help you create") || 
+          line.includes("Let's build") || 
+          line.includes("Here's a template") ||
+          line.includes("Let me help") || 
+          line.includes("IF:") || 
+          line.includes("THEN:") || 
+          line.includes("For example:")) {
+        
+        currentSection = "guidance";
+        sections[currentSection] += line + '\n';
+        
+        // Continue collecting guidance section until we hit next steps
+        while (i + 1 < lines.length && 
+              !lines[i + 1].includes("📝 Please revise") && 
+              !lines[i + 1].includes("Please revise") &&
+              !lines[i + 1].includes("Consider:") &&
+              !lines[i + 1].includes("Remember:")) {
+          i++;
+          sections[currentSection] += lines[i] + '\n';
+        }
+        continue;
+      }
+      
+      // Detect next steps section in contingency plan
+      if (line.includes("📝 Please revise") || 
+          line.includes("Please revise") ||
+          line.includes("Consider:") ||
+          line.includes("Remember:") ||
+          line.includes("What specific behaviors")) {
+        
+        currentSection = "nextSteps";
+        sections[currentSection] += line + '\n';
+        
+        // Add this line and all remaining lines to next steps
+        while (i + 1 < lines.length) {
+          i++;
+          sections[currentSection] += lines[i] + '\n';
+        }
+        continue;
+      }
+      
+      // Add line to current section if not specifically handled above
+      sections[currentSection] += line + '\n';
+    }
+  }
   // Detect if this is a Claude response format
-  const isClaudeResponse = 
-    content.includes("Looking at your learning objective") || 
-    content.includes("Looking at your SMART goal") || 
-    content.includes("Looking at your implementation intention") || 
-    content.includes("Looking at your monitoring & adaptation system") || 
-    content.includes("Looking at your long-term goal") ||
-    content.includes("👋 Hello") || 
-    content.includes("Hi there! 👋");
-  
-  // Special handling for Claude responses
-  if (isClaudeResponse) {
+  else if (content.includes("Looking at your learning objective") || 
+           content.includes("Looking at your SMART goal") || 
+           content.includes("Looking at your implementation intention") || 
+           content.includes("Looking at your monitoring & adaptation system") || 
+           content.includes("Looking at your long-term goal") ||
+           content.includes("👋 Hello") || 
+           content.includes("Hi there! 👋")) {
+    
     const lines = cleanedContent.split('\n');
     let currentSection = "intro";
     
@@ -62,6 +156,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
           line.includes("• Visualization:") ||
           line.includes("• Action Plan:") ||
           line.includes("• Timeline:")) {
+        
         currentSection = "assessment";
         sections[currentSection] += line + '\n';
         
@@ -87,6 +182,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
           line.includes("I'll help you") ||
           line.includes("Let me help") ||
           line.includes("template to help")) {
+        
         currentSection = "guidance";
         sections[currentSection] += line + '\n';
         
@@ -108,6 +204,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
           line.includes("Please revise") ||
           line.includes("Remember:") ||
           line.includes("📝 Next Steps:")) {
+        
         currentSection = "nextSteps";
         sections[currentSection] += line + '\n';
         
@@ -123,92 +220,9 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       // Add line to current section if not specifically handled above
       sections[currentSection] += line + '\n';
     }
-  }
-  // Special handling for contingency plans
-  else if (isContingencyPlan) {
-    const lines = cleanedContent.split('\n');
-    let currentSection = "intro";
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      
-      // Detect assessment section in contingency plan
-      if (line.includes("Looking at your implementation intentions") || 
-          line.includes("If-Then Structure:") || 
-          line.includes("Response Specificity:") || 
-          line.includes("Feasibility:")) {
-        currentSection = "assessment";
-        // Add this line to assessment
-        sections[currentSection] += line + '\n';
-        
-        // Continue collecting assessment section until we hit guidance
-        while (i + 1 < lines.length && 
-               !lines[i + 1].includes("Let's build a stronger implementation") &&
-               !lines[i + 1].includes("Here's a template")) {
-          i++;
-          sections[currentSection] += lines[i] + '\n';
-        }
-        continue;
-      }
-      
-      // Detect guidance section in contingency plan
-      if (line.includes("Let's build a stronger implementation") || 
-          line.includes("Here's a template") ||
-          line.includes("IF [specific sign of procrastination]")) {
-        currentSection = "guidance";
-        // Add this line to guidance
-        sections[currentSection] += line + '\n';
-        
-        // Continue collecting guidance section until we hit next steps
-        while (i + 1 < lines.length && 
-               !lines[i + 1].includes("Please revise your implementation") &&
-               !lines[i + 1].includes("Remember:")) {
-          i++;
-          sections[currentSection] += lines[i] + '\n';
-        }
-        continue;
-      }
-      
-      // Detect next steps section in contingency plan
-      if (line.includes("Please revise your implementation") || 
-          line.includes("What specific behaviors signal") ||
-          line.includes("Consider:")) {
-        currentSection = "nextSteps";
-        // Add this line and all remaining lines to next steps
-        sections[currentSection] += line + '\n';
-        while (i + 1 < lines.length) {
-          i++;
-          sections[currentSection] += lines[i] + '\n';
-        }
-        continue;
-      }
-      
-      // Add line to current section if not specifically handled above
-      sections[currentSection] += line + '\n';
-    }
   } else {
-    // Regular section extraction - only look for explicit ## headers
-    const lines = cleanedContent.split('\n');
-    let currentSection = "intro";
-    
-    for (const line of lines) {
-      // Check for exact section headers only
-      if (line.startsWith("## Assessment")) {
-        currentSection = "assessment";
-        continue;
-      }
-      else if (line.startsWith("## Guidance")) {
-        currentSection = "guidance";
-        continue;
-      }
-      else if (line.startsWith("## Next Steps")) {
-        currentSection = "nextSteps";
-        continue;
-      }
-      
-      // Add line to current section
-      sections[currentSection] += line + '\n';
-    }
+    // For messages that don't match any pattern, display as is
+    sections.intro = cleanedContent;
   }
   
   // Trim whitespace
