@@ -310,23 +310,23 @@ Timeline: ${responses["timeline"] || ""}
         <div className="flex flex-col space-y-3">
           <div>{content}</div>
           
-          <div className="bg-slate-800 rounded-md border border-blue-500/50 p-4 mt-2 space-y-4">
+          <div className="bg-slate-800 rounded-md border border-purple-500/50 p-4 mt-2 space-y-4">
             <div className="space-y-2">
-              <h3 className="text-blue-300 font-medium">Specific Goal:</h3>
+              <h3 className="text-purple-300 font-medium">Specific Goal:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["specific_goal"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-blue-300 font-medium">Action Plan:</h3>
+              <h3 className="text-purple-300 font-medium">Action Plan:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["action_plan"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-blue-300 font-medium">Timeline:</h3>
+              <h3 className="text-purple-300 font-medium">Timeline:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["timeline"] || ""}
               </div>
@@ -340,8 +340,98 @@ Timeline: ${responses["timeline"] || ""}
       );
     }
     
-    // For all other messages, use the shared formatter
-    return formatMessageContent(content, phase);
+    // Remove instructor metadata from the message (appears as HTML comments)
+    let cleanedContent = content.replace(/<!--\s*INSTRUCTOR_METADATA[\s\S]*?-->/g, '');
+    
+    // Determine if the message has sections based on its content
+    const hasAssessment = content.includes("## Assessment") || content.includes("Assessment") || content.includes("Looking at your");
+    const hasGuidance = content.includes("## Guidance") || content.includes("Guidance") || 
+      content.includes("Here's a template") || content.includes("Since this needs") || 
+      content.includes("Try this template") || content.includes("template to help make your goal");
+    const hasNextSteps = content.includes("## Next Steps") || content.includes("Next Steps") || content.includes("Please revise");
+    
+    // If we detect this is a message with sections, format it properly with colored borders
+    if (hasAssessment || hasGuidance || hasNextSteps) {
+      // Split the content into sections
+      const sections: {[key: string]: string} = {
+        intro: "",
+        assessment: "",
+        guidance: "",
+        nextSteps: ""
+      };
+      
+      // Process the content to identify sections
+      const lines = cleanedContent.split('\n');
+      let currentSection = "intro";
+      
+      // Parse message by line to extract sections
+      for (const line of lines) {
+        // Check for section markers and transition to that section
+        if (line.includes("## Assessment") || line.includes("Looking at your") || 
+            line.match(/^Assessment\b/) || line.includes("⚠️ Assessment")) {
+          currentSection = "assessment";
+          // Skip the ## Assessment line itself if present
+          if (line.trim() === "## Assessment") continue;
+        }
+        else if (line.includes("## Guidance") || line.includes("Here's a template") || 
+                 line.includes("Since this needs") || line.includes("Try this template") || 
+                 line.includes("template to help make your goal") || line.match(/^🎯 Let's make/) || 
+                 line.includes("template to make it more specific") || line.includes("For example:")) {
+          currentSection = "guidance";
+          // Skip the ## Guidance line itself if present
+          if (line.trim() === "## Guidance") continue;
+        }
+        else if (line.includes("## Next Steps") || line.includes("Next Steps") || 
+                 line.includes("Please revise") || line.match(/^📝 Next Steps/) || 
+                 line.match(/^📝 Please revise/)) {
+          currentSection = "nextSteps";
+          // Skip the ## Next Steps line itself if present
+          if (line.trim() === "## Next Steps") continue;
+        }
+        
+        // Add line to current section
+        sections[currentSection] += line + '\n';
+      }
+      
+      // Clean up each section by trimming
+      Object.keys(sections).forEach(key => {
+        sections[key] = sections[key].trim();
+      });
+      
+      // Format with colored borders and sections
+      return (
+        <div className="flex flex-col space-y-4">
+          {sections.intro && (
+            <div className="text-purple-200">{sections.intro}</div>
+          )}
+          
+          {sections.assessment && (
+            <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <MarkdownRenderer content={sections.assessment} />
+            </div>
+          )}
+          
+          {sections.guidance && (
+            <div className="border-l-2 border-purple-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <MarkdownRenderer content={sections.guidance} />
+            </div>
+          )}
+          
+          {sections.nextSteps && (
+            <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+              <MarkdownRenderer content={sections.nextSteps} />
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // For messages with no special formatting, just render the cleaned content
+    return (
+      <div className="border-l-2 border-purple-500 pl-3 py-2 rounded-md">
+        <MarkdownRenderer content={cleanedContent} />
+      </div>
+    );
   }
 
   // Reset and start over the process
@@ -470,12 +560,12 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
             className={`flex items-start gap-2 ${message.sender === "bot" ? "justify-start" : "justify-end"}`}
           >
             {message.sender === "bot" && (
-              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-blue-600">
+              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
                 <Bot size={16} />
               </div>
             )}
             
-            <Card className={`max-w-[75%] ${message.sender === "bot" ? "bg-slate-800/70" : "bg-blue-900/70"} border-0 shadow-md`}>
+            <Card className={`max-w-[75%] ${message.sender === "bot" ? "bg-slate-800/70" : "bg-purple-900/70"} border-0 shadow-md`}>
               <CardContent className="p-3">
                 <div className="text-sm">
                   {typeof message.content === 'string' 
@@ -501,7 +591,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
             className="flex items-center gap-2 mb-2"
             key="loading-indicator"
           >
-            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-blue-600">
+            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
               <Bot size={16} />
             </div>
             <div 
@@ -538,12 +628,12 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 maxLength={500}
-                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-blue-500 min-h-[80px]"
+                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
               <Button 
                 onClick={handleSendResponse}
-                className="h-auto bg-blue-600 hover:bg-blue-500 py-3"
+                className="h-auto bg-purple-600 hover:bg-purple-500 py-3"
                 disabled={!userInput.trim() || isSubmitting}
               >
                 <Send size={18} />
@@ -562,7 +652,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
             </Button>
             <Button
               onClick={handleConfirmAndSubmit}
-              className="bg-blue-600 hover:bg-blue-500"
+              className="bg-purple-600 hover:bg-purple-500"
               disabled={isEvaluating}
             >
               <Check size={16} className="mr-2" />
@@ -587,12 +677,12 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                   }
                 }}
                 maxLength={500}
-                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-blue-500 min-h-[80px]"
+                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
               <Button 
                 onClick={handleSendChatMessage}
-                className="h-auto bg-blue-600 hover:bg-blue-500 py-3"
+                className="h-auto bg-purple-600 hover:bg-purple-500 py-3"
                 disabled={!userInput.trim() || isSubmitting}
               >
                 <Send size={18} />
@@ -601,7 +691,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
             <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("phase4/ifthen")}
-                className="bg-blue-600 hover:bg-blue-500"
+                className="bg-purple-600 hover:bg-purple-500"
               >
                 Next Task <ArrowRight size={16} className="ml-2" />
               </Button>
