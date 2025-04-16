@@ -36,8 +36,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       currentSection = "guidance";
       continue;
     }
-    else if (line.includes("Next Steps") || line.includes("📝") || 
-            line.includes("Please revise") || line.includes("revise your")) {
+    else if (line.startsWith("## Next Steps")) {
       currentSection = "nextSteps";
       continue;
     }
