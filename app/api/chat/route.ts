@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
+
+// Helper to generate a consistent UUID from any string
+function generateUuidFromString(input: string): string {
+  // Create a hash from the input string
+  const hash = createHash('md5').update(input).digest('hex')
+  
+  // Convert to UUID format (version 4-like)
+  const uuid = [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    // Version 4 UUID has specific bits set
+    '4' + hash.substring(13, 16),
+    // UUID variant bits
+    '8' + hash.substring(17, 20),
+    hash.substring(20, 32)
+  ].join('-')
+  
+  return uuid
+}
 
 // Check if database is enabled
 const isDatabaseEnabled = process.env.DATABASE_ENABLED !== 'false';
@@ -75,6 +95,15 @@ export async function POST(request: NextRequest) {
     const fullUrl = `${backendUrl}${endpoint}`
     
     console.log(`Forwarding request to backend at ${fullUrl}`)
+
+    // Create a proper UUID from the user_id if it's not already a UUID
+    if (body.user_id) {
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      const isUuid = uuidPattern.test(body.user_id)
+      if (!isUuid) {
+        body.user_id = generateUuidFromString(body.user_id)
+      }
+    }
 
     try {
       // Forward the request to the backend with increased timeout

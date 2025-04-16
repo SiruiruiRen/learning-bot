@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
+
+// Helper to generate a consistent UUID from any string
+function generateUuidFromString(input: string): string {
+  // Create a hash from the input string
+  const hash = createHash('md5').update(input).digest('hex')
+  
+  // Convert to UUID format (version 4-like)
+  const uuid = [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    // Version 4 UUID has specific bits set
+    '4' + hash.substring(13, 16),
+    // UUID variant bits
+    '8' + hash.substring(17, 20),
+    hash.substring(20, 32)
+  ].join('-')
+  
+  return uuid
+}
 
 // Check if database is enabled
 const isDatabaseEnabled = process.env.DATABASE_ENABLED !== 'false';
@@ -58,6 +78,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Create a proper UUID from the userId if it's not already a UUID
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const isUuid = uuidPattern.test(userId)
+    const formattedUserId = isUuid ? userId : generateUuidFromString(userId)
+    
     // Store in Supabase directly if available and enabled
     if (isDatabaseEnabled && supabase) {
       try {
@@ -65,7 +90,7 @@ export async function POST(request: NextRequest) {
         const { data: existingUser, error: userError } = await supabase
           .from('users')
           .select('id')
-          .eq('id', userId)
+          .eq('id', formattedUserId)
           .maybeSingle();
         
         // Create user if doesn't exist
@@ -87,7 +112,7 @@ export async function POST(request: NextRequest) {
           }
           
           await supabase.from('users').insert({
-            id: userId,
+            id: formattedUserId,
             email: userEmail,
             created_at: new Date().toISOString()
           });
@@ -97,7 +122,7 @@ export async function POST(request: NextRequest) {
         const { data, error } = await supabase
           .from('user_data')
           .insert({
-            user_id: userId,
+            user_id: formattedUserId,
             data_type: dataType,
             value: value,
             metadata: metadata || null,
@@ -119,7 +144,7 @@ export async function POST(request: NextRequest) {
     // Forward to backend API as fallback
     try {
       const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
-      const endpoint = `/api/user-data/${userId}`;
+      const endpoint = `/api/user-data/${formattedUserId}`;
       const fullUrl = `${backendUrl}${endpoint}`;
       
       console.log(`Forwarding user data to backend at ${fullUrl}`);
@@ -187,13 +212,18 @@ export async function GET(request: NextRequest) {
       );
     }
     
+    // Create a proper UUID from the userId if it's not already a UUID
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const isUuid = uuidPattern.test(userId)
+    const formattedUserId = isUuid ? userId : generateUuidFromString(userId)
+    
     // Try to get from Supabase if available
     if (isDatabaseEnabled && supabase) {
       try {
         let query = supabase
           .from('user_data')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', formattedUserId);
         
         if (dataType) {
           query = query.eq('data_type', dataType);
@@ -216,7 +246,7 @@ export async function GET(request: NextRequest) {
     // Try backend as fallback
     try {
       const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
-      let endpoint = `/api/user-data/${userId}`;
+      let endpoint = `/api/user-data/${formattedUserId}`;
       if (dataType) {
         endpoint += `?data_type=${encodeURIComponent(dataType)}`;
       }

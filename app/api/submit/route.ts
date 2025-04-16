@@ -1,4 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { v4 as uuidv4 } from 'uuid'
+import { createHash } from 'crypto'
+
+// Helper to generate a consistent UUID from any string
+function generateUuidFromString(input: string): string {
+  // Create a hash from the input string
+  const hash = createHash('md5').update(input).digest('hex')
+  
+  // Convert to UUID format (version 4-like)
+  const uuid = [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    // Version 4 UUID has specific bits set
+    '4' + hash.substring(13, 16),
+    // UUID variant bits
+    '8' + hash.substring(17, 20),
+    hash.substring(20, 32)
+  ].join('-')
+  
+  return uuid
+}
 
 // Proxy API route that forwards learning objective submissions to the backend
 export async function POST(request: NextRequest) {
@@ -23,9 +44,15 @@ export async function POST(request: NextRequest) {
     
     console.log(`Forwarding submission to backend at ${fullUrl}`)
 
+    // Create a proper UUID from the user_id if it's not already a UUID
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const isUuid = uuidPattern.test(body.user_id)
+    const userId = isUuid ? body.user_id : generateUuidFromString(body.user_id)
+
     // Add required fields for submission
     const submissionBody = {
       ...body,
+      user_id: userId, // Use the UUID format for backend
       is_submission: true,
       submission_type: body.submission_type || "learning_objective"
     }
