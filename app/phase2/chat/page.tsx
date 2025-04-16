@@ -91,18 +91,18 @@ export default function Phase2ChatPage() {
         <div className="stars3"></div>
 
         {/* Nebula effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-900/10 via-transparent to-transparent opacity-30"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-transparent to-transparent opacity-30"></div>
       </div>
 
       <div className="container mx-auto px-4">
         <ModuleBar currentPhase={phaseId} />
         
         {/* Fixed Phase Title that stays visible when scrolling */}
-        <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-teal-500/20 py-3 px-4">
+        <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-blue-500/20 py-3 px-4">
           <div className="container mx-auto">
             <div className="flex items-center justify-center">
-              <Target className="h-6 w-6 text-teal-500 mr-2" />
-              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text">
+              <Target className="h-6 w-6 text-blue-500 mr-2" />
+              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-blue-400 to-sky-500 bg-clip-text">
                 Task Analysis & Resource Identification
               </h2>
             </div>
@@ -118,7 +118,7 @@ export default function Phase2ChatPage() {
           <div className="flex justify-between mb-4">
             <Button
               variant="ghost"
-              className="text-teal-400 hover:text-teal-300 hover:bg-slate-800/50"
+              className="text-blue-400 hover:text-blue-300 hover:bg-slate-800/50"
               onClick={() => router.push("/phase2")}
             >
               <ArrowLeft className="h-4 w-4 mr-2" /> Back to Phase 2
@@ -126,18 +126,18 @@ export default function Phase2ChatPage() {
             
             <Button
               variant="outline"
-              className="text-teal-400 border-teal-400 hover:text-teal-300 hover:bg-slate-800/50"
+              className="text-blue-400 border-blue-400 hover:text-blue-300 hover:bg-slate-800/50"
               onClick={toggleMode}
             >
               Switch to {useGuidedMode ? "Free Chat" : "Guided"} Mode
             </Button>
           </div>
           
-          <Card className="bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-xl mb-6 max-w-4xl mx-auto w-full">
+          <Card className="bg-slate-900/60 backdrop-blur-md border border-blue-500/30 shadow-xl mb-6 max-w-4xl mx-auto w-full">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-3 text-xl md:text-2xl font-bold">
-                <MessageSquare className="h-7 w-7 text-teal-500" />
-                <span className="bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text text-transparent">
+                <MessageSquare className="h-7 w-7 text-blue-500" />
+                <span className="bg-gradient-to-r from-blue-400 to-sky-500 bg-clip-text text-transparent">
                   {useGuidedMode ? "Guided Learning Objective Builder" : "Task Analysis Chat"}
                 </span>
               </CardTitle>

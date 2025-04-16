@@ -476,11 +476,11 @@ export default function Phase3Content() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto mt-16"
         >
-          <Card className="bg-slate-900/60 backdrop-blur-md border border-blue-500/30 shadow-xl mb-6">
+          <Card className="bg-slate-900/60 backdrop-blur-md border border-purple-500/30 shadow-xl mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                <BookMarked className="h-8 w-8 text-blue-500" />
-                <span className="bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                <BookMarked className="h-8 w-8 text-purple-500" />
+                <span className="bg-gradient-to-r from-purple-400 to-fuchsia-500 bg-clip-text text-transparent">
                   {cards[currentCardIndex].title}
                 </span>
               </CardTitle>
@@ -499,19 +499,19 @@ export default function Phase3Content() {
                     </p>
                   </div>
                   
-                  <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20">
-                    <h3 className="text-lg font-medium text-blue-300 mb-2">In This Phase You'll Learn:</h3>
+                  <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-500/20">
+                    <h3 className="text-lg font-medium text-purple-300 mb-2">In This Phase You'll Learn:</h3>
                     <div className="space-y-2">
                       <div className="flex items-start gap-2">
-                        <div className="text-blue-400 mt-0.5">📊</div>
+                        <div className="text-purple-400 mt-0.5">📊</div>
                         <p className="text-white/80">How to use evidence-based learning strategies</p>
                       </div>
                       <div className="flex items-start gap-2">
-                        <div className="text-blue-400 mt-0.5">🔄</div>
+                        <div className="text-purple-400 mt-0.5">🔄</div>
                         <p className="text-white/80">The power of spacing effect and distributed practice</p>
                       </div>
                       <div className="flex items-start gap-2">
-                        <div className="text-blue-400 mt-0.5">🧠</div>
+                        <div className="text-purple-400 mt-0.5">🧠</div>
                         <p className="text-white/80">Self-explanation techniques for deeper understanding</p>
                       </div>
                     </div>
@@ -540,7 +540,7 @@ export default function Phase3Content() {
                 {currentCardIndex > 0 ? (
                   <Button 
                     variant="outline"
-                    className="text-blue-400 border-blue-500/30 hover:bg-blue-900/20"
+                    className="text-purple-400 border-purple-500/30 hover:bg-purple-900/20"
                     onClick={prevCard}
                   >
                     <ChevronLeft className="h-4 w-4 mr-2" /> Previous
@@ -548,7 +548,7 @@ export default function Phase3Content() {
                 ) : <div></div>} {/* Empty div to maintain flex spacing */}
                 
                 <Button 
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-2 rounded-lg"
+                  className="bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white px-6 py-2 rounded-lg"
                   onClick={nextCard}
                   disabled={currentCardIndex === 3 && !quizCompleted}
                 >

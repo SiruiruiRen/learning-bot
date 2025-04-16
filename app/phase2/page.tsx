@@ -112,10 +112,10 @@ const LearningObjectiveAnalysis = () => {
 // Add new component for analyzing prior knowledge and resources
 const PriorKnowledgeResourceAnalysis = () => {
   return (
-    <div className="bg-slate-800/50 p-4 rounded-lg border border-teal-500/20 mb-4 max-w-4xl mx-auto">
-      <h3 className="text-lg font-medium text-teal-300 mb-2 flex items-center gap-2">
-        <div className="h-7 w-7 rounded-full bg-teal-900/60 flex items-center justify-center">
-          <span className="text-teal-400">📚</span>
+    <div className="bg-slate-800/50 p-4 rounded-lg border border-blue-500/20 mb-4 max-w-4xl mx-auto">
+      <h3 className="text-lg font-medium text-blue-300 mb-2 flex items-center gap-2">
+        <div className="h-7 w-7 rounded-full bg-blue-900/60 flex items-center justify-center">
+          <span className="text-blue-400">📚</span>
         </div>
         Why Prior Knowledge & Resources Matter
       </h3>
@@ -125,35 +125,35 @@ const PriorKnowledgeResourceAnalysis = () => {
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-700/30 p-3 rounded border border-teal-500/10">
-          <h4 className="text-teal-300 text-sm font-medium mb-2 flex items-center">
-            <Search className="h-4 w-4 mr-1 text-teal-400" />
+        <div className="bg-slate-700/30 p-3 rounded border border-blue-500/10">
+          <h4 className="text-blue-300 text-sm font-medium mb-2 flex items-center">
+            <Search className="h-4 w-4 mr-1 text-blue-400" />
             Analyzing Prior Knowledge:
           </h4>
           <ul className="space-y-1">
             <li className="flex items-center text-white/70 text-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-teal-400 mr-2"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2"></div>
               Recognize knowledge gaps to address
             </li>
             <li className="flex items-center text-white/70 text-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-teal-400 mr-2"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2"></div>
               Connect new ideas to existing mental models
             </li>
           </ul>
         </div>
         
-        <div className="bg-slate-700/30 p-3 rounded border border-teal-500/10">
-          <h4 className="text-teal-300 text-sm font-medium mb-2 flex items-center">
-            <BookOpen className="h-4 w-4 mr-1 text-teal-400" />
+        <div className="bg-slate-700/30 p-3 rounded border border-blue-500/10">
+          <h4 className="text-blue-300 text-sm font-medium mb-2 flex items-center">
+            <BookOpen className="h-4 w-4 mr-1 text-blue-400" />
             Selecting Effective Resources:
           </h4>
           <ul className="space-y-1">
             <li className="flex items-center text-white/70 text-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-teal-400 mr-2"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2"></div>
               Choose materials appropriate to your level
             </li>
             <li className="flex items-center text-white/70 text-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-teal-400 mr-2"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mr-2"></div>
               Seek diverse formats for complex topics
             </li>
           </ul>
@@ -335,7 +335,7 @@ export default function Phase2Content() {
         <div className="stars3"></div>
 
         {/* Nebula effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-900/10 via-transparent to-transparent opacity-30"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-transparent to-transparent opacity-30"></div>
       </div>
 
       <div className="container mx-auto px-4">
@@ -389,11 +389,11 @@ export default function Phase2Content() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto mt-16"
         >
-          <Card className="bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-xl mb-6">
+          <Card className="bg-slate-900/60 backdrop-blur-md border border-blue-500/30 shadow-xl mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                <Target className="h-8 w-8 text-teal-500" />
-                <span className="bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text text-transparent">
+                <Target className="h-8 w-8 text-blue-500" />
+                <span className="bg-gradient-to-r from-blue-400 to-sky-500 bg-clip-text text-transparent">
                   Task Analysis & Resource Identification
                 </span>
               </CardTitle>
@@ -446,15 +446,15 @@ export default function Phase2Content() {
                     
                     <div className="text-white/80 text-sm">
                       {videoWatched ? (
-                        <div className="p-3 bg-teal-900/20 border border-teal-500/20 rounded-lg">
-                          <p className="text-teal-300 font-medium flex items-center">
-                            <CheckCircle className="h-4 w-4 mr-2 text-teal-400" />
+                        <div className="p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+                          <p className="text-blue-300 font-medium flex items-center">
+                            <CheckCircle className="h-4 w-4 mr-2 text-blue-400" />
                             Video Completed!
                           </p>
                         </div>
                       ) : (
-                        <p className="mt-4 text-teal-300 font-medium flex items-center">
-                          <MessageSquare className="h-4 w-4 mr-2 text-teal-300" />
+                        <p className="mt-4 text-blue-300 font-medium flex items-center">
+                          <MessageSquare className="h-4 w-4 mr-2 text-blue-300" />
                           After watching the video, you'll chat with SolBot to create your personalized Task Analysis & Resource Identification plan.
                         </p>
                       )}
@@ -468,7 +468,7 @@ export default function Phase2Content() {
                 {currentCardIndex > 0 ? (
                   <Button 
                     variant="outline"
-                    className="text-teal-400 border-teal-500/30 hover:bg-teal-900/20"
+                    className="text-blue-400 border-blue-500/30 hover:bg-blue-900/20"
                     onClick={prevCard}
                   >
                     <ChevronLeft className="h-4 w-4 mr-2" /> Previous
@@ -477,14 +477,14 @@ export default function Phase2Content() {
                 
                 {currentCardIndex < cards.length - 1 ? (
                   <Button 
-                    className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-6 py-2 rounded-lg"
+                    className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white px-6 py-2 rounded-lg"
                     onClick={nextCard}
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : (
                   <Button 
-                    className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white px-6 py-3 rounded-full font-medium shadow-lg"
+                    className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white px-6 py-3 rounded-full font-medium shadow-lg"
                     onClick={nextCard}
                   >
                     Continue to Chat <ChevronRight className="h-5 w-5 ml-2" />
