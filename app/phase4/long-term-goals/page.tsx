@@ -156,9 +156,9 @@ export default function LongTermGoalsPage() {
             </Button>
             <div className="flex items-center">
               <Sparkles className="h-6 w-6 text-orange-500 mr-2" />
-              <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                Phase 4: Long-term Learning Goals
-              </h1>
+              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text">
+                Phase 4: Achieve Your Goals
+              </h2>
             </div>
             <div className="w-24"></div> {/* Spacer for centering */}
           </div>

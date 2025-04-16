@@ -136,7 +136,7 @@ export default function Phase4Content() {
 
   // Define the cards for easy reference
   const cards = [
-    { id: "intro", title: "Strategic Planning" },
+    { id: "intro", title: "Achieve Your Goals" },
     { id: "mcii", title: "MCII: Your Psychological Superpower" },
     { id: "tasks", title: "Your Learning Planning Tasks" },
   ]
@@ -242,9 +242,9 @@ export default function Phase4Content() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-gray-900/95 backdrop-blur-md border-b border-orange-500/20 py-3 px-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-            <Target className="h-6 w-6 text-orange-500 mr-2" />
+            <ListTodo className="h-6 w-6 text-orange-500 mr-2" />
             <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text">
-              Phase 4: Strategic Planning
+              Phase 4: Achieve Your Goals
             </h2>
           </div>
         </div>
@@ -407,9 +407,9 @@ export default function Phase4Content() {
             <Card className="bg-gray-900/60 backdrop-blur-md border border-orange-500/30 shadow-xl mb-6">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                  <ListTodo className="h-8 w-8 text-orange-500" />
+                  <ListTodo className="h-7 w-7 text-orange-500" />
                   <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                    Your Learning Planning Tasks
+                    Achieve Your Goals
                   </span>
                 </CardTitle>
               </CardHeader>

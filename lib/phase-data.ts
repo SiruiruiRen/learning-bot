@@ -23,7 +23,7 @@ export interface PhaseMessage {
 export const phases: Record<number, PhaseData> = {
   1: {
     id: 1,
-    title: "Self-Regulated Learning Framework",
+    title: "What's SRL",
     subtitle: "Master the art of learning effectively",
     description: "Discover the science-backed approach that transforms average students into exceptional learners.",
     initialMessages: [
@@ -51,7 +51,7 @@ export const phases: Record<number, PhaseData> = {
   },
   2: {
     id: 2,
-    title: "Task Analysis",
+    title: "Understand Your Tasks",
     subtitle: "Define what success looks like",
     description: "Learn to precisely map out your learning path before beginning - the key to avoiding wasted time and effort.",
     initialMessages: [
@@ -79,7 +79,7 @@ export const phases: Record<number, PhaseData> = {
   },
   3: {
     id: 3,
-    title: "Learning Strategies",
+    title: "Effective Learning Strategies",
     subtitle: "Study smarter, not harder",
     description: "Discover scientifically-proven techniques that make information stick in your long-term memory.",
     initialMessages: [
@@ -107,7 +107,7 @@ export const phases: Record<number, PhaseData> = {
   },
   4: {
     id: 4,
-    title: "Goal Setting",
+    title: "Achieve Your Goals",
     subtitle: "Create your roadmap to mastery",
     description: "Transform vague intentions into a concrete action plan with built-in accountability.",
     initialMessages: [
@@ -135,7 +135,7 @@ export const phases: Record<number, PhaseData> = {
   },
   5: {
     id: 5,
-    title: "Monitoring & Adaptation",
+    title: "Monitor Your Learning",
     subtitle: "Stay on course and pivot when needed",
     description: "Learn to track your progress objectively and make data-driven adjustments to your approach.",
     initialMessages: [

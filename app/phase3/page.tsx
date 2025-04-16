@@ -129,7 +129,7 @@ export default function Phase3Content() {
 
   // Define the cards for easy reference
   const cards = [
-    { id: "intro", title: "Learning Strategies" },
+    { id: "intro", title: "Effective Learning Strategies" },
     { id: "self-explanation", title: "Self-Explanation Strategy" },
     { id: "spacing-effect", title: "The Power of Spacing Effect" },
     { id: "knowledge-check", title: "Knowledge Check" },
@@ -432,8 +432,8 @@ export default function Phase3Content() {
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
             <BookMarked className="h-6 w-6 text-purple-500 mr-2" />
-            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-fuchsia-500 bg-clip-text">
-              Phase 3: Learning Strategies
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-violet-500 bg-clip-text">
+              Phase 3: Effective Learning Strategies
             </h2>
           </div>
         </div>

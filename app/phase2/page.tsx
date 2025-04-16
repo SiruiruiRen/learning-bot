@@ -184,7 +184,7 @@ export default function Phase2Content() {
 
   // Define the cards for easy reference
   const cards = [
-    { id: "intro", title: "Task Analysis & Resource Identification" },
+    { id: "intro", title: "Understand Your Task" },
     { id: "objectives", title: "How to Analyze Learning Objectives" },
     { id: "resources", title: "Why Prior Knowledge & Resources Matter" },
     { id: "video", title: "Watch: Introduction to Learning Task Analysis" },
@@ -345,9 +345,9 @@ export default function Phase2Content() {
         <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-blue-500/20 py-3 px-4">
           <div className="container mx-auto">
             <div className="flex items-center justify-center">
-              <Target className="h-6 w-6 text-blue-500 mr-2" />
-              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-blue-400 to-sky-500 bg-clip-text">
-                Phase 2: Task Analysis
+              <Target className="h-6 w-6 text-teal-500 mr-2" />
+              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text">
+                Phase 2: Understand Your Tasks
               </h2>
             </div>
           </div>

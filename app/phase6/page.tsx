@@ -293,9 +293,9 @@ export default function Phase6Content() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-indigo-500/20 py-3 px-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-            <Medal className="h-6 w-6 text-indigo-500 mr-2" />
-            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text">
-              Phase 6: Learning System Summary
+            <Medal className="h-6 w-6 text-rose-500 mr-2" />
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-rose-400 to-pink-500 bg-clip-text">
+              Phase 6: Learning Journey Summary
             </h2>
           </div>
         </div>

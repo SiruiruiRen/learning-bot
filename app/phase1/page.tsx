@@ -30,8 +30,8 @@ export default function Phase1Content() {
 
   // Define the cards for easy reference
   const cards = [
-    { id: "intro", title: "Introduction to Self-Regulated Learning" },
-    { id: "video", title: "Understanding the SRL Framework" },
+    { id: "intro", title: "What's SRL" },
+    { id: "video", title: "Understanding Self-Regulated Learning" },
     { id: "quiz", title: "Knowledge Check" },
   ]
 
@@ -318,7 +318,7 @@ export default function Phase1Content() {
             <div className="flex items-center justify-center">
               <BrainCircuit className="h-6 w-6 text-indigo-500 mr-2" />
               <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text">
-                Phase 1: SRL Introduction
+                Phase 1: What's SRL
               </h2>
             </div>
           </div>

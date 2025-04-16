@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Award, Bot, Download, Home, Printer, Sparkles, CheckCircle, Send, Target, BookOpen, LineChart, Timer, ClipboardList, BrainCircuit, ArrowRight, Play, ArrowRightCircle, PlusCircle, Lightbulb } from "lucide-react"
+import { Award, Bot, Download, Home, Printer, Sparkles, CheckCircle, Send, Target, BookOpen, LineChart, Timer, ClipboardList, BrainCircuit, ArrowRight, Play, ArrowRightCircle, PlusCircle, Lightbulb, Medal } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import { Textarea } from "@/components/ui/textarea"
 import { v4 as uuidv4 } from 'uuid'
@@ -176,10 +176,10 @@ export default function SummaryPage() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-rose-500/20 py-3 px-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-            <Award className="h-7 w-7 text-rose-500 mr-2" />
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-rose-400 to-pink-500 bg-clip-text text-transparent">
-              Learning Journey Summary
-            </h1>
+            <Medal className="h-6 w-6 text-rose-500 mr-2" />
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-rose-400 to-pink-500 bg-clip-text">
+              Phase 6: Learning Journey Summary
+            </h2>
           </div>
         </div>
       </div>

@@ -85,7 +85,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
       icon: <Flag className="h-5 w-5" />,
       color: "blue" as ModuleColor,
       phases: [1, 2],
-      phaseNames: ["SRL Intro", "Task Analysis"],
+      phaseNames: ["What's SRL", "Understand Your Tasks"],
       phaseIcons: [<BrainCircuit className="h-5 w-5" />, <Target className="h-5 w-5" />],
       phaseDescriptions: [
         "Understand the self-regulated learning framework that will guide your learning journey",
@@ -98,7 +98,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
       icon: <Lightbulb className="h-5 w-5" />,
       color: "purple" as ModuleColor,
       phases: [3, 4],
-      phaseNames: ["Strategies", "Planning"],
+      phaseNames: ["Effective Learning Strategies", "Achieve Your Goals"],
       phaseIcons: [<BookMarked className="h-5 w-5" />, <ListTodo className="h-5 w-5" />],
       phaseDescriptions: [
         "Discover evidence-based learning techniques like retrieval practice and spaced repetition",
@@ -111,7 +111,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
       icon: <BarChart2 className="h-5 w-5" />,
       color: "indigo" as ModuleColor,
       phases: [5, 6],
-      phaseNames: ["Monitoring", "Summary"],
+      phaseNames: ["Monitor Your Learning", "Learning Journey Summary"],
       phaseIcons: [<TrendingUp className="h-5 w-5" />, <Medal className="h-5 w-5" />],
       phaseDescriptions: [
         "Build a system to track your progress and adjust your approach",
@@ -369,7 +369,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
-                    <p>Phase 1: SRL Introduction</p>
+                    <p>Phase 1: What's SRL</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -398,7 +398,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
-                    <p>Phase 2: Task Analysis</p>
+                    <p>Phase 2: Understand Your Tasks</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -427,7 +427,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
-                    <p>Phase 3: Learning Strategies</p>
+                    <p>Phase 3: Effective Learning Strategies</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -456,7 +456,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
-                    <p>Phase 4: Strategic Planning</p>
+                    <p>Phase 4: Achieve Your Goals</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -485,7 +485,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
-                    <p>Phase 5: Progress Monitoring</p>
+                    <p>Phase 5: Monitor Your Learning</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -514,7 +514,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
-                    <p>Summary & Success Blueprint</p>
+                    <p>Phase 6: Learning Journey Summary</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

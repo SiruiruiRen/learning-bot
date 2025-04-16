@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sparkles, ArrowLeft, Trophy, ArrowRight, LineChart } from "lucide-react"
+import { Sparkles, ArrowLeft, Trophy, ArrowRight, LineChart, Target } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedContingencyPlan from "@/components/guided-contingency-plan"
 
@@ -151,10 +151,10 @@ export default function ContingencyStrategiesPage() {
               <span>Back</span>
             </Button>
             <div className="flex items-center">
-              <LineChart className="h-6 w-6 text-orange-500 mr-2" />
-              <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                Phase 4: Contingency Strategies
-              </h1>
+              <Target className="h-6 w-6 text-orange-500 mr-2" />
+              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text">
+                Phase 4: Achieve Your Goals
+              </h2>
             </div>
             <div className="w-24"></div> {/* Spacer for centering */}
           </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { BarChart, Target, ChartLine, Gauge, ArrowRight, CheckCircle, ChevronRight, ChevronLeft } from "lucide-react"
+import { BarChart, Target, ChartLine, Gauge, ArrowRight, CheckCircle, ChevronRight, ChevronLeft, LineChart } from "lucide-react"
 import { Button } from "@/components/ui/button" 
 import ModuleBar from "@/components/module-bar"
 
@@ -138,7 +138,7 @@ export default function Phase5Content() {
 
   // Define the cards for easy reference
   const cards = [
-    { id: "intro", title: "Monitoring & Adaptation" },
+    { id: "intro", title: "Monitoring Your Learning" },
     { id: "strategy", title: "Metacognitive Monitoring Strategies" },
     { id: "benefits", title: "Benefits of Regular Monitoring" },
   ]
@@ -208,9 +208,9 @@ export default function Phase5Content() {
       <div className="fixed top-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-indigo-500/20 py-3 px-4">
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-            <BarChart className="h-6 w-6 text-indigo-500 mr-2" />
-            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text">
-              Phase 5: Monitoring & Adaptation
+            <LineChart className="h-6 w-6 text-amber-500 mr-2" />
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text">
+              Phase 5: Monitor Your Learning
             </h2>
           </div>
         </div>
