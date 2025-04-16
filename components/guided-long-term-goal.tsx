@@ -21,18 +21,18 @@ interface GuidedLongTermGoalProps {
 const LONGTERM_QUESTIONS = [
   {
     id: "specific_goal",
-    question: "What specific long-term learning goal would you like to achieve through this course or learning journey?",
-    hint: "Visualize yourself at the finish line. What specific knowledge or skills will you possess? What concrete achievements will demonstrate your success? Be as detailed as possible about what mastery looks like to you."
+    question: "What meaningful goal would you like to accomplish by applying what you're learning in this course?",
+    hint: "Choose a specific, achievable goal that connects to the course material. This could be mastering a particular concept, completing a project, or applying your knowledge in a real-world situation. "
   },
   {
     id: "goal_orientation",
-    question: "Imagine your future self after achieving this goal. How would this accomplishment transform your personal or professional identity?",
-    hint: "Close your eyes and picture yourself after achieving this goal. How will this knowledge change who you are? What new opportunities will open up? How might others see you differently? Try to feel the emotions associated with this transformation."
+    question: "How does this goal connect to your personal story and future aspirations?",
+    hint: "Reflect on why this goal matters specifically to you. How does it align with your values or interests? Consider how accomplishing this goal fits into your broader life journey and who you're becoming."
   },
   {
     id: "visualization",
-    question: "Describe a vivid scene where you're applying your newly mastered knowledge or skills. What are you doing and how does it feel?",
-    hint: "Create a mental movie of a specific moment: Where are you? Who else is there? What exactly are you doing with your new abilities? What sights, sounds, or sensations are present? How do you feel emotionally as you demonstrate your mastery? Make this scene as detailed and immersive as possible."
+    question: "Take a moment to indulge in how it would feel to achieve this goal. Why would achieving this goal be so satisfying? Elaborate on what it would feel like to achieve this goal. Imagine the relevant events and experiences as vividly as possible.",
+    hint: "Paint a detailed mental picture of your success: Where are you? What are you doing with your new knowledge or skills? Notice the emotions you experience—pride, relief, excitement. Consider both the practical benefits and how this achievement might change how you see yourself."
   }
 ]
 
@@ -627,7 +627,7 @@ I'll guide you to create a compelling mental image of your success that will mot
                 Question {currentQuestion + 1} of {LONGTERM_QUESTIONS.length}
               </div>
               <div>
-                {userInput.length} / 500 characters
+                {userInput.length} / 1500 characters
               </div>
             </div>
             
@@ -640,7 +640,7 @@ I'll guide you to create a compelling mental image of your success that will mot
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
@@ -689,7 +689,7 @@ I'll guide you to create a compelling mental image of your success that will mot
                     handleSendChatMessage()
                   }
                 }}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />

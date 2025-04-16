@@ -22,18 +22,18 @@ interface GuidedMonitoringAdaptationProps {
 const MONITORING_QUESTIONS = [
   {
     id: "progress_metrics",
-    question: "What specific metrics or indicators will you track to monitor your progress?",
-    hint: "Example: 'Completion of weekly practice problems, quiz scores, ability to implement concepts in my projects'"
+    question: "How will you measure your success toward your goal?",
+    hint: "Choose 2-3 concrete indicators that will show you're making progress, such as completing practice assignments, improving quiz scores, or successfully applying concepts in projects."
   },
   {
     id: "reflection_schedule",
-    question: "How and when will you schedule regular reflection on your learning progress?",
-    hint: "Example: 'I'll do a 15-minute review every Friday afternoon and a more comprehensive monthly assessment'"
+    question: "When will you pause to reflect on what's working and what isn't?",
+    hint: "Set a specific, realistic schedule for checking your progress - perhaps a quick weekly check-in and a more thorough monthly review."
   },
   {
     id: "adaptation_approach",
-    question: "How will you adjust your learning plan if you discover your current approach isn't working?",
-    hint: "Example: 'I'll seek feedback from peers, try alternative learning resources, or adjust my timeline if necessary'"
+    question: "How will you adjust your learning plan if you discover your current approach isn't working? What will you do if you find yourself stuck or falling behind?",
+    hint: "Consider who you might ask for help, what alternative learning approaches you could try, or how you might adjust your timeline or expectations."
   }
 ]
 
@@ -533,7 +533,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
                 Question {currentQuestion + 1} of {MONITORING_QUESTIONS.length}
               </div>
               <div>
-                {userInput.length} / 500 characters
+                {userInput.length} / 1500 characters
               </div>
             </div>
             
@@ -546,7 +546,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
@@ -595,7 +595,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
                     handleSendChatMessage()
                   }
                 }}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
