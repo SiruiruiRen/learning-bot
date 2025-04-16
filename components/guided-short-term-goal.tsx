@@ -340,96 +340,49 @@ Timeline: ${responses["timeline"] || ""}
       );
     }
     
-    // Remove instructor metadata from the message (appears as HTML comments)
-    let cleanedContent = content.replace(/<!--\s*INSTRUCTOR_METADATA[\s\S]*?-->/g, '');
-    
-    // Determine if the message has sections based on its content
-    const hasAssessment = content.includes("## Assessment") || content.includes("Assessment") || content.includes("Looking at your");
-    const hasGuidance = content.includes("## Guidance") || content.includes("Guidance") || 
-      content.includes("Here's a template") || content.includes("Since this needs") || 
-      content.includes("Try this template") || content.includes("template to help make your goal");
-    const hasNextSteps = content.includes("## Next Steps") || content.includes("Next Steps") || content.includes("Please revise");
-    
-    // If we detect this is a message with sections, format it properly with colored borders
-    if (hasAssessment || hasGuidance || hasNextSteps) {
-      // Split the content into sections
-      const sections: {[key: string]: string} = {
-        intro: "",
-        assessment: "",
-        guidance: "",
-        nextSteps: ""
-      };
-      
-      // Process the content to identify sections
-      const lines = cleanedContent.split('\n');
-      let currentSection = "intro";
-      
-      // Parse message by line to extract sections
-      for (const line of lines) {
-        // Check for section markers and transition to that section
-        if (line.includes("## Assessment") || line.includes("Looking at your") || 
-            line.match(/^Assessment\b/) || line.includes("⚠️ Assessment")) {
-          currentSection = "assessment";
-          // Skip the ## Assessment line itself if present
-          if (line.trim() === "## Assessment") continue;
+    // Simple format for evaluation messages with sections 
+    // Look specifically for standard Claude output section headers
+    if (content.includes("## Assessment") || content.includes("## Guidance") || content.includes("## Next Steps")) {
+      // Split content by the headers
+      const sections = content.split(/(?=## )/);
+      const formattedSections = sections.map((section, index) => {
+        if (section.startsWith("## Assessment")) {
+          return (
+            <div key={`assessment-${index}`} className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md mt-3">
+              <MarkdownRenderer content={section} />
+            </div>
+          );
         }
-        else if (line.includes("## Guidance") || line.includes("Here's a template") || 
-                 line.includes("Since this needs") || line.includes("Try this template") || 
-                 line.includes("template to help make your goal") || line.match(/^🎯 Let's make/) || 
-                 line.includes("template to make it more specific") || line.includes("For example:")) {
-          currentSection = "guidance";
-          // Skip the ## Guidance line itself if present
-          if (line.trim() === "## Guidance") continue;
+        else if (section.startsWith("## Guidance")) {
+          return (
+            <div key={`guidance-${index}`} className="border-l-2 border-purple-500 pl-3 py-2 bg-slate-800/30 rounded-md mt-3">
+              <MarkdownRenderer content={section} />
+            </div>
+          );
         }
-        else if (line.includes("## Next Steps") || line.includes("Next Steps") || 
-                 line.includes("Please revise") || line.match(/^📝 Next Steps/) || 
-                 line.match(/^📝 Please revise/)) {
-          currentSection = "nextSteps";
-          // Skip the ## Next Steps line itself if present
-          if (line.trim() === "## Next Steps") continue;
+        else if (section.startsWith("## Next Steps")) {
+          return (
+            <div key={`next-steps-${index}`} className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md mt-3">
+              <MarkdownRenderer content={section} />
+            </div>
+          );
         }
-        
-        // Add line to current section
-        sections[currentSection] += line + '\n';
-      }
-      
-      // Clean up each section by trimming
-      Object.keys(sections).forEach(key => {
-        sections[key] = sections[key].trim();
+        else {
+          return (
+            <div key={`intro-${index}`} className="mt-2">
+              <MarkdownRenderer content={section} />
+            </div>
+          );
+        }
       });
       
-      // Format with colored borders and sections
-      return (
-        <div className="flex flex-col space-y-4">
-          {sections.intro && (
-            <div className="text-purple-200">{sections.intro}</div>
-          )}
-          
-          {sections.assessment && (
-            <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <MarkdownRenderer content={sections.assessment} />
-            </div>
-          )}
-          
-          {sections.guidance && (
-            <div className="border-l-2 border-purple-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <MarkdownRenderer content={sections.guidance} />
-            </div>
-          )}
-          
-          {sections.nextSteps && (
-            <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <MarkdownRenderer content={sections.nextSteps} />
-            </div>
-          )}
-        </div>
-      );
+      return <div className="flex flex-col">{formattedSections}</div>;
     }
     
-    // For messages with no special formatting, just render the cleaned content
+    // For messages with no special formatting, just render the content
     return (
       <div className="border-l-2 border-purple-500 pl-3 py-2 rounded-md">
-        <MarkdownRenderer content={cleanedContent} />
+        <MarkdownRenderer content={content} />
       </div>
     );
   }
