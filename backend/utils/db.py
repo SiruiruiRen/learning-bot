@@ -123,6 +123,20 @@ def init_db():
         try:
             test_response = _supabase_client.table("user_data").select("count", count="exact").limit(1).execute()
             logger.info(f"Database connection test successful. Count: {test_response.count}")
+            
+            # Check table schema compatibility
+            try:
+                # Get users table columns to debug schema issues
+                columns_resp = _supabase_client.table("users").select("*").limit(1).execute()
+                if columns_resp.data:
+                    user_columns = list(columns_resp.data[0].keys())
+                    logger.info(f"Users table has columns: {user_columns}")
+                else:
+                    # Try getting users table columns via RPC if available
+                    logger.info("No users found. Unable to determine schema.")
+            except Exception as schema_err:
+                logger.warning(f"Could not check schema compatibility: {schema_err}")
+                
         except Exception as test_err:
             logger.warning(f"Database connection test failed: {test_err}")
     except Exception as e:
@@ -178,8 +192,8 @@ def get_user_profile(user_id: str) -> Dict[str, Any]:
             # Create the user on the fly
             user_data = {
                 "id": uuid_id,
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat()
+                # Removed updated_at as it doesn't exist in schema
             }
             db.table("users").insert(user_data).execute()
             return {"id": clean_user_id, "uuid": uuid_id}
@@ -194,8 +208,7 @@ def ensure_user_exists(user_id: str) -> str:
         if user_id not in _memory_db["users"]:
             _memory_db["users"][user_id] = {
                 "id": user_id,
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat()
             }
         return user_id
     
@@ -215,11 +228,14 @@ def ensure_user_exists(user_id: str) -> str:
         if not response.data:
             # Create the user if not exists
             logger.info(f"Creating new user with ID: {uuid_user_id} (original: {clean_user_id})")
+            
+            # Only include fields that exist in the schema
             user_data = {
                 "id": uuid_user_id,
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat()
+                # Removed updated_at as it doesn't exist in schema
             }
+            
             db.table("users").insert(user_data).execute()
         
         return uuid_user_id
@@ -644,8 +660,14 @@ def save_llm_interaction(user_id: str, model: str, tokens_in: int, tokens_out: i
     
     db = get_db()
     try:
+        # Clean the user ID first if it has a prefix
+        clean_user_id = user_id
+        if isinstance(user_id, str) and user_id.startswith("user-"):
+            clean_user_id = user_id[5:]  # Remove "user-" prefix
+            logger.debug(f"Cleaned user ID from '{user_id}' to '{clean_user_id}'")
+            
         # Ensure user exists and get UUID
-        uuid_user_id = ensure_user_exists(user_id)
+        uuid_user_id = ensure_user_exists(clean_user_id)
         
         # Create database record
         db_data = {
@@ -657,6 +679,7 @@ def save_llm_interaction(user_id: str, model: str, tokens_in: int, tokens_out: i
             "metadata": json.dumps({
                 "phase": phase,
                 "component": component,
+                "original_user_id": user_id,
                 **(metadata or {})
             })
         }
