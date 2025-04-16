@@ -337,7 +337,121 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       );
     }
     
-    // Extract sections using section headers pattern
+    // Force styled sections for contingency strategy messages
+    if (messages.length > 0 && messages[messages.length - 1].sender === "bot" && messages[messages.length - 1].type === "evaluation") {
+      // Check if this is a contingency strategies evaluation
+      if (content.includes("Looking at your implementation intentions:") || 
+          content.includes("If-Then Structure:") || 
+          content.includes("implementation intention") ||
+          content.includes("contingency") ||
+          content.includes("If") && content.includes("Then")) {
+        
+        // Split the content into paragraphs for easier processing
+        const paragraphs = content.split('\n\n').filter(p => p.trim() !== '');
+        
+        // Extract greeting/intro (first paragraph)
+        const introSection = paragraphs[0];
+        
+        // Find assessment section (paragraph containing "Looking at" or bullet points with warnings)
+        let assessmentSection = '';
+        let assessmentIndex = -1;
+        
+        for (let i = 0; i < paragraphs.length; i++) {
+          if (paragraphs[i].includes("Looking at your implementation intentions:") || 
+              (paragraphs[i].includes("If-Then Structure:") && paragraphs[i].includes("⚠️"))) {
+            assessmentSection = paragraphs[i];
+            assessmentIndex = i;
+            break;
+          }
+        }
+        
+        // If no explicit assessment found, use second paragraph if it has bullet points
+        if (assessmentIndex === -1 && paragraphs.length > 1 && (paragraphs[1].includes("•") || paragraphs[1].includes("⚠️"))) {
+          assessmentSection = paragraphs[1];
+          assessmentIndex = 1;
+        }
+        
+        // Identify guidance section (template, examples)
+        let guidanceSection = '';
+        let guidanceStartIndex = -1;
+        
+        // Look for guidance section starting keywords
+        for (let i = assessmentIndex + 1; i < paragraphs.length; i++) {
+          if (paragraphs[i].includes("template") || 
+              paragraphs[i].includes("build") ||
+              paragraphs[i].includes("example") ||
+              paragraphs[i].includes("IF:") ||
+              paragraphs[i].includes("THEN:") ||
+              paragraphs[i].includes("strengthen")) {
+            guidanceStartIndex = i;
+            break;
+          }
+        }
+        
+        // If we found a guidance section, collect all paragraphs until we find next steps
+        if (guidanceStartIndex !== -1) {
+          let nextStepsIndex = -1;
+          
+          // Look for next steps indicators
+          for (let i = guidanceStartIndex + 1; i < paragraphs.length; i++) {
+            if (paragraphs[i].includes("Please revise") || 
+                paragraphs[i].includes("📝") ||
+                paragraphs[i].includes("🚀") ||
+                paragraphs[i].includes("Continue") ||
+                paragraphs[i].includes("revise") ||
+                i === paragraphs.length - 1) { // Last paragraph might be next steps
+              nextStepsIndex = i;
+              break;
+            }
+          }
+          
+          // Collect guidance paragraphs
+          if (nextStepsIndex === -1) {
+            // If no next steps found, assume all remaining paragraphs are guidance
+            guidanceSection = paragraphs.slice(guidanceStartIndex).join('\n\n');
+          } else {
+            guidanceSection = paragraphs.slice(guidanceStartIndex, nextStepsIndex).join('\n\n');
+          }
+          
+          // Next steps is either the identified paragraph or the last paragraph
+          const nextStepsSection = nextStepsIndex !== -1 ? paragraphs[nextStepsIndex] : paragraphs[paragraphs.length - 1];
+          
+          // Handle a case where we couldn't identify sections properly
+          if (!assessmentSection && !guidanceSection) {
+            // Simple fallback: split content into thirds
+            const contentLines = content.split('\n');
+            const totalLines = contentLines.length;
+            
+            if (totalLines >= 6) {
+              const firstThird = Math.floor(totalLines / 3);
+              const secondThird = Math.floor(totalLines * 2 / 3);
+              
+              assessmentSection = contentLines.slice(1, firstThird).join('\n');
+              guidanceSection = contentLines.slice(firstThird, secondThird).join('\n');
+              const nextStepsSection = contentLines.slice(secondThird).join('\n');
+              
+              return renderStyledSections(introSection, assessmentSection, guidanceSection, nextStepsSection);
+            }
+          }
+          
+          return renderStyledSections(introSection, assessmentSection, guidanceSection, nextStepsSection);
+        } else {
+          // If we couldn't identify a clear guidance section, use a simple approach
+          // Split the remaining content in half for guidance and next steps
+          const remainingParagraphs = paragraphs.slice(assessmentIndex + 1);
+          const midPoint = Math.floor(remainingParagraphs.length / 2);
+          
+          if (remainingParagraphs.length > 0) {
+            guidanceSection = remainingParagraphs.slice(0, midPoint || 1).join('\n\n');
+            const nextStepsSection = remainingParagraphs.slice(midPoint || 1).join('\n\n');
+            
+            return renderStyledSections(introSection, assessmentSection, guidanceSection, nextStepsSection);
+          }
+        }
+      }
+    }
+    
+    // Extract sections using section headers pattern (for responses with ## headers)
     if (content.includes("## Assessment") || content.includes("## Guidance") || content.includes("## Next Steps")) {
       // Split the content into sections
       const sections: {[key: string]: string} = {
@@ -375,56 +489,61 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
         sections[key] = sections[key].trim();
       });
       
-      // Format with colored borders and sections
-      return (
-        <div className="flex flex-col space-y-4">
-          {sections.intro && (
-            <div className="text-white/90">
-              <MarkdownRenderer content={sections.intro} />
-            </div>
-          )}
-          
-          {sections.assessment && (
-            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-                Assessment
-              </div>
-              <MarkdownRenderer content={sections.assessment} />
-            </div>
-          )}
-          
-          {sections.guidance && (
-            <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
-              <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
-                <div className="text-purple-300 font-semibold text-lg flex items-center">
-                  <span className="text-purple-300 mr-2 text-xl">📝</span>
-                  Guidance
-                </div>
-              </div>
-              <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
-                <MarkdownRenderer content={sections.guidance} className="prose prose-invert max-w-none text-slate-100" />
-              </div>
-            </div>
-          )}
-          
-          {sections.nextSteps && (
-            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-blue-400 mr-2 text-xl">📝</span>
-                Next Steps
-              </div>
-              <MarkdownRenderer content={sections.nextSteps} />
-            </div>
-          )}
-        </div>
-      );
+      // Format with colored borders and sections using our helper function
+      return renderStyledSections(sections.intro, sections.assessment, sections.guidance, sections.nextSteps);
     }
     
     // For regular messages with no special formatting
     return (
       <div className="border-l-4 border-purple-500/40 pl-3 rounded">
         <MarkdownRenderer content={content} />
+      </div>
+    );
+  }
+  
+  // Helper function to render styled sections with consistent formatting
+  const renderStyledSections = (intro?: string, assessment?: string, guidance?: string, nextSteps?: string) => {
+    return (
+      <div className="flex flex-col space-y-4">
+        {intro && (
+          <div className="text-white/90">
+            <MarkdownRenderer content={intro} />
+          </div>
+        )}
+        
+        {assessment && (
+          <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
+            <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
+              <span className="text-amber-400 mr-2 text-xl">⚠️</span>
+              Assessment
+            </div>
+            <MarkdownRenderer content={assessment} />
+          </div>
+        )}
+        
+        {guidance && (
+          <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
+            <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
+              <div className="text-purple-300 font-semibold text-lg flex items-center">
+                <span className="text-purple-300 mr-2 text-xl">📝</span>
+                Guidance
+              </div>
+            </div>
+            <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
+              <MarkdownRenderer content={guidance} />
+            </div>
+          </div>
+        )}
+        
+        {nextSteps && (
+          <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
+            <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
+              <span className="text-blue-400 mr-2 text-xl">📝</span>
+              Next Steps
+            </div>
+            <MarkdownRenderer content={nextSteps} />
+          </div>
+        )}
       </div>
     );
   }
