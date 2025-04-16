@@ -493,8 +493,8 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
             <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
               <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
                 <div className="text-purple-300 font-semibold text-lg flex items-center">
-                  <span className="text-purple-300 mr-2 text-xl">📝</span>
-                  Guidance
+                  <span className="text-purple-300 mr-2 text-xl">💡</span>
+                  <span className="text-purple-300 font-bold block">Guidance</span>
                 </div>
               </div>
               <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
@@ -533,8 +533,8 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
           <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
             <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
               <div className="text-purple-300 font-semibold text-lg flex items-center">
-                <span className="text-purple-300 mr-2 text-xl">📝</span>
-                Guidance
+                <span className="text-purple-300 mr-2 text-xl">💡</span>
+                <span className="text-purple-300 font-bold block">Guidance</span>
               </div>
             </div>
             <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
@@ -614,8 +614,8 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
             <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
               <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
                 <div className="text-purple-300 font-semibold text-lg flex items-center">
-                  <span className="text-purple-300 mr-2 text-xl">📝</span>
-                  Guidance
+                  <span className="text-purple-300 mr-2 text-xl">💡</span>
+                  <span className="text-purple-300 font-bold block">Guidance</span>
                 </div>
               </div>
               <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">

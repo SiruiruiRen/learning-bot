@@ -241,7 +241,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
         <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
           <div className="text-amber-400 font-medium text-lg mb-3 flex items-center" style={{display: 'flex', alignItems: 'center'}}>
             <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-            <span className="text-amber-400 font-bold">Assessment</span>
+            <span className="text-amber-400 font-bold" style={{visibility: 'visible', opacity: 1}}>Assessment</span>
           </div>
           {formatAssessmentContent(sections.assessment)}
         </div>
@@ -252,7 +252,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
           <div className={`${phase === 'phase5' ? 'bg-purple-800/20' : 'bg-teal-800/20'} mb-3 py-2 pl-3 border-b ${phase === 'phase5' ? 'border-purple-500/30' : 'border-teal-500/30'}`} style={{display: 'block'}}>
             <div className={`${phase === 'phase5' ? 'text-purple-300' : 'text-teal-300'} font-semibold text-lg flex items-center`} style={{display: 'flex', alignItems: 'center'}}>
               <span className={`${phase === 'phase5' ? 'text-purple-300' : 'text-teal-300'} mr-2 text-xl`}>💡</span>
-              <span className={`${phase === 'phase5' ? 'text-purple-300' : 'text-teal-300'} font-bold`}>Guidance</span>
+              <span className={`${phase === 'phase5' ? 'text-purple-300' : 'text-teal-300'} font-bold block`}>Guidance</span>
             </div>
           </div>
           <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
@@ -265,7 +265,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
         <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
           <div className="text-blue-400 font-medium text-lg mb-3 flex items-center" style={{display: 'flex', alignItems: 'center'}}>
             <span className="text-blue-400 mr-2 text-xl">📝</span>
-            <span className="text-blue-400 font-bold">Next Steps</span>
+            <span className="text-blue-400 font-bold" style={{visibility: 'visible', opacity: 1}}>Next Steps</span>
           </div>
           <MarkdownRenderer content={sections.nextSteps} />
         </div>
