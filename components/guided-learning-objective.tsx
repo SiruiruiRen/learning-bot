@@ -447,74 +447,19 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
-            className="flex items-start gap-2 mb-2"
+            className="flex items-center gap-2 mb-2"
             key="loading-indicator"
           >
-            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-teal-600 animate-glow">
+            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-teal-600">
               <Bot size={16} />
             </div>
-            <div className="bg-slate-800/70 p-4 rounded-lg shadow-lg border border-teal-500/30 max-w-[75%] backdrop-blur-sm">
-              <div className="flex items-center mb-3">
-                <div className="flex-shrink-0 w-5 h-5 mr-2">
-                  <svg className="animate-spin w-5 h-5 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
-                <span className="mr-2 font-medium text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300 animate-shimmer">
-                  Analyzing responses
-                  <span className="thinking-indicator"></span>
-                </span>
-                <span className="text-xs text-teal-400/50 ml-auto font-mono">Claude 3.5</span>
-              </div>
-              
-              {/* Enhanced message display */}
-              <div className="py-2 px-3 bg-teal-500/10 rounded-md mb-3 text-sm text-white/80">
-                <div className="flex items-center gap-1.5">
-                  <BookOpen size={14} className="text-teal-400" />
-                  <span className="animate-shimmer">{loadingMessages[currentLoadingMessage]}</span>
-                </div>
-                <div className="mt-1.5 text-xs text-teal-400/70 pl-5">
-                  Task analysis & resource identification...
-                </div>
-              </div>
-              
-              {/* Enhanced gradient progress bar */}
-              <div className="w-full h-2.5 bg-slate-700/50 rounded-full overflow-hidden p-0.5">
-                <div className="h-full rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-400 animate-gradient-x"></div>
-              </div>
-              
-              {/* Neural network visualization */}
-              <div className="grid grid-cols-3 gap-1.5 mt-3 py-2">
-                {[...Array(9)].map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="flex justify-center"
-                  >
-                    <div
-                      className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-400 to-cyan-300"
-                      style={{ 
-                        animation: `pulse 1.5s ease-in-out ${(i % 3) * 0.3}s infinite`,
-                        opacity: 0.4 + (Math.random() * 0.6)
-                      }}
-                    ></div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Neural connection animated lines */}
-              <div className="grid grid-cols-3 gap-1 py-1 mt-1">
-                {[...Array(6)].map((_, i) => (
-                  <div 
-                    key={i}
-                    className="h-0.5 bg-gradient-to-r from-teal-500/20 to-cyan-500/30 rounded-full"
-                    style={{ 
-                      animation: `fadeInOutHorizontal 2s ease-in-out ${i * 0.25}s infinite`,
-                      gridColumn: i % 2 === 0 ? "1 / 3" : "2 / 4" 
-                    }}
-                  ></div>
-                ))}
-              </div>
+            <div 
+              className="typing-indicator"
+              data-message={loadingMessages[currentLoadingMessage]}
+            >
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
           </motion.div>
         )}
