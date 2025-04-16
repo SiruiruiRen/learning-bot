@@ -550,6 +550,12 @@ I'll guide you through a series of questions that will help you create a meaning
             transition={{ duration: 0.3 }}
             className={`flex items-start gap-2 ${message.sender === "bot" ? "justify-start" : "justify-end"}`}
           >
+            {message.sender === "bot" && (
+              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
+                <Bot size={16} />
+              </div>
+            )}
+            
             <Card className={`max-w-[75%] ${message.sender === "bot" ? "bg-slate-800/70" : "bg-purple-900/70"} border-0 shadow-md`}>
               <CardContent className="p-3">
                 <div className="text-sm">
