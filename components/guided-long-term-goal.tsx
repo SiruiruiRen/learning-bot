@@ -8,6 +8,7 @@ import { Check, ArrowRight, Send, User, Bot, AlertTriangle, CheckCircle2, Info, 
 import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import { v4 as uuidv4 } from 'uuid'
+import { formatMessageContent } from "@/lib/message-formatter"
 
 interface GuidedLongTermGoalProps {
   userId: string
@@ -308,7 +309,8 @@ Visualization: ${responses["visualization"] || ""}
     }
   }
   
-  // Process chat message to convert markdown
+  // Replace the custom processMessageContent function with the shared formatMessageContent
+  // Keep only the special case for confirmation messages
   const processMessageContent = (content: string) => {
     // Special case for confirmation messages to display the goal properly
     if (content.includes("Thank you for your thoughtful responses! Here is your complete long-term learning goal")) {
@@ -346,185 +348,9 @@ Visualization: ${responses["visualization"] || ""}
       );
     }
     
-    // Remove instructor metadata from the message (appears as HTML comments)
-    let cleanedContent = content.replace(/<!--\s*INSTRUCTOR_METADATA[\s\S]*?-->/g, '');
-    
-    // Determine if the message has sections based on its content
-    const hasAssessment = content.includes("## Assessment") || 
-                          content.includes("Assessment:") || 
-                          content.includes("Looking at your") || 
-                          content.includes("⚠️") || 
-                          content.includes("Goal Clarity:");
-    
-    const hasGuidance = content.includes("## Guidance") || 
-                        content.includes("Guidance:") || 
-                        content.includes("Here's a template") || 
-                        content.includes("Let's build") || 
-                        content.includes("Let's develop");
-    
-    const hasNextSteps = content.includes("## Next Steps") || 
-                         content.includes("Next Steps:") || 
-                         content.includes("Please revise");
-    
-    // If we detect this is a message with sections, format it properly with section headers and styling
-    if (hasAssessment || hasGuidance || hasNextSteps) {
-      // Extract sections using section headers pattern
-      const sections: {[key: string]: string} = {
-        intro: "",
-        assessment: "",
-        guidance: "",
-        nextSteps: ""
-      };
-      
-      // Improved section extraction
-      const lines = cleanedContent.split('\n');
-      let currentSection = "intro";
-      
-      for (const line of lines) {
-        // Check for explicit section headers first
-        if (line.match(/^#+\s*Assessment/i) || line.match(/^Assessment:/i)) {
-          currentSection = "assessment";
-          continue; // Skip the header line
-        }
-        else if (line.match(/^#+\s*Guidance/i) || line.match(/^Guidance:/i)) {
-          currentSection = "guidance";
-          continue; // Skip the header line
-        }
-        else if (line.match(/^#+\s*Next\s*Steps/i) || line.match(/^Next\s*Steps:/i)) {
-          currentSection = "nextSteps";
-          continue; // Skip the header line
-        }
-        // Then check for implicit section indicators
-        else if (currentSection === "intro" && (
-             line.includes("Looking at your") || 
-             line.includes("⚠️") || 
-             line.includes("Goal Clarity:") ||
-             line.includes("Goal Orientation:") ||
-             line.includes("Visualization:"))) {
-          currentSection = "assessment";
-        }
-        else if (currentSection !== "intro" && !currentSection.includes("nextSteps") && (
-                line.includes("Let's develop") || 
-                line.includes("template") ||
-                line.match(/My long-term goal is/i) ||
-                line.match(/\d+\.\s+\[Key/))) {
-          currentSection = "guidance";
-        }
-        else if (line.includes("Please revise") || 
-                line.match(/^\d+\.\s+If\s+\_+/) ||
-                line.includes("revise your")) {
-          currentSection = "nextSteps";
-        }
-        
-        // Add line to current section
-        sections[currentSection] += line + '\n';
-      }
-      
-      // Trim whitespace
-      Object.keys(sections).forEach(key => {
-        sections[key] = sections[key].trim();
-      });
-      
-      // Format assessment content to create table-like structure
-      const formatAssessmentContent = (content: string) => {
-        if (!content) return null;
-        
-        const formattedContent = [];
-        const lines = content.split('\n');
-        let tableRows = [];
-        
-        // Extract table rows from bullet points with criteria info
-        for (const line of lines) {
-          if (line.match(/^\s*[•-]\s+([^:]+):\s*(\[.*?\]|\⚠️|\💡|\✅)/)) {
-            // Get the parts (criteria name and value)
-            const parts = line.split(':');
-            const criteriaName = parts[0].replace(/^\s*[•-]\s+/, '').trim();
-            const criteriaValue = parts.slice(1).join(':').trim();
-            
-            // Add to table rows
-            tableRows.push({ criteriaName, criteriaValue });
-          }
-        }
-        
-        // If we found table data, create a formatted table
-        if (tableRows.length > 0) {
-          return (
-            <div className="bg-slate-800/40 rounded-md mb-3 overflow-hidden shadow-sm">
-              <table className="w-full border-collapse border border-slate-600">
-                <tbody>
-                  {tableRows.map((row, rowIndex) => (
-                    <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? "bg-slate-800/30" : "bg-slate-800/50"}>
-                      <td className="py-2 px-3 border-r border-slate-600 w-1/3 font-medium text-slate-200">
-                        {row.criteriaName}
-                      </td>
-                      <td className="py-2 px-3 border-t border-slate-700">
-                        {row.criteriaValue}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        }
-        
-        // If no table data, just return the standard content
-        return <MarkdownRenderer content={content} />;
-      };
-      
-      // Return formatted content with colored sections and explicit section headers
-      return (
-        <div className="flex flex-col space-y-4">
-          {sections.intro && (
-            <div className="text-white/90">
-              <MarkdownRenderer content={sections.intro} />
-            </div>
-          )}
-          
-          {sections.assessment && (
-            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-                Assessment
-              </div>
-              {formatAssessmentContent(sections.assessment)}
-            </div>
-          )}
-          
-          {sections.guidance && (
-            <div className="border-l-4 border-teal-500 py-3 rounded-md overflow-hidden shadow-md">
-              <div className="bg-teal-800/20 mb-3 py-2 pl-3 border-b border-teal-500/30">
-                <div className="text-teal-300 font-semibold text-lg flex items-center">
-                  <span className="text-teal-300 mr-2 text-xl">💡</span>
-                  Guidance
-                </div>
-              </div>
-              <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
-                <MarkdownRenderer content={sections.guidance} className="prose prose-invert max-w-none text-slate-100" />
-              </div>
-            </div>
-          )}
-          
-          {sections.nextSteps && (
-            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-blue-400 mr-2 text-xl">📝</span>
-                Next Steps
-              </div>
-              <MarkdownRenderer content={sections.nextSteps} />
-            </div>
-          )}
-        </div>
-      );
-    }
-    
-    // For messages with no special formatting, just render the cleaned content
-    return (
-      <div className="border-l-4 border-purple-500/40 pl-3 rounded">
-        <MarkdownRenderer content={cleanedContent} />
-      </div>
-    );
-  }
+    // For all other messages, use the shared formatter from lib/message-formatter
+    return formatMessageContent(content, phase);
+  };
 
   // Reset and start over the process
   const handleStartOver = () => {
