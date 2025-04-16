@@ -65,14 +65,25 @@ def format_uuid(val, prefix="id_"):
     if is_valid_uuid(val):
         return val
     
-    # Remove any 'user-' prefix before generating the UUID
-    if isinstance(val, str) and val.startswith("user-"):
-        val = val.replace("user-", "")
+    # Normalize user_id by removing any prefix and special characters
+    val_str = str(val).strip()
     
-    # Create a deterministic UUID based on the value to ensure consistency
-    # This allows us to use the same generated UUID for the same input value
+    # If it's a user ID with "user-" prefix, handle it specially
+    if val_str.startswith("user-"):
+        # Strip the "user-" prefix and generate a deterministic UUID
+        clean_val = val_str.replace("user-", "").replace("-", "_")
+    else:
+        # For other values, just use a simple cleaner
+        clean_val = val_str.replace("-", "_").replace(" ", "_")
+    
+    # Create a deterministic UUID based on the cleaned value to ensure consistency
     namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace for URLs
-    return str(uuid.uuid5(namespace, f"{prefix}{str(val)}"))
+    
+    # Ensure we have a stable UUID for the same input
+    derived_uuid = str(uuid.uuid5(namespace, f"{prefix}{clean_val}"))
+    logger.debug(f"Converted '{val}' to UUID: {derived_uuid}")
+    
+    return derived_uuid
 
 def init_db():
     """Initialize the database connection or fallback to memory storage"""
@@ -214,14 +225,29 @@ def save_message(user_id: str, conversation_id: str, role: str, content: str, ph
             if not conversation_exists:
                 logger.info(f"Creating conversation with ID: {uuid_conv_id}")
                 try:
+                    # Use the correct structure for Supabase timestamp fields
+                    # Using ISO timestamp format instead of now() function
+                    current_time = datetime.now().isoformat()
                     conv_data = {
                         "id": uuid_conv_id,
                         "user_id": uuid_user_id,
-                        "created_at": "now()"
+                        "started_at": current_time  # Using started_at from schema instead of created_at
                     }
                     db.table("conversations").insert(conv_data).execute()
                 except Exception as create_err:
                     logger.error(f"Failed to create conversation: {create_err}")
+                    # Let's check if we need to use a different table structure
+                    try:
+                        # Simplified fallback - only include required fields
+                        basic_conv_data = {
+                            "id": uuid_conv_id,
+                            "user_id": uuid_user_id
+                        }
+                        db.table("conversations").insert(basic_conv_data).execute()
+                        logger.info("Successfully created conversation with minimal fields")
+                    except Exception as fallback_err:
+                        logger.error(f"Fallback conversation creation also failed: {fallback_err}")
+                        # Continue with saving the message - it might work if the conversation already exists
         except Exception as check_err:
             logger.warning(f"Error in conversation check/create: {check_err}")
         
@@ -240,16 +266,34 @@ def save_message(user_id: str, conversation_id: str, role: str, content: str, ph
             response = db.table("messages").insert(data).execute()
             return response.data[0] if response.data else message
         except Exception as e:
-            if "column messages.user_id does not exist" in str(e):
+            err_msg = str(e)
+            if "column messages.user_id does not exist" in err_msg:
                 # Try without user_id in the data
                 logger.info("Retrying message save without user_id field")
                 response = db.table("messages").insert(data).execute()
                 return response.data[0] if response.data else message
-            elif "violates foreign key constraint" in str(e):
+            elif "violates foreign key constraint" in err_msg:
                 logger.error(f"Foreign key violation - conversation may not exist: {uuid_conv_id}")
-                # Fall back to memory storage
-                _memory_db["messages"].append(message)
-                return message
+                # Try to create the conversation one more time with a different approach
+                try:
+                    # Check if table structure has required fields other than timestamps
+                    minimal_data = {
+                        "id": uuid_conv_id,
+                        "user_id": uuid_user_id,
+                        "agent_type": "general"  # Safe default from schema
+                    }
+                    logger.info(f"Creating conversation with minimal data: {minimal_data}")
+                    db.table("conversations").insert(minimal_data).execute()
+                    
+                    # Try saving the message again
+                    logger.info("Retrying message save after conversation creation")
+                    response = db.table("messages").insert(data).execute()
+                    return response.data[0] if response.data else message
+                except Exception as retry_err:
+                    logger.error(f"Final attempt failed: {retry_err}")
+                    # Fall back to memory storage
+                    _memory_db["messages"].append(message)
+                    return message
             else:
                 raise
     except Exception as e:
