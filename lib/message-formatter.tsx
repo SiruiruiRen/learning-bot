@@ -27,8 +27,105 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     content.includes("Looking at your implementation intentions") || 
     (content.includes("If-Then Structure:") && content.includes("Response Specificity:") && content.includes("Feasibility:"));
   
+  // Detect if this is a Claude response format
+  const isClaudeResponse = 
+    content.includes("Looking at your learning objective") || 
+    content.includes("Looking at your SMART goal") || 
+    content.includes("Looking at your implementation intention") || 
+    content.includes("Looking at your monitoring & adaptation system") || 
+    content.includes("Looking at your long-term goal") ||
+    content.includes("👋 Hello") || 
+    content.includes("Hi there! 👋");
+  
+  // Special handling for Claude responses
+  if (isClaudeResponse) {
+    const lines = cleanedContent.split('\n');
+    let currentSection = "intro";
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Detect assessment section in Claude response format
+      // This looks for the assessment patterns like "Looking at X:" with bullet points
+      if (line.includes("Looking at your") || 
+          line.includes("• Goal Clarity:") || 
+          line.includes("• Specific Goal:") ||
+          line.includes("• Task Identification:") ||
+          line.includes("• Resource Specificity:") ||
+          line.includes("• If-Then Structure:") ||
+          line.includes("• Response Specificity:") ||
+          line.includes("• Feasibility:") ||
+          line.includes("• Progress Checks:") ||
+          line.includes("• Adaptation Triggers:") ||
+          line.includes("• Strategy Alternatives:") ||
+          line.includes("• Goal Orientation:") ||
+          line.includes("• Visualization:") ||
+          line.includes("• Action Plan:") ||
+          line.includes("• Timeline:")) {
+        currentSection = "assessment";
+        sections[currentSection] += line + '\n';
+        
+        // Continue collecting assessment section until guidance
+        while (i + 1 < lines.length && 
+              !lines[i + 1].includes("Let's") && 
+              !lines[i + 1].includes("Since") && 
+              !lines[i + 1].includes("Here's a template") && 
+              !lines[i + 1].includes("I'll provide a template") &&
+              !lines[i + 1].includes("I'll help you") &&
+              !lines[i + 1].includes("Let me help")) {
+          i++;
+          sections[currentSection] += lines[i] + '\n';
+        }
+        continue;
+      }
+      
+      // Detect guidance section in Claude response
+      if (line.includes("Let's") || 
+          line.includes("Since") || 
+          line.includes("Here's a template") || 
+          line.includes("I'll provide a template") ||
+          line.includes("I'll help you") ||
+          line.includes("Let me help") ||
+          line.includes("template to help")) {
+        currentSection = "guidance";
+        sections[currentSection] += line + '\n';
+        
+        // Continue collecting guidance section until next steps
+        while (i + 1 < lines.length && 
+              !lines[i + 1].includes("Next Steps") && 
+              !lines[i + 1].includes("📝 Please revise") && 
+              !lines[i + 1].includes("Please revise") &&
+              !lines[i + 1].includes("Remember:")) {
+          i++;
+          sections[currentSection] += lines[i] + '\n';
+        }
+        continue;
+      }
+      
+      // Detect next steps section in Claude response
+      if (line.includes("Next Steps") || 
+          line.includes("📝 Please revise") || 
+          line.includes("Please revise") ||
+          line.includes("Remember:") ||
+          line.includes("📝 Next Steps:")) {
+        currentSection = "nextSteps";
+        sections[currentSection] += line + '\n';
+        
+        // Collect all remaining lines to next steps except instructor metadata
+        while (i + 1 < lines.length && 
+              !lines[i + 1].includes("<!-- INSTRUCTOR_METADATA")) {
+          i++;
+          sections[currentSection] += lines[i] + '\n';
+        }
+        continue;
+      }
+      
+      // Add line to current section if not specifically handled above
+      sections[currentSection] += line + '\n';
+    }
+  }
   // Special handling for contingency plans
-  if (isContingencyPlan) {
+  else if (isContingencyPlan) {
     const lines = cleanedContent.split('\n');
     let currentSection = "intro";
     
