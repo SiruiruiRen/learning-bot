@@ -64,3 +64,6 @@ deploy-package/
 deploy-render/
 patterns.txt
 video/
+.vercel/
+prompt_engineering/evaluation/results/~.xlsx
+~.xlsx
