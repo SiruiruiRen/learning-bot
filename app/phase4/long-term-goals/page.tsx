@@ -177,7 +177,7 @@ export default function LongTermGoalsPage() {
               <CardTitle className="flex items-center justify-center gap-3 text-2xl font-bold text-center">
                 <Sparkles className="h-7 w-7 text-orange-500" />
                 <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                  Task 1: Long-term Learning Goals
+                  Phase 4Task 1: Long-term Learning Goals
                 </span>
               </CardTitle>
             </CardHeader>
