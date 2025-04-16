@@ -339,223 +339,7 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
     
     // Check if this is an evaluation message in the contingency strategies component
     if (messages.length > 0 && messages[messages.length - 1].type === "evaluation") {
-      // Find the best sections based on content markers
-      
-      // First find where assessment part starts - usually has "Looking at your implementation intentions"
-      const lookingAtIndex = content.indexOf("Looking at your implementation intentions");
-      
-      // Find bullet points with If-Then Structure, Response Specificity, and Feasibility
-      const ifThenIndex = content.indexOf("• If-Then Structure:");
-      const responseIndex = content.indexOf("• Response Specificity:");
-      const feasibilityIndex = content.indexOf("• Feasibility:");
-      
-      // Find guidance part that comes after the assessment
-      const templateIndex = content.indexOf("Here's a template");
-      const letMeHelpIndex = content.indexOf("Let me help");
-      const letsBuiltIndex = content.indexOf("Let's build");
-      const strengthenIndex = content.indexOf("strengthen");
-      
-      // Find end of assessment section by taking the earliest guidance marker
-      let assessmentEndIndex = -1;
-      for (const idx of [templateIndex, letMeHelpIndex, letsBuiltIndex, strengthenIndex]) {
-        if (idx !== -1 && (assessmentEndIndex === -1 || idx < assessmentEndIndex)) {
-          assessmentEndIndex = idx;
-        }
-      }
-      
-      // Find the next steps part which usually has revision instructions
-      const pleaseReviseIndex = content.indexOf("Please revise");
-      const nextStepsIndex = pleaseReviseIndex !== -1 ? pleaseReviseIndex : content.lastIndexOf("•");
-      
-      // Determine section boundaries
-      let introEndIndex = ifThenIndex !== -1 ? ifThenIndex : lookingAtIndex;
-      if (introEndIndex === -1) introEndIndex = content.indexOf("•");
-      
-      // Extract sections based on indices
-      const intro = introEndIndex !== -1 
-        ? content.substring(0, introEndIndex).trim()
-        : content.split('\n')[0]; // Fallback to first line
-      
-      let assessment = "";
-      if (assessmentEndIndex !== -1 && introEndIndex !== -1) {
-        assessment = content.substring(introEndIndex, assessmentEndIndex).trim();
-      } else if (ifThenIndex !== -1) {
-        // If we have bullet points but no clear end, include all bullet points in assessment
-        assessment = content.substring(ifThenIndex).split("THEN")[0].trim();
-        if (assessment.length < 20) { // Too short, try another approach
-          assessment = content.substring(ifThenIndex, content.indexOf("THEN:")).trim();
-        }
-      }
-      
-      // If assessment is still empty, try to find it by looking for warning triangles
-      if (!assessment && content.includes("⚠️")) {
-        const parts = content.split("\n\n");
-        for (const part of parts) {
-          if (part.includes("⚠️") || part.includes("Looking at your implementation")) {
-            assessment = part;
-            break;
-          }
-        }
-      }
-      
-      let guidance = "";
-      if (assessmentEndIndex !== -1 && nextStepsIndex !== -1) {
-        guidance = content.substring(assessmentEndIndex, nextStepsIndex).trim();
-      } else if (assessment) {
-        // Find the part after assessment
-        const afterAssessment = content.substring(content.indexOf(assessment) + assessment.length).trim();
-        // Skip the first paragraph if it's short (likely a transition)
-        const guidanceParts = afterAssessment.split("\n\n");
-        if (guidanceParts.length > 1) {
-          guidance = guidanceParts.slice(0, -1).join("\n\n"); // All but last paragraph
-        } else {
-          guidance = afterAssessment;
-        }
-      }
-      
-      let nextSteps = "";
-      if (nextStepsIndex !== -1) {
-        nextSteps = content.substring(nextStepsIndex).trim();
-      } else if (guidance) {
-        // If we have guidance, the last paragraph is likely next steps
-        const parts = content.split("\n\n");
-        nextSteps = parts[parts.length - 1];
-      }
-      
-      // If we still couldn't get good sections, use a simpler approach
-      if (!assessment || !guidance) {
-        const paragraphs = content.split("\n\n").filter(p => p.trim());
-        
-        // First paragraph is intro
-        const intro = paragraphs[0];
-        
-        // If there are warning triangles, use that paragraph as assessment
-        let assessmentIndex = -1;
-        for (let i = 0; i < paragraphs.length; i++) {
-          if (paragraphs[i].includes("⚠️") || paragraphs[i].includes("Looking at your")) {
-            assessmentIndex = i;
-            break;
-          }
-        }
-        
-        if (assessmentIndex === -1 && paragraphs.length > 1) {
-          // If no assessment found, use second paragraph
-          assessmentIndex = 1;
-        }
-        
-        const assessment = assessmentIndex !== -1 ? paragraphs[assessmentIndex] : "";
-        
-        // Find guidance - look for paragraphs with examples or templates
-        let guidanceStartIndex = -1;
-        for (let i = assessmentIndex + 1; i < paragraphs.length; i++) {
-          if (paragraphs[i].includes("template") || 
-              paragraphs[i].includes("example") || 
-              paragraphs[i].includes("IF:") || 
-              paragraphs[i].includes("THEN:") ||
-              paragraphs[i].includes("Let's") ||
-              paragraphs[i].includes("Here's")) {
-            guidanceStartIndex = i;
-            break;
-          }
-        }
-        
-        // Find next steps - usually last paragraph
-        const nextStepsIndex = paragraphs.length - 1;
-        
-        // Extract guidance - everything between guidance start and next steps
-        let guidance = "";
-        if (guidanceStartIndex !== -1 && nextStepsIndex > guidanceStartIndex) {
-          guidance = paragraphs.slice(guidanceStartIndex, nextStepsIndex).join("\n\n");
-        } else if (assessmentIndex !== -1 && paragraphs.length > assessmentIndex + 1) {
-          // If no clear guidance marker, use all paragraphs between assessment and next steps
-          guidance = paragraphs.slice(assessmentIndex + 1, nextStepsIndex).join("\n\n");
-        }
-        
-        const nextSteps = paragraphs[nextStepsIndex];
-        
-        // Always force styling with section headers
-        return (
-          <div className="flex flex-col space-y-4">
-            {intro && (
-              <div className="text-white/90">
-                <MarkdownRenderer content={intro} />
-              </div>
-            )}
-            
-            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-                Assessment
-              </div>
-              <MarkdownRenderer content={assessment} />
-            </div>
-            
-            <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
-              <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
-                <div className="text-purple-300 font-semibold text-lg flex items-center">
-                  <span className="text-purple-300 mr-2 text-xl">💡</span>
-                  <span className="text-purple-300 font-bold block">Guidance</span>
-                </div>
-              </div>
-              <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
-                <MarkdownRenderer content={guidance} />
-              </div>
-            </div>
-            
-            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-blue-400 mr-2 text-xl">📝</span>
-                Next Steps
-              </div>
-              <MarkdownRenderer content={nextSteps} />
-            </div>
-          </div>
-        );
-      }
-      
-      // Always force styling with section headers
-      return (
-        <div className="flex flex-col space-y-4">
-          {intro && (
-            <div className="text-white/90">
-              <MarkdownRenderer content={intro} />
-            </div>
-          )}
-          
-          <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-            <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
-              <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-              Assessment
-            </div>
-            <MarkdownRenderer content={assessment} />
-          </div>
-          
-          <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
-            <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
-              <div className="text-purple-300 font-semibold text-lg flex items-center">
-                <span className="text-purple-300 mr-2 text-xl">💡</span>
-                <span className="text-purple-300 font-bold block">Guidance</span>
-              </div>
-            </div>
-            <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
-              <MarkdownRenderer content={guidance} />
-            </div>
-          </div>
-          
-          <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-            <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
-              <span className="text-blue-400 mr-2 text-xl">📝</span>
-              Next Steps
-            </div>
-            <MarkdownRenderer content={nextSteps} />
-          </div>
-        </div>
-      );
-    }
-    
-    // Extract sections using section headers pattern (for responses with ## headers)
-    if (content.includes("## Assessment") || content.includes("## Guidance") || content.includes("## Next Steps")) {
-      // Split the content into sections
+      // Simple section extraction for evaluation messages
       const sections: {[key: string]: string} = {
         intro: "",
         assessment: "",
@@ -563,35 +347,40 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
         nextSteps: ""
       };
       
-      // Process the content to identify sections
+      // Extract sections using simple markers
       const lines = content.split('\n');
       let currentSection = "intro";
       
       for (const line of lines) {
-        // Check for section markers and transition to that section
-        if (line.startsWith("## Assessment")) {
+        // Check for section markers
+        if (line.includes("Assessment") || line.includes("⚠️") || 
+            line.includes("Looking at your") || line.includes("• If-Then")) {
           currentSection = "assessment";
-          continue; // Skip the header line
+          continue;
         }
-        else if (line.startsWith("## Guidance")) {
+        else if (line.includes("Guidance") || line.includes("💡") || 
+                line.includes("Let's") || line.includes("Here's") || 
+                line.includes("template") || line.includes("IF:") || 
+                line.includes("THEN:")) {
           currentSection = "guidance";
-          continue; // Skip the header line
+          continue;
         }
-        else if (line.startsWith("## Next Steps")) {
+        else if (line.includes("Next Steps") || line.includes("📝") || 
+                line.includes("Please revise") || line.includes("Remember")) {
           currentSection = "nextSteps";
-          continue; // Skip the header line
+          continue;
         }
         
         // Add line to current section
         sections[currentSection] += line + '\n';
       }
       
-      // Clean up each section by trimming
+      // Trim whitespace
       Object.keys(sections).forEach(key => {
         sections[key] = sections[key].trim();
       });
       
-      // Format with colored borders and sections
+      // Return formatted content with simple styling
       return (
         <div className="flex flex-col space-y-4">
           {sections.intro && (
@@ -601,34 +390,30 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
           )}
           
           {sections.assessment && (
-            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-                Assessment
+            <div className="border-l-4 border-amber-500 pl-3 py-2 rounded-md">
+              <div className="text-amber-400 font-medium text-lg mb-2 flex items-center">
+                <span className="text-amber-400 mr-2">⚠️</span>
+                <span>Assessment</span>
               </div>
               <MarkdownRenderer content={sections.assessment} />
             </div>
           )}
           
           {sections.guidance && (
-            <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
-              <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
-                <div className="text-purple-300 font-semibold text-lg flex items-center">
-                  <span className="text-purple-300 mr-2 text-xl">💡</span>
-                  <span className="text-purple-300 font-bold block">Guidance</span>
-                </div>
+            <div className="border-l-4 border-teal-500 pl-3 py-2 rounded-md">
+              <div className="text-teal-400 font-medium text-lg mb-2 flex items-center">
+                <span className="text-teal-400 mr-2">💡</span>
+                <span>Guidance</span>
               </div>
-              <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
-                <MarkdownRenderer content={sections.guidance} className="prose prose-invert max-w-none text-slate-100" />
-              </div>
+              <MarkdownRenderer content={sections.guidance} />
             </div>
           )}
           
           {sections.nextSteps && (
-            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-blue-400 mr-2 text-xl">📝</span>
-                Next Steps
+            <div className="border-l-4 border-blue-500 pl-3 py-2 rounded-md">
+              <div className="text-blue-400 font-medium text-lg mb-2 flex items-center">
+                <span className="text-blue-400 mr-2">📝</span>
+                <span>Next Steps</span>
               </div>
               <MarkdownRenderer content={sections.nextSteps} />
             </div>
@@ -639,7 +424,7 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
     
     // For regular messages with no special formatting
     return (
-      <div className="border-l-4 border-purple-500/40 pl-3 rounded">
+      <div className="border-l-4 border-teal-500/40 pl-3 rounded">
         <MarkdownRenderer content={content} />
       </div>
     );
