@@ -68,21 +68,26 @@ def format_uuid(val, prefix="id_"):
     # Normalize user_id by removing any prefix and special characters
     val_str = str(val).strip()
     
-    # If it's a user ID with "user-" prefix, handle it specially to ensure consistent UUIDs
-    if val_str.startswith("user-"):
-        # Extract the username part after "user-"
-        username = val_str[5:]  # Skip the "user-" prefix
+    # Special case for user IDs - preserve the original name without prefix
+    if prefix == "user_":
+        # If it already has user- prefix, preserve the actual name part
+        if val_str.startswith("user-"):
+            username = val_str[5:]  # Skip the "user-" prefix
+        else:
+            # Use the name as is
+            username = val_str
+            
         # Create a deterministic UUID based on the username
-        namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace for URLs
+        namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
         derived_uuid = str(uuid.uuid5(namespace, f"user_{username}"))
-        logger.debug(f"Converted '{val}' to UUID: {derived_uuid}")
+        logger.debug(f"Converted user '{val}' to UUID: {derived_uuid}")
         return derived_uuid
     
     # For other values, just use a simple cleaner
     clean_val = val_str.replace("-", "_").replace(" ", "_")
     
     # Create a deterministic UUID based on the cleaned value to ensure consistency
-    namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace for URLs
+    namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
     derived_uuid = str(uuid.uuid5(namespace, f"{prefix}{clean_val}"))
     logger.debug(f"Converted '{val}' to UUID: {derived_uuid}")
     
@@ -159,17 +164,68 @@ def get_user_profile(user_id: str) -> Dict[str, Any]:
     
     db = get_db()
     try:
-        # Format user_id as UUID if needed
-        uuid_id = format_uuid(user_id, "user_")
+        # Clean the user ID first by removing any prefix
+        clean_user_id = user_id
+        if isinstance(user_id, str) and user_id.startswith("user-"):
+            clean_user_id = user_id[5:]  # Remove "user-" prefix
+            
+        # Format user_id as UUID
+        uuid_id = format_uuid(clean_user_id, "user_")
         
         response = db.table("users").select("*").eq("id", uuid_id).execute()
         if not response.data:
-            logger.warning(f"User profile not found for user_id: {user_id}")
-            return {"id": user_id}
+            logger.warning(f"User profile not found for user_id: {clean_user_id}, creating new user")
+            # Create the user on the fly
+            user_data = {
+                "id": uuid_id,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+            db.table("users").insert(user_data).execute()
+            return {"id": clean_user_id, "uuid": uuid_id}
         return response.data[0]
     except Exception as e:
         logger.error(f"Error fetching user profile: {e}")
         return {"id": user_id}
+
+def ensure_user_exists(user_id: str) -> str:
+    """Ensure a user exists in the database, creating if needed, and return the UUID"""
+    if _using_memory_db:
+        if user_id not in _memory_db["users"]:
+            _memory_db["users"][user_id] = {
+                "id": user_id,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+        return user_id
+    
+    db = get_db()
+    # Format user_id as UUID
+    # Strip any "user-" prefix to use just the name
+    clean_user_id = user_id
+    if isinstance(user_id, str) and user_id.startswith("user-"):
+        clean_user_id = user_id[5:]  # Remove "user-" prefix
+        
+    uuid_user_id = format_uuid(clean_user_id, "user_")
+    
+    try:
+        # Check if user exists
+        response = db.table("users").select("id").eq("id", uuid_user_id).limit(1).execute()
+        
+        if not response.data:
+            # Create the user if not exists
+            logger.info(f"Creating new user with ID: {uuid_user_id} (original: {clean_user_id})")
+            user_data = {
+                "id": uuid_user_id,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+            db.table("users").insert(user_data).execute()
+        
+        return uuid_user_id
+    except Exception as e:
+        logger.error(f"Error ensuring user exists: {e}")
+        return uuid_user_id  # Return the UUID anyway to continue the process
 
 def save_message(user_id: str, conversation_id: str, role: str, content: str, phase: str = None, component: str = None, metadata: dict = None) -> Dict[str, Any]:
     """Save message to database or memory"""
@@ -199,7 +255,7 @@ def save_message(user_id: str, conversation_id: str, role: str, content: str, ph
     db = get_db()
     try:
         # Format IDs as UUIDs if needed
-        uuid_user_id = format_uuid(user_id, "user_")
+        uuid_user_id = ensure_user_exists(user_id)  # Ensure user exists first
         uuid_conv_id = format_uuid(conversation_id, "conv_")
         
         # Create metadata JSON for fields not in the schema
@@ -309,8 +365,8 @@ def save_scores(user_id: str, phase: str, component: str, criteria: str, score: 
     
     db = get_db()
     try:
-        # Format user ID as UUID if needed
-        uuid_user_id = format_uuid(user_id, "user_")
+        # Ensure user exists and get UUID
+        uuid_user_id = ensure_user_exists(user_id)
         
         # Create database record with proper field names
         db_data = {
@@ -588,8 +644,8 @@ def save_llm_interaction(user_id: str, model: str, tokens_in: int, tokens_out: i
     
     db = get_db()
     try:
-        # Format IDs as UUIDs if needed
-        uuid_user_id = format_uuid(user_id, "user_")
+        # Ensure user exists and get UUID
+        uuid_user_id = ensure_user_exists(user_id)
         
         # Create database record
         db_data = {
