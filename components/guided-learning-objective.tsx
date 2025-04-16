@@ -21,18 +21,18 @@ interface GuidedLearningObjectiveProps {
 const OBJECTIVE_QUESTIONS = [
   {
     id: "goal_clarity",
-    question: "What specific course or learning task are you working on? Please describe its content scope, learning requirements, and key objectives in detail.",
-    hint: "Example: 'Python Data Science Course covers data manipulation with pandas, visualization with matplotlib/seaborn, statistical analysis, and machine learning with scikit-learn. The course requires understanding programming concepts, applying statistical methods, and building predictive models.'"
+    question: "For your chosen course/task: What are you learning right now? Describe the key topics, skills, and objectives involved.",
+    hint: "Provide specific details about your course content, required skills, and what you're expected to accomplish by the end. Example: 'My Python Data Science course covers data manipulation with pandas, visualization techniques, statistical analysis, and building machine learning models with scikit-learn.'"
   },
   {
     id: "background_connection",
-    question: "What specific learning resources are available to you for this course or task?",
-    hint: "Example: 'The course provides official Python documentation, Jupyter notebooks with examples, weekly coding labs, a textbook on Python for Data Science, video tutorials, and a community forum for questions.'"
+    question: "What learning materials and resources do you have access to?",
+    hint: "List all available resources that could help you learn this material. Example: 'I have access to course documentation, practice exercises, instructional videos, a textbook, online forums, and weekly live sessions with an instructor.'"
   },
   {
     id: "study_resources",
-    question: "How will you strategically utilize these resources to address different aspects of your learning task?",
-    hint: "Example: 'I will use the Jupyter notebooks for hands-on practice with data structures, the textbook for understanding statistical concepts, coding labs to implement algorithms, video tutorials for visualizing complex processes, and the community forum to clarify implementation challenges.'"
+    question: "How will you use these resources to maximize your learning?",
+    hint: "Describe your specific plan for using each resource to address different learning challenges. Example: 'I'll use practice exercises for hands-on experience, the textbook for concept clarification, videos for visual demonstrations, and forums when I encounter obstacles.'"
   }
 ]
 
@@ -473,7 +473,7 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
                 Question {currentQuestion + 1} of {OBJECTIVE_QUESTIONS.length}
               </div>
               <div>
-                {userInput.length} / 500 characters
+                {userInput.length} / 1500 characters
               </div>
             </div>
             
@@ -486,7 +486,7 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-teal-500 min-h-[80px]"
                 rows={3}
               />
@@ -535,7 +535,7 @@ Strategic Resource Utilization: ${responses["study_resources"] || ""}
                     handleSendChatMessage()
                   }
                 }}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-teal-500 min-h-[80px]"
                 rows={3}
               />
