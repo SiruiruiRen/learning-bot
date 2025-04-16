@@ -421,61 +421,6 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       );
     }
     
-    // Check also for variations with lowercase or different spacing
-    if (content.toLowerCase().includes("assessment") && 
-        (content.toLowerCase().includes("guidance") || content.toLowerCase().includes("next steps"))) {
-      
-      // Try to extract sections based on content patterns
-      const assessmentMatch = content.match(/Looking at your implementation intentions:([\s\S]*?)(?=Let's|Please|$)/i);
-      const guidanceMatch = content.match(/Let's (build|strengthen|improve)([\s\S]*?)(?=Please|$)/i);
-      const nextStepsMatch = content.match(/Please (revise|update)([\s\S]*?)$/i);
-      
-      const sections: {[key: string]: string} = {
-        intro: "",
-        assessment: assessmentMatch ? assessmentMatch[1].trim() : "",
-        guidance: guidanceMatch ? guidanceMatch[0].trim() : "",
-        nextSteps: nextStepsMatch ? nextStepsMatch[0].trim() : ""
-      };
-      
-      return (
-        <div className="flex flex-col space-y-4">
-          {sections.assessment && (
-            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-amber-400 mr-2 text-xl">⚠️</span>
-                Assessment
-              </div>
-              <MarkdownRenderer content={`Looking at your implementation intentions:${sections.assessment}`} />
-            </div>
-          )}
-          
-          {sections.guidance && (
-            <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
-              <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
-                <div className="text-purple-300 font-semibold text-lg flex items-center">
-                  <span className="text-purple-300 mr-2 text-xl">📝</span>
-                  Guidance
-                </div>
-              </div>
-              <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
-                <MarkdownRenderer content={sections.guidance} className="prose prose-invert max-w-none text-slate-100" />
-              </div>
-            </div>
-          )}
-          
-          {sections.nextSteps && (
-            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
-              <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
-                <span className="text-blue-400 mr-2 text-xl">📝</span>
-                Next Steps
-              </div>
-              <MarkdownRenderer content={sections.nextSteps} />
-            </div>
-          )}
-        </div>
-      );
-    }
-    
     // For regular messages with no special formatting
     return (
       <div className="border-l-4 border-purple-500/40 pl-3 rounded">
