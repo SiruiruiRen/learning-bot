@@ -20,17 +20,17 @@ interface GuidedContingencyPlanProps {
 const CONTINGENCY_QUESTIONS = [
   {
     id: "if_trigger",
-    question: "What specific obstacles, challenges, or triggers might prevent you from achieving your learning goals?",
-    hint: "Consider both internal obstacles (procrastination, skill gaps) and external obstacles (time constraints, resources)"
+    question: "Identify your 'IF' statements: What specific obstacles, challenges, or triggers might prevent you from achieving your learning goals?",
+    hint: "List the exact internal barriers (such as knowledge gaps, procrastination habits, or focus issues) and external challenges (such as scheduling conflicts, resource limitations, or environmental distractions) that could derail your progress. Be as specific as possible about when and how these obstacles typically appear."
   },
   {
     id: "then_response",
-    question: "For each obstacle identified, what specific action steps will you take in response?",
+    question: "Identify your 'THEN' statements: For each obstacle identified, what specific action steps will you take in response?",
     hint: "Detail the exact steps you'll take, including when, where, and how you'll implement your response (e.g., 'I will immediately schedule a 15-minute focused review session using the Feynman technique' rather than just 'I will study more')"
   },
   {
     id: "feasibility",
-    question: "How will you ensure your contingency plans are practical and easy to implement when triggered?",
+    question: "Consider what you'll need (time, tools, help) to follow through. What might make your plans hard to implement, and how can you prepare for that?",
     hint: "Consider the resources, time, and effort required to execute your plans. What might make your responses difficult to implement, and how can you address those barriers?"
   }
 ]
@@ -77,14 +77,14 @@ export default function GuidedContingencyPlan({
       {
         id: uuidv4(),
         sender: "bot",
-        content: `Hi there! 👋 Now let's create effective if-then plans to help you overcome potential distractions and obstacles while studying.
+        content: `Hi there! 👋 Now let's create effective 'IF-THEN' plans to help you overcome potential distractions and obstacles while studying.
 
 Looking at what makes an excellent contingency plan:
-• Specific Triggers: 🔍 The "IF" part clearly identifies exact situations when your plan goes into action
-• Detailed Responses: 🛠️ The "THEN" part details exactly what steps you'll take when obstacles arise
-• Practical Solutions: ⚖️ Your responses are realistic and feasible given your resources and constraints
+• Specific Triggers: 🔍 Your "IF" statements should pinpoint specific situations(obstacles) that challenge your focus
+• Detailed Responses: 🛠️ Your "THEN" actions should be clear, immediate steps you can take when obstacles appear
+• Practical Solutions: ⚖️ Your responses are realistic and feasible. Your strategies should work within your available time, environment, and resources
 
-I'll guide you through creating implementation intentions that will help you anticipate challenges and respond effectively to stay on track with your learning goals.`,
+Now let's make a plan to handle obstacles. Create simple 'IF-THEN' statements that prepare you for challenges you might face when working toward your goal.`,
         timestamp: new Date(),
         type: "question"
       },
@@ -599,7 +599,7 @@ I'll guide you through creating implementation intentions that will help you ant
                 Question {currentQuestion + 1} of {CONTINGENCY_QUESTIONS.length}
               </div>
               <div>
-                {userInput.length} / 500 characters
+                {userInput.length} / 1500 characters
               </div>
             </div>
             
@@ -612,7 +612,7 @@ I'll guide you through creating implementation intentions that will help you ant
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
@@ -661,7 +661,7 @@ I'll guide you through creating implementation intentions that will help you ant
                     handleSendChatMessage()
                   }
                 }}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />

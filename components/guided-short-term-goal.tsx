@@ -21,18 +21,18 @@ interface GuidedShortTermGoalProps {
 const SHORT_TERM_QUESTIONS = [
   {
     id: "specific_goal",
-    question: "What specific short-term goal will you work on next, and how will you measure your success?",
-    hint: "Example: 'Complete a 2000-word research paper on renewable energy impacts that includes at least 5 peer-reviewed sources by March 15th' rather than just 'Write a paper'"
+    question: "What's your next milestone/short-term goal, and how will you know when you've reached it?",
+    hint: "Be precise about what you'll accomplish and how you'll measure success. For example: 'Complete a 2000-word research paper with 5 peer-reviewed sources by March 15th' rather than just 'Write a paper.'"
   },
   {
     id: "action_plan",
-    question: "What specific actions will you take to achieve this goal?",
-    hint: "Example: 'Write 500 words daily between 9-11am, tracking progress in a writing log. Research 3 sources every Tuesday at the library. Schedule two 1-hour review sessions with my mentor on March 1st and 10th'"
+    question: "What are the key steps you'll take to reach this short-term goal?",
+    hint: "Break down your approach into specific, scheduled actions. For instance: 'Research 3 sources each Tuesday at the library, write 500 words daily between 9-11am, and meet with my mentor on March 1st and 10th.'"
   },
   {
     id: "timeline",
     question: "What is your precise schedule for completing this goal, including any checkpoints?",
-    hint: "Example: 'March 1st - Complete outline and research. March 5th - Finish rough draft. March 10th - Complete final draft. March 12th - Proofread. March 15th - Submit final paper'"
+    hint: "Map out your journey with clear dates for each phase. Example: 'March 1: Complete outline and research, March 5: Finish rough draft, March 10: Complete final draft, March 15: Submit final paper.'"
   }
 ]
 
@@ -612,7 +612,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                 Question {currentQuestion + 1} of {SHORT_TERM_QUESTIONS.length}
               </div>
               <div>
-                {userInput.length} / 500 characters
+                {userInput.length} / 1500 characters
               </div>
             </div>
             
@@ -625,7 +625,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
@@ -674,7 +674,7 @@ I'll guide you through each element of a SMART goal to ensure your success.`,
                     handleSendChatMessage()
                   }
                 }}
-                maxLength={500}
+                maxLength={1500}
                 className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
