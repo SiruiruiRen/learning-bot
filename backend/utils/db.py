@@ -68,18 +68,21 @@ def format_uuid(val, prefix="id_"):
     # Normalize user_id by removing any prefix and special characters
     val_str = str(val).strip()
     
-    # If it's a user ID with "user-" prefix, handle it specially
+    # If it's a user ID with "user-" prefix, handle it specially to ensure consistent UUIDs
     if val_str.startswith("user-"):
-        # Strip the "user-" prefix and generate a deterministic UUID
-        clean_val = val_str.replace("user-", "").replace("-", "_")
-    else:
-        # For other values, just use a simple cleaner
-        clean_val = val_str.replace("-", "_").replace(" ", "_")
+        # Extract the username part after "user-"
+        username = val_str[5:]  # Skip the "user-" prefix
+        # Create a deterministic UUID based on the username
+        namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace for URLs
+        derived_uuid = str(uuid.uuid5(namespace, f"user_{username}"))
+        logger.debug(f"Converted '{val}' to UUID: {derived_uuid}")
+        return derived_uuid
+    
+    # For other values, just use a simple cleaner
+    clean_val = val_str.replace("-", "_").replace(" ", "_")
     
     # Create a deterministic UUID based on the cleaned value to ensure consistency
     namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')  # Standard namespace for URLs
-    
-    # Ensure we have a stable UUID for the same input
     derived_uuid = str(uuid.uuid5(namespace, f"{prefix}{clean_val}"))
     logger.debug(f"Converted '{val}' to UUID: {derived_uuid}")
     
@@ -225,65 +228,47 @@ def save_message(user_id: str, conversation_id: str, role: str, content: str, ph
             if not conversation_exists:
                 logger.info(f"Creating conversation with ID: {uuid_conv_id}")
                 try:
-                    # Use the correct structure for Supabase timestamp fields
-                    # Using ISO timestamp format instead of now() function
-                    current_time = datetime.now().isoformat()
+                    # Using required fields based on DB schema
                     conv_data = {
                         "id": uuid_conv_id,
                         "user_id": uuid_user_id,
-                        "started_at": current_time  # Using started_at from schema instead of created_at
+                        "agent_type": "general",  # This is required
+                        "phase": phase or "unknown",  # This is required
+                        "started_at": datetime.now().isoformat()
                     }
                     db.table("conversations").insert(conv_data).execute()
                 except Exception as create_err:
                     logger.error(f"Failed to create conversation: {create_err}")
-                    # Let's check if we need to use a different table structure
-                    try:
-                        # Simplified fallback - only include required fields
-                        basic_conv_data = {
-                            "id": uuid_conv_id,
-                            "user_id": uuid_user_id
-                        }
-                        db.table("conversations").insert(basic_conv_data).execute()
-                        logger.info("Successfully created conversation with minimal fields")
-                    except Exception as fallback_err:
-                        logger.error(f"Fallback conversation creation also failed: {fallback_err}")
-                        # Continue with saving the message - it might work if the conversation already exists
         except Exception as check_err:
             logger.warning(f"Error in conversation check/create: {check_err}")
         
-        # Only include fields that exist in the actual table schema
+        # Only include fields that exist in the actual table schema - note: no user_id in messages table
         data = {
             "id": message_id,
             "conversation_id": uuid_conv_id,
             "sender_type": role,
             "content": content,
-            "timestamp": "now()",
             "metadata": json.dumps(meta_data)
         }
         
-        # Only include user_id if it's a column in the messages table
         try:
             response = db.table("messages").insert(data).execute()
             return response.data[0] if response.data else message
         except Exception as e:
             err_msg = str(e)
-            if "column messages.user_id does not exist" in err_msg:
-                # Try without user_id in the data
-                logger.info("Retrying message save without user_id field")
-                response = db.table("messages").insert(data).execute()
-                return response.data[0] if response.data else message
-            elif "violates foreign key constraint" in err_msg:
+            if "violates foreign key constraint" in err_msg:
                 logger.error(f"Foreign key violation - conversation may not exist: {uuid_conv_id}")
-                # Try to create the conversation one more time with a different approach
+                # Try to create the conversation one more time with all required fields
                 try:
-                    # Check if table structure has required fields other than timestamps
-                    minimal_data = {
+                    # Make sure all required fields are present
+                    conv_data = {
                         "id": uuid_conv_id,
                         "user_id": uuid_user_id,
-                        "agent_type": "general"  # Safe default from schema
+                        "agent_type": "general",
+                        "phase": phase or "unknown"
                     }
-                    logger.info(f"Creating conversation with minimal data: {minimal_data}")
-                    db.table("conversations").insert(minimal_data).execute()
+                    logger.info(f"Creating conversation with complete data: {conv_data}")
+                    db.table("conversations").insert(conv_data).execute()
                     
                     # Try saving the message again
                     logger.info("Retrying message save after conversation creation")
@@ -528,13 +513,11 @@ def get_messages(user_id: str, conversation_id: str, limit: int = 5) -> List[Dic
     db = get_db()
     try:
         # Format IDs as UUIDs if needed
-        uuid_user_id = format_uuid(user_id, "user_")
         uuid_conv_id = format_uuid(conversation_id, "conv_")
         
-        # Query for messages
+        # Query for messages - note we only filter by conversation_id as user_id column doesn't exist
         query = (db.table("messages")
                 .select("*")
-                .eq("user_id", uuid_user_id)
                 .eq("conversation_id", uuid_conv_id)
                 .order("timestamp", desc=False))
         
@@ -561,7 +544,7 @@ def get_messages(user_id: str, conversation_id: str, limit: int = 5) -> List[Dic
             # Format message
             result.append({
                 "id": msg.get("id", ""),
-                "user_id": user_id,
+                "user_id": user_id,  # Use the provided user_id since it's not in the DB
                 "conversation_id": conversation_id,
                 "role": msg.get("sender_type", "user"),
                 "content": msg.get("content", ""),
@@ -573,4 +556,62 @@ def get_messages(user_id: str, conversation_id: str, limit: int = 5) -> List[Dic
         return result
     except Exception as e:
         logger.error(f"Error fetching messages: {e}")
-        return [] 
+        return []
+
+def save_llm_interaction(user_id: str, model: str, tokens_in: int, tokens_out: int, 
+                        phase: str = None, component: str = None, metadata: dict = None) -> Dict[str, Any]:
+    """Save LLM interaction details to database or memory"""
+    # Generate a interaction ID
+    interaction_id = str(uuid.uuid4())
+    
+    # Create base interaction object
+    interaction = {
+        "id": interaction_id,
+        "user_id": user_id,
+        "model": model,
+        "tokens_in": tokens_in,
+        "tokens_out": tokens_out,
+        "phase": phase,
+        "component": component,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    # Add metadata if provided
+    if metadata:
+        interaction["metadata"] = metadata
+    
+    if _using_memory_db:
+        if "llm_interactions" not in _memory_db:
+            _memory_db["llm_interactions"] = []
+        _memory_db["llm_interactions"].append(interaction)
+        return interaction
+    
+    db = get_db()
+    try:
+        # Format IDs as UUIDs if needed
+        uuid_user_id = format_uuid(user_id, "user_")
+        
+        # Create database record
+        db_data = {
+            "id": interaction_id,
+            "user_id": uuid_user_id,
+            "model": model,
+            "tokens_in": tokens_in,
+            "tokens_out": tokens_out,
+            "metadata": json.dumps({
+                "phase": phase,
+                "component": component,
+                **(metadata or {})
+            })
+        }
+        
+        # Try to save to database
+        response = db.table("llm_interactions").insert(db_data).execute()
+        return response.data[0] if response.data else interaction
+    except Exception as e:
+        logger.error(f"Error saving LLM interaction: {e}")
+        # Fall back to memory storage
+        if "llm_interactions" not in _memory_db:
+            _memory_db["llm_interactions"] = []
+        _memory_db["llm_interactions"].append(interaction)
+        return interaction 
