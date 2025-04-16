@@ -309,23 +309,23 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
           
           <div className="bg-slate-800 rounded-md border border-amber-500/50 p-4 mt-2 space-y-4">
             <div className="space-y-2">
-              <h3 className="text-amber-300 font-medium">Potential Challenges:</h3>
+              <h3 className="text-amber-300 font-medium">If-Then Structure:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
-                {responses["challenges"] || ""}
+                {responses["if_trigger"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-amber-300 font-medium">Risk Assessment:</h3>
+              <h3 className="text-amber-300 font-medium">Response Specificity:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
-                {responses["risk_assessment"] || ""}
+                {responses["then_response"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-amber-300 font-medium">Contingency Strategies:</h3>
+              <h3 className="text-amber-300 font-medium">Feasibility:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
-                {responses["contingency_strategies"] || ""}
+                {responses["feasibility"] || ""}
               </div>
             </div>
           </div>
@@ -423,7 +423,7 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
     
     // For regular messages with no special formatting
     return (
-      <div className="border-l-4 border-amber-500/40 pl-3 rounded">
+      <div className="border-l-4 border-purple-500/40 pl-3 rounded">
         <MarkdownRenderer content={content} />
       </div>
     );
