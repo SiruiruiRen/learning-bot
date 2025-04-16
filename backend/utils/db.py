@@ -213,6 +213,10 @@ def ensure_user_exists(user_id: str) -> str:
         return user_id
     
     db = get_db()
+    if db is None:
+        logger.warning("Database not available in ensure_user_exists, using derived UUID")
+        return format_uuid(user_id, "user_")
+        
     # Format user_id as UUID
     # Strip any "user-" prefix to use just the name
     clean_user_id = user_id
@@ -223,20 +227,30 @@ def ensure_user_exists(user_id: str) -> str:
     
     try:
         # Check if user exists
-        response = db.table("users").select("id").eq("id", uuid_user_id).limit(1).execute()
-        
-        if not response.data:
-            # Create the user if not exists
-            logger.info(f"Creating new user with ID: {uuid_user_id} (original: {clean_user_id})")
+        try:
+            response = db.table("users").select("id").eq("id", uuid_user_id).limit(1).execute()
             
-            # Only include fields that exist in the schema
-            user_data = {
-                "id": uuid_user_id,
-                "created_at": datetime.now().isoformat()
-                # Removed updated_at as it doesn't exist in schema
-            }
-            
-            db.table("users").insert(user_data).execute()
+            if not response.data:
+                # Create the user if not exists
+                logger.info(f"Creating new user with ID: {uuid_user_id} (original: {clean_user_id})")
+                
+                # Only include fields that exist in the schema
+                user_data = {
+                    "id": uuid_user_id
+                }
+                
+                try:
+                    # Try to add email only if it's in the schema
+                    user_data["created_at"] = datetime.now().isoformat()
+                except:
+                    pass
+                
+                try:
+                    db.table("users").insert(user_data).execute()
+                except Exception as insert_err:
+                    logger.warning(f"Failed to insert user but continuing: {insert_err}")
+        except Exception as check_err:
+            logger.warning(f"Failed to check if user exists, continuing: {check_err}")
         
         return uuid_user_id
     except Exception as e:
@@ -675,18 +689,79 @@ def save_llm_interaction(user_id: str, model: str, tokens_in: int, tokens_out: i
             "user_id": uuid_user_id,
             "model": model,
             "tokens_in": tokens_in,
-            "tokens_out": tokens_out,
-            "metadata": json.dumps({
-                "phase": phase,
-                "component": component,
-                "original_user_id": user_id,
-                **(metadata or {})
-            })
+            "tokens_out": tokens_out
         }
         
+        # Add metadata as separate field if it exists in the schema
+        try:
+            # Set metadata field if it exists in schema
+            if metadata or phase or component:
+                meta_obj = {
+                    "phase": phase,
+                    "component": component,
+                    "original_user_id": user_id,
+                    **(metadata or {})
+                }
+                db_data["metadata"] = json.dumps(meta_obj)
+        except Exception as meta_err:
+            logger.warning(f"Couldn't add metadata: {meta_err}")
+        
         # Try to save to database
-        response = db.table("llm_interactions").insert(db_data).execute()
-        return response.data[0] if response.data else interaction
+        try:
+            response = db.table("llm_interactions").insert(db_data).execute()
+            return response.data[0] if response.data else interaction
+        except Exception as e:
+            logger.error(f"Error saving LLM interaction: {e}")
+            
+            # Try progressively simpler fallbacks
+            try:
+                logger.warning("Trying simplified llm_interactions insert")
+                # Try a minimal insert with only the most basic fields
+                minimal_data = {
+                    "id": interaction_id,
+                    "user_id": uuid_user_id,
+                    "model": model
+                }
+                
+                # Add numeric fields if they don't cause issues
+                try:
+                    minimal_data["tokens_in"] = tokens_in
+                except:
+                    pass
+                    
+                try:
+                    minimal_data["tokens_out"] = tokens_out
+                except:
+                    pass
+                
+                simple_response = db.table("llm_interactions").insert(minimal_data).execute()
+                if simple_response.data:
+                    logger.info("Simplified llm_interactions insert succeeded")
+                    return simple_response.data[0]
+            except Exception as fallback_err:
+                logger.error(f"Simplified llm_interactions insert failed: {fallback_err}")
+                
+                # Try one more time with an empty insert
+                try:
+                    logger.warning("Trying minimal llm_interactions insert")
+                    bare_data = {
+                        "id": interaction_id,
+                        "user_id": uuid_user_id
+                    }
+                    
+                    minimal_response = db.table("llm_interactions").insert(bare_data).execute()
+                    if minimal_response.data:
+                        logger.info("Minimal llm_interactions insert succeeded")
+                        return minimal_response.data[0]
+                except Exception as minimal_err:
+                    logger.error(f"Minimal llm_interactions insert failed: {minimal_err}")
+            
+            # Fall back to memory storage if all database attempts fail
+            if "llm_interactions" not in _memory_db:
+                _memory_db["llm_interactions"] = []
+            _memory_db["llm_interactions"].append(interaction)
+            return interaction
+            
     except Exception as e:
         logger.error(f"Error saving LLM interaction: {e}")
         # Fall back to memory storage

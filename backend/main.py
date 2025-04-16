@@ -66,8 +66,15 @@ except Exception as e:
 async def lifespan(app: FastAPI):
     # Startup: initialize resources
     logger.info("SoLBot backend starting up...")
-    init_db()
-    logger.info("Database initialized")
+    
+    # Initialize database with error handling
+    try:
+        init_db()
+        logger.info("Database initialized")
+    except Exception as db_err:
+        logger.error(f"Database initialization failed: {db_err}")
+        logger.info("App will continue with in-memory storage")
+    
     logger.info("Using simplified direct LLM architecture")
     
     # Start the warmup thread to keep the service from sleeping
@@ -78,7 +85,12 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown: cleanup resources
     logger.info("SoLBot backend shutting down...")
-    close_db()
+    
+    # Close database connection with error handling
+    try:
+        close_db()
+    except Exception as close_err:
+        logger.error(f"Error closing database connection: {close_err}")
 
 # Initialize FastAPI
 app = FastAPI(

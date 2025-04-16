@@ -100,7 +100,18 @@ async def log_llm_interaction(
     for analysis, debugging, and auditing purposes.
     """
     # Import here to avoid circular imports
-    from backend.utils.db import get_db
+    try:
+        from backend.utils.db import get_db
+    except ImportError:
+        logger.warning("Could not import get_db, using memory storage only")
+        global local_memory_db
+        local_memory_db["llm_interactions"].append({
+            "id": str(uuid.uuid4()),
+            "error": "db_import_error",
+            "raw_llm_response": raw_llm_response[:100] + "..." if raw_llm_response else "",
+            "timestamp": datetime.datetime.now().isoformat()
+        })
+        return
     
     try:
         # Calculate duration if timestamps are provided
@@ -128,38 +139,68 @@ async def log_llm_interaction(
             "response_timestamp": datetime.datetime.fromtimestamp(response_timestamp or time.time()).isoformat(),
             "duration_ms": duration_ms,
             "cache_hit": cache_hit,
-            "metadata": json.dumps(metadata or {})
+            "metadata": json.dumps(metadata or {}) if metadata else "{}"
         }
         
-        # Get DB client
-        db = get_db()
-        
-        # Check if we are using memory storage or the DB connection failed
+        # First determine if we should use memory storage
+        use_memory_storage = True
         try:
+            # Get DB client
+            db = get_db()
             from backend.utils.db import _using_memory_db
-            if _using_memory_db or db is None:
-                # Store in local memory DB
-                global local_memory_db
-                local_memory_db["llm_interactions"].append(interaction)
-                logger.debug(f"Stored LLM interaction in memory: {interaction['id']}")
-                return
-        except ImportError:
-            logger.warning("Could not import _using_memory_db, falling back to local storage")
+            use_memory_storage = _using_memory_db or db is None
+        except (ImportError, Exception) as db_err:
+            logger.warning(f"Error checking DB availability: {db_err}, using memory storage")
+            use_memory_storage = True
+        
+        # Use memory storage if needed
+        if use_memory_storage:
+            # Store in local memory DB
+            global local_memory_db
             local_memory_db["llm_interactions"].append(interaction)
+            logger.debug(f"Stored LLM interaction in memory: {interaction['id']}")
             return
             
-        # If we reach here, use the database
+        # If we reach here, attempt to use the database but don't fail if it doesn't work
         try:
-            db.table("llm_interactions").insert(interaction).execute()
-            logger.debug(f"Logged LLM interaction to database: {interaction['id']}")
+            # Try minimal fields first, focusing on essential data
+            minimal_data = {
+                "id": interaction["id"],
+                "model_name": model_name,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens
+            }
+            
+            # Try to add important fields that shouldn't cause schema issues
+            try:
+                if user_id:
+                    minimal_data["user_id"] = user_id
+            except:
+                pass
+                
+            try:
+                # Add metadata field if it won't cause issues
+                minimal_data["metadata"] = json.dumps({
+                    "phase": phase,
+                    "component": component,
+                    "duration_ms": duration_ms,
+                    "cache_hit": cache_hit
+                })
+            except:
+                pass
+            
+            # Try to insert the minimal version
+            db.table("llm_interactions").insert(minimal_data).execute()
+            logger.debug(f"Logged minimal LLM interaction to database: {interaction['id']}")
+            
         except Exception as db_error:
-            logger.error(f"Error saving to database: {db_error}")
-            # Fallback to memory storage
+            logger.warning(f"Error saving to database: {db_error}")
+            # Fallback to memory storage but don't let it interrupt the main thread
             local_memory_db["llm_interactions"].append(interaction)
             
     except Exception as e:
+        # Make sure this function never fails and interrupts the main application flow
         logger.error(f"Error logging LLM interaction: {e}")
-        # Don't re-raise to avoid impacting the main flow
 
 async def call_claude(
     system_prompt: str,
