@@ -9,6 +9,7 @@ import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import { v4 as uuidv4 } from 'uuid'
 import { formatMessageContent } from "@/lib/message-formatter"
+import { formatMonitoringContent } from "@/components/custom-monitoring-formatter"
 
 interface GuidedMonitoringAdaptationProps {
   userId: string
@@ -352,7 +353,12 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
       );
     }
     
-    // Use the shared formatMessageContent function to handle section headers consistently
+    // Use the custom formatter for monitoring content to ensure proper section display
+    if (phase === 'phase5') {
+      return formatMonitoringContent(content, phase);
+    }
+    
+    // Fallback to the shared formatter for other phases
     return formatMessageContent(content, phase);
   }
 
