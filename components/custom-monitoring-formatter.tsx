@@ -11,7 +11,7 @@ import { ReactNode } from "react";
 export function formatMonitoringContent(content: string, phase?: string): ReactNode {
   if (!content || typeof content !== 'string') return null;
   
-  // Extract sections using section headers pattern
+  // Extract sections using explicit section headers pattern only
   const sections: {[key: string]: string} = {
     intro: "",
     assessment: "",
@@ -19,21 +19,21 @@ export function formatMonitoringContent(content: string, phase?: string): ReactN
     nextSteps: ""
   };
   
-  // Simple section extraction
+  // Simple section extraction - only look for explicit ## headers
   const lines = content.split('\n');
   let currentSection = "intro";
   
   for (const line of lines) {
-    // Check for explicit section headers
-    if (line.includes("Assessment") || line.includes("⚠️")) {
+    // Check for exact section headers only
+    if (line.startsWith("## Assessment")) {
       currentSection = "assessment";
       continue;
     }
-    else if (line.includes("Guidance") || line.includes("💡")) {
+    else if (line.startsWith("## Guidance")) {
       currentSection = "guidance";
       continue;
     }
-    else if (line.includes("Next Steps") || line.includes("📝")) {
+    else if (line.startsWith("## Next Steps")) {
       currentSection = "nextSteps";
       continue;
     }
@@ -47,7 +47,16 @@ export function formatMonitoringContent(content: string, phase?: string): ReactN
     sections[key] = sections[key].trim();
   });
   
-  // Return formatted content with clean styling
+  // If no explicit sections were identified, render with minimal styling
+  if (!sections.assessment && !sections.guidance && !sections.nextSteps) {
+    return (
+      <div className="border-l-4 border-teal-500/40 pl-3 rounded">
+        <MarkdownRenderer content={content} />
+      </div>
+    );
+  }
+  
+  // Return formatted content with simple styling
   return (
     <div className="flex flex-col space-y-4">
       {sections.intro && (
@@ -59,7 +68,6 @@ export function formatMonitoringContent(content: string, phase?: string): ReactN
       {sections.assessment && (
         <div className="border-l-4 border-amber-500 pl-3 py-2 rounded-md">
           <div className="text-amber-400 font-medium text-lg mb-2 flex items-center">
-            <span className="text-amber-400 mr-2">⚠️</span>
             <span>Assessment</span>
           </div>
           <MarkdownRenderer content={sections.assessment} />
@@ -69,7 +77,6 @@ export function formatMonitoringContent(content: string, phase?: string): ReactN
       {sections.guidance && (
         <div className="border-l-4 border-teal-500 pl-3 py-2 rounded-md">
           <div className="text-teal-400 font-medium text-lg mb-2 flex items-center">
-            <span className="text-teal-400 mr-2">💡</span>
             <span>Guidance</span>
           </div>
           <MarkdownRenderer content={sections.guidance} />
@@ -79,7 +86,6 @@ export function formatMonitoringContent(content: string, phase?: string): ReactN
       {sections.nextSteps && (
         <div className="border-l-4 border-blue-500 pl-3 py-2 rounded-md">
           <div className="text-blue-400 font-medium text-lg mb-2 flex items-center">
-            <span className="text-blue-400 mr-2">📝</span>
             <span>Next Steps</span>
           </div>
           <MarkdownRenderer content={sections.nextSteps} />

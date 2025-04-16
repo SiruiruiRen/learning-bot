@@ -14,7 +14,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
   // Remove instructor metadata from the message (appears as HTML comments)
   let cleanedContent = content.replace(/<!--\s*INSTRUCTOR_METADATA[\s\S]*?-->/g, '');
   
-  // Extract sections using section headers pattern
+  // Extract sections using explicit section headers pattern only
   const sections: {[key: string]: string} = {
     intro: "",
     assessment: "",
@@ -22,20 +22,17 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     nextSteps: ""
   };
   
-  // Simple section extraction
+  // Simple section extraction - only look for explicit ## headers
   const lines = cleanedContent.split('\n');
   let currentSection = "intro";
   
   for (const line of lines) {
-    // Check for section markers
-    if (line.includes("Assessment") || line.includes("⚠️") || 
-        line.includes("Looking at your") || line.includes("Progress Checks:")) {
+    // Check for exact section headers only
+    if (line.startsWith("## Assessment")) {
       currentSection = "assessment";
       continue;
     }
-    else if (line.includes("Guidance") || line.includes("💡") || 
-            line.includes("template") || line.includes("PROGRESS METRICS:") ||
-            line.includes("REFLECTION SCHEDULE:") || line.includes("ADAPTATION TRIGGERS")) {
+    else if (line.startsWith("## Guidance")) {
       currentSection = "guidance";
       continue;
     }
@@ -54,7 +51,7 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
     sections[key] = sections[key].trim();
   });
   
-  // If no sections were identified, render with minimal styling
+  // If no explicit sections were identified, render with minimal styling
   if (!sections.assessment && !sections.guidance && !sections.nextSteps) {
     return (
       <div className="border-l-4 border-teal-500/40 pl-3 rounded">
@@ -75,7 +72,6 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       {sections.assessment && (
         <div className="border-l-4 border-amber-500 pl-3 py-2 rounded-md">
           <div className="text-amber-400 font-medium text-lg mb-2 flex items-center">
-            <span className="text-amber-400 mr-2">⚠️</span>
             <span>Assessment</span>
           </div>
           <MarkdownRenderer content={sections.assessment} />
@@ -85,7 +81,6 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       {sections.guidance && (
         <div className="border-l-4 border-teal-500 pl-3 py-2 rounded-md">
           <div className="text-teal-400 font-medium text-lg mb-2 flex items-center">
-            <span className="text-teal-400 mr-2">💡</span>
             <span>Guidance</span>
           </div>
           <MarkdownRenderer content={sections.guidance} />
@@ -95,7 +90,6 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       {sections.nextSteps && (
         <div className="border-l-4 border-blue-500 pl-3 py-2 rounded-md">
           <div className="text-blue-400 font-medium text-lg mb-2 flex items-center">
-            <span className="text-blue-400 mr-2">📝</span>
             <span>Next Steps</span>
           </div>
           <MarkdownRenderer content={sections.nextSteps} />
