@@ -315,44 +315,38 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
   
   // Process chat message to convert markdown
   const processMessageContent = (content: string) => {
-    // Special case for confirmation messages to display the monitoring plan
-    if (content.includes("Here is your complete monitoring and adaptation plan")) {
-      // Get user responses directly from state instead of trying to parse them from content
-      const responseData = {
-        metrics: responses["progress_metrics"] || "",
-        schedule: responses["reflection_schedule"] || "",
-        approach: responses["adaptation_approach"] || ""
-      };
-      
-      // Extract intro and confirmation parts
-      const parts = content.split(/\n\n|\r\n\r\n/);
-      const introMessage = parts[0];
-      const confirmQuestion = parts[parts.length - 1];
-      
+    // Special case for confirmation messages to display the monitoring plan properly
+    if (content.includes("Thank you for your responses! Here is your complete monitoring and adaptation plan")) {
       return (
         <div className="flex flex-col space-y-3">
-          <div>{introMessage}</div>
+          <div>{content}</div>
           
-          <div className="bg-slate-700/50 p-4 rounded-md border border-indigo-500/30 my-2">
-            <div className="space-y-4 text-sm">
-              <div>
-                <span className="font-semibold text-indigo-300">Progress Metrics:</span>
-                <div className="bg-slate-800/50 p-2 rounded mt-1 border border-slate-700">{responseData.metrics}</div>
+          <div className="bg-slate-800 rounded-md border border-purple-500/50 p-4 mt-2 space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-purple-300 font-medium">Progress Metrics:</h3>
+              <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
+                {responses["progress_metrics"] || ""}
               </div>
-              
-              <div>
-                <span className="font-semibold text-indigo-300">Reflection Schedule:</span>
-                <div className="bg-slate-800/50 p-2 rounded mt-1 border border-slate-700">{responseData.schedule}</div>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-purple-300 font-medium">Reflection Schedule:</h3>
+              <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
+                {responses["reflection_schedule"] || ""}
               </div>
-              
-              <div>
-                <span className="font-semibold text-indigo-300">Adaptation Approach:</span>
-                <div className="bg-slate-800/50 p-2 rounded mt-1 border border-slate-700">{responseData.approach}</div>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-purple-300 font-medium">Adaptation Approach:</h3>
+              <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
+                {responses["adaptation_approach"] || ""}
               </div>
             </div>
           </div>
           
-          <div className="text-slate-300">{confirmQuestion}</div>
+          <div className="text-slate-300 mt-2">
+            Is this your complete monitoring and adaptation plan? If you'd like to make any changes, click "Edit Responses". Otherwise, click "Confirm & Submit" to proceed.
+          </div>
         </div>
       );
     }
@@ -560,16 +554,16 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
             className={`flex items-start gap-2 ${message.sender === "bot" ? "justify-start" : "justify-end"}`}
           >
             {message.sender === "bot" && (
-              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-indigo-600">
+              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
                 <Bot size={16} />
               </div>
             )}
             
-            <Card className={`max-w-[75%] ${message.sender === "bot" ? "bg-slate-800/70" : "bg-indigo-900/70"} border-0 shadow-md`}>
+            <Card className={`max-w-[75%] ${message.sender === "bot" ? "bg-slate-800/70" : "bg-purple-900/70"} border-0 shadow-md`}>
               <CardContent className="p-3">
                 <div className="text-sm">
                   {typeof message.content === 'string' 
-                    ? processMessageContent(message.content) 
+                    ? processMessageContent(message.content)
                     : message.content}
                 </div>
               </CardContent>
@@ -591,7 +585,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
             className="flex items-center gap-2 mb-2"
             key="loading-indicator"
           >
-            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-indigo-600">
+            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
               <Bot size={16} />
             </div>
             <div 
@@ -628,12 +622,12 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 maxLength={500}
-                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-indigo-500 min-h-[80px]"
+                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
               <Button 
                 onClick={handleSendResponse}
-                className="h-auto bg-indigo-600 hover:bg-indigo-500 py-3"
+                className="h-auto bg-purple-600 hover:bg-purple-500 py-3"
                 disabled={!userInput.trim() || isSubmitting}
               >
                 <Send size={18} />
@@ -652,7 +646,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
             </Button>
             <Button
               onClick={handleConfirmAndSubmit}
-              className="bg-indigo-600 hover:bg-indigo-500"
+              className="bg-purple-600 hover:bg-purple-500"
               disabled={isEvaluating}
             >
               <Check size={16} className="mr-2" />
@@ -677,12 +671,12 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
                   }
                 }}
                 maxLength={500}
-                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-indigo-500 min-h-[80px]"
+                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
               <Button 
                 onClick={handleSendChatMessage}
-                className="h-auto bg-indigo-600 hover:bg-indigo-500 py-3"
+                className="h-auto bg-purple-600 hover:bg-purple-500 py-3"
                 disabled={!userInput.trim() || isSubmitting}
               >
                 <Send size={18} />
@@ -691,7 +685,7 @@ ADAPTATION APPROACH: ${responses["adaptation_approach"] || ""}
             <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("summary")}
-                className="bg-indigo-600 hover:bg-indigo-500"
+                className="bg-purple-600 hover:bg-purple-500"
               >
                 Next Phase <ArrowRight size={16} className="ml-2" />
               </Button>

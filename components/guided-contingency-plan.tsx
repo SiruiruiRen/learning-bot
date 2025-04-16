@@ -307,23 +307,23 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
         <div className="flex flex-col space-y-3">
           <div>{content}</div>
           
-          <div className="bg-slate-800 rounded-md border border-emerald-500/50 p-4 mt-2 space-y-4">
+          <div className="bg-slate-800 rounded-md border border-purple-500/50 p-4 mt-2 space-y-4">
             <div className="space-y-2">
-              <h3 className="text-emerald-300 font-medium">IF Triggers:</h3>
+              <h3 className="text-purple-300 font-medium">IF Triggers:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["if_trigger"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-emerald-300 font-medium">THEN Responses:</h3>
+              <h3 className="text-purple-300 font-medium">THEN Responses:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["then_response"] || ""}
               </div>
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-emerald-300 font-medium">Feasibility Considerations:</h3>
+              <h3 className="text-purple-300 font-medium">Feasibility Considerations:</h3>
               <div className="bg-slate-700/70 p-3 rounded-md border border-slate-600 whitespace-pre-wrap">
                 {responses["feasibility"] || ""}
               </div>
@@ -400,7 +400,7 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       return (
         <div className="flex flex-col space-y-4">
           {sections.intro && (
-            <div className="text-emerald-200">{sections.intro}</div>
+            <div className="text-purple-200">{sections.intro}</div>
           )}
           
           {sections.assessment && (
@@ -410,7 +410,7 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
           )}
           
           {sections.guidance && (
-            <div className="border-l-2 border-emerald-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+            <div className="border-l-2 border-purple-500 pl-3 py-2 bg-slate-800/30 rounded-md">
               <MarkdownRenderer content={sections.guidance} />
             </div>
           )}
@@ -426,7 +426,7 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
     
     // For messages with no special formatting, just render the cleaned content
     return (
-      <div className="border-l-2 border-emerald-500 pl-3 py-2 rounded-md">
+      <div className="border-l-2 border-purple-500 pl-3 py-2 rounded-md">
         <MarkdownRenderer content={cleanedContent} />
       </div>
     );
@@ -556,12 +556,12 @@ I'll guide you through creating implementation intentions that will help you ant
             className={`flex items-start gap-2 ${message.sender === "bot" ? "justify-start" : "justify-end"}`}
           >
             {message.sender === "bot" && (
-              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-emerald-600">
+              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
                 <Bot size={16} />
               </div>
             )}
             
-            <Card className={`max-w-[75%] ${message.sender === "bot" ? "bg-slate-800/70" : "bg-emerald-900/70"} border-0 shadow-md`}>
+            <Card className={`max-w-[75%] ${message.sender === "bot" ? "bg-slate-800/70" : "bg-purple-900/70"} border-0 shadow-md`}>
               <CardContent className="p-3">
                 <div className="text-sm">
                   {typeof message.content === 'string' 
@@ -587,7 +587,7 @@ I'll guide you through creating implementation intentions that will help you ant
             className="flex items-center gap-2 mb-2"
             key="loading-indicator"
           >
-            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-emerald-600">
+            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
               <Bot size={16} />
             </div>
             <div 
@@ -624,12 +624,12 @@ I'll guide you through creating implementation intentions that will help you ant
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 maxLength={500}
-                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-emerald-500 min-h-[80px]"
+                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
               <Button 
                 onClick={handleSendResponse}
-                className="h-auto bg-emerald-600 hover:bg-emerald-500 py-3"
+                className="h-auto bg-purple-600 hover:bg-purple-500 py-3"
                 disabled={!userInput.trim() || isSubmitting}
               >
                 <Send size={18} />
@@ -648,7 +648,7 @@ I'll guide you through creating implementation intentions that will help you ant
             </Button>
             <Button
               onClick={handleConfirmAndSubmit}
-              className="bg-emerald-600 hover:bg-emerald-500"
+              className="bg-purple-600 hover:bg-purple-500"
               disabled={isEvaluating}
             >
               <Check size={16} className="mr-2" />
@@ -673,12 +673,12 @@ I'll guide you through creating implementation intentions that will help you ant
                   }
                 }}
                 maxLength={500}
-                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-emerald-500 min-h-[80px]"
+                className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
                 rows={3}
               />
               <Button 
                 onClick={handleSendChatMessage}
-                className="h-auto bg-emerald-600 hover:bg-emerald-500 py-3"
+                className="h-auto bg-purple-600 hover:bg-purple-500 py-3"
                 disabled={!userInput.trim() || isSubmitting}
               >
                 <Send size={18} />
@@ -687,7 +687,7 @@ I'll guide you through creating implementation intentions that will help you ant
             <div className="flex justify-center">
               <Button
                 onClick={() => onComplete && onComplete("phase5")}
-                className="bg-emerald-600 hover:bg-emerald-500"
+                className="bg-purple-600 hover:bg-purple-500"
               >
                 Next Phase <ArrowRight size={16} className="ml-2" />
               </Button>
