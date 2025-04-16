@@ -779,48 +779,48 @@ For assistance, you can:
     setIsTyping(true)
     let count = 0
     
-    // Base thinking texts that apply to all phases
+    // More informative base thinking texts
     const baseThinkingTexts = [
       "SoLBot is thinking"
     ]
     
-    // Phase-specific thinking texts
+    // Enhanced phase-specific thinking texts
     const phaseThinkingTexts: Record<string, string[]> = {
       intro: [
-        "Getting to know you better",
-        "Preparing your learning journey",
-        "Customizing my approach for you"
+        "Learning about your goals",
+        "Preparing personalized guidance",
+        "Building your learning profile"
       ],
       phase1: [
-        "Reviewing motivation factors",
-        "Considering your learning goals",
-        "Preparing goal alignment response"
+        "Evaluating motivation factors",
+        "Aligning with learning principles",
+        "Crafting personalized feedback"
       ],
       phase2: [
-        "Analyzing learning objectives",
-        "Evaluating resource selection",
-        "Applying appropriate scaffolding"
+        "Reviewing learning objectives",
+        "Identifying optimal resources",
+        "Developing scaffolding approach"
       ],
       phase4: [
-        "Assessing goal-setting strategy",
-        "Considering time management approach",
-        "Evaluating planning effectiveness"
+        "Analyzing goal structure",
+        "Evaluating timeline feasibility",
+        "Optimizing planning strategy"
       ],
       phase5: [
-        "Analyzing reflection depth",
-        "Considering improvement strategies",
-        "Evaluating learning transfer"
+        "Processing reflection details",
+        "Identifying improvement areas",
+        "Preparing adaptive feedback"
       ],
       summary: [
-        "Synthesizing learning journey",
-        "Preparing comprehensive summary",
-        "Connecting learning milestones"
+        "Compiling learning journey",
+        "Identifying key achievements",
+        "Creating comprehensive overview"
       ]
     }
     
-    // Combine base texts with phase-specific texts
+    // Combine base texts with phase-specific texts and add completion indicator
     const phaseTexts = phaseThinkingTexts[phase] || phaseThinkingTexts.intro
-    const thinkingTexts = [...baseThinkingTexts, ...phaseTexts, "Almost ready"]
+    const thinkingTexts = [...baseThinkingTexts, ...phaseTexts, "Finalizing response..."]
     
     // Add typing indicator with initial message
     setMessages((prev) => [
@@ -943,7 +943,7 @@ For assistance, you can:
                 <div className="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full mr-2 bg-teal-900/50 animate-glow">
                   <Bot className="h-5 w-5 text-teal-400" />
                 </div>
-                <div className="p-4 bg-slate-800/80 border border-teal-500/30 rounded-lg w-[80%] max-w-[80%] shadow-lg animate-pulse-slow">
+                <div className="p-4 bg-slate-800/80 border border-teal-500/30 rounded-lg w-[80%] max-w-[80%] shadow-lg backdrop-blur-sm">
                   <div className="text-sm text-white/90 mb-3 flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 mr-2">
                       <svg className="animate-spin w-5 h-5 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -951,41 +951,58 @@ For assistance, you can:
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                     </div>
-                    <span className="mr-2 font-medium bg-clip-text text-transparent bg-gradient-to-r from-teal-300 to-cyan-300 animate-shimmer">{loadingText}</span>
+                    <span className="mr-2 font-medium text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300 animate-shimmer">
+                      {loadingText}
+                      <span className="thinking-indicator"></span>
+                    </span>
+                    <span className="text-xs text-teal-400/50 ml-auto font-mono">Claude 3.5</span>
                   </div>
                   
-                  {/* Beautiful gradient progress bar with smooth movement */}
-                  <div className="w-full h-2 bg-slate-700/50 rounded-full overflow-hidden mb-3 p-0.5">
-                    <div className="h-full rounded-full animate-progress-pulse"></div>
+                  {/* Enhanced gradient progress bar with smoother animation */}
+                  <div className="w-full h-2.5 bg-slate-700/50 rounded-full overflow-hidden mb-3 p-0.5">
+                    <div className="h-full rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-teal-400 animate-gradient-x"></div>
                   </div>
                   
-                  {/* Enhanced neural network visualization */}
-                  <div className="flex justify-center items-center gap-1.5 mt-3 py-1 bg-slate-800/80 rounded-full">
-                    {[...Array(7)].map((_, i) => (
+                  {/* Phase-specific contextual hints */}
+                  <div className="text-xs text-white/50 mb-3 italic">
+                    {phase === "intro" && "Finding the best way to help with your learning journey..."}
+                    {phase === "phase1" && "Analyzing your learning preferences and style..."}
+                    {phase === "phase2" && "Evaluating the most effective learning resources for you..."}
+                    {phase === "phase4" && "Designing an optimal goal structure for your success..."}
+                    {phase === "phase5" && "Creating personalized strategies based on your input..."}
+                    {phase === "summary" && "Building a comprehensive overview of your progress..."}
+                  </div>
+                  
+                  {/* Improved neural network visualization */}
+                  <div className="grid grid-cols-3 gap-1.5 mt-3 py-2 px-3">
+                    {[...Array(9)].map((_, i) => (
                       <div 
                         key={i} 
-                        className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-teal-400 to-cyan-300"
-                        style={{ 
-                          animation: `pulseDelayed 1.5s ease-in-out ${i * 0.12}s infinite`,
-                          opacity: 0.5 + (i * 0.05)
-                        }}
-                      ></div>
+                        className="flex justify-center"
+                      >
+                        <div
+                          className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-400 to-cyan-300"
+                          style={{ 
+                            animation: `pulse 1.5s ease-in-out ${(i % 3) * 0.3}s infinite`,
+                            opacity: 0.4 + (Math.random() * 0.6)
+                          }}
+                        ></div>
+                      </div>
                     ))}
                   </div>
                   
-                  {/* Neural connection lines */}
-                  <div className="flex justify-between py-1 mt-2 px-3">
-                    <div className="flex flex-col space-y-0.5">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="w-6 h-0.5 bg-teal-500/20 rounded-full animate-shimmer"></div>
-                      ))}
-                    </div>
-                    <div className="flex flex-col space-y-0.5">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="w-6 h-0.5 bg-cyan-500/20 rounded-full animate-shimmer" 
-                             style={{ animationDelay: `${i * 0.2}s` }}></div>
-                      ))}
-                    </div>
+                  {/* Neural connection animated lines */}
+                  <div className="grid grid-cols-3 gap-1 py-1 mt-1 px-3">
+                    {[...Array(6)].map((_, i) => (
+                      <div 
+                        key={i}
+                        className="h-0.5 bg-gradient-to-r from-teal-500/20 to-cyan-500/30 rounded-full"
+                        style={{ 
+                          animation: `fadeInOutHorizontal 2s ease-in-out ${i * 0.25}s infinite`,
+                          gridColumn: i % 2 === 0 ? "1 / 3" : "2 / 4" 
+                        }}
+                      ></div>
+                    ))}
                   </div>
                 </div>
               </div>
