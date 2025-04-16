@@ -99,12 +99,14 @@ async def log_llm_interaction(
     This function will save all details of an LLM interaction to the llm_interactions table
     for analysis, debugging, and auditing purposes.
     """
+    # Declare global at the top of the function
+    global local_memory_db
+    
     # Import here to avoid circular imports
     try:
         from backend.utils.db import get_db
     except ImportError:
         logger.warning("Could not import get_db, using memory storage only")
-        global local_memory_db
         local_memory_db["llm_interactions"].append({
             "id": str(uuid.uuid4()),
             "error": "db_import_error",
@@ -156,7 +158,6 @@ async def log_llm_interaction(
         # Use memory storage if needed
         if use_memory_storage:
             # Store in local memory DB
-            global local_memory_db
             local_memory_db["llm_interactions"].append(interaction)
             logger.debug(f"Stored LLM interaction in memory: {interaction['id']}")
             return
