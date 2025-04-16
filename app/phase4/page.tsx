@@ -407,7 +407,7 @@ export default function Phase4Content() {
             <Card className="bg-gray-900/60 backdrop-blur-md border border-orange-500/30 shadow-xl mb-6">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                  <ListTodo className="h-7 w-7 text-orange-500" />
+                  <ListTodo className="h-8 w-8 text-orange-500" />
                   <span className="bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
                     Achieve Your Goals
                   </span>

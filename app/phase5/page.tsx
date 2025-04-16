@@ -228,9 +228,9 @@ export default function Phase5Content() {
             <Card className="bg-slate-900/60 backdrop-blur-md border border-indigo-500/30 shadow-xl mb-6">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                  <BarChart className="h-8 w-8 text-indigo-500" />
-                  <span className="bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">
-                    Monitoring & Adaptation
+                  <LineChart className="h-8 w-8 text-amber-500" />
+                  <span className="bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text text-transparent">
+                    Monitor Your Learning
                   </span>
                 </CardTitle>
               </CardHeader>

@@ -301,18 +301,8 @@ export default function Phase6Content() {
         </div>
       </div>
 
-      {/* Fixed Phase Title that stays visible when scrolling */}
-      <div className="fixed top-16 left-0 right-0 z-10 bg-slate-900/95 backdrop-blur-md border-b border-emerald-500/20 py-3 px-4">
-        <div className="container mx-auto">
-          <div className="flex items-center justify-center">
-            <h2 className="text-lg md:text-xl font-bold text-emerald-400">
-              Task Analysis & Resource Identification
-            </h2>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 relative z-10 pt-32">
+      {/* Content container with appropriate padding for fixed header */}
+      <div className="container mx-auto px-4 relative z-10 pt-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -363,9 +353,9 @@ export default function Phase6Content() {
               </div>
 
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center mt-4">
-                <GraduationCap className="h-8 w-8 text-purple-500" />
-                <span className="bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-                  Your Complete Learning System
+                <Medal className="h-8 w-8 text-rose-500" />
+                <span className="bg-gradient-to-r from-rose-400 to-pink-500 bg-clip-text text-transparent">
+                  Learning Journey Summary
                 </span>
               </CardTitle>
             </CardHeader>
