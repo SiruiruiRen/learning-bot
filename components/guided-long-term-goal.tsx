@@ -21,18 +21,18 @@ interface GuidedLongTermGoalProps {
 const LONGTERM_QUESTIONS = [
   {
     id: "specific_goal",
-    question: "What specific long-term learning goal would you like to achieve related to your focused course/tasks?",
-    hint: "Think about where you want to be with your knowledge and skills by the end of your learning journey. This isn't just about grades—it's about who you'll become through this learning."
+    question: "What specific long-term learning goal would you like to achieve through this course or learning journey?",
+    hint: "Visualize yourself at the finish line. What specific knowledge or skills will you possess? What concrete achievements will demonstrate your success? Be as detailed as possible about what mastery looks like to you."
   },
   {
     id: "goal_orientation",
-    question: "Why is achieving this goal important to you personally?",
-    hint: "Consider how this goal connects to your identity, values, and future aspirations. How will mastering this knowledge or skill contribute to your personal or professional growth?"
+    question: "Imagine your future self after achieving this goal. How would this accomplishment transform your personal or professional identity?",
+    hint: "Close your eyes and picture yourself after achieving this goal. How will this knowledge change who you are? What new opportunities will open up? How might others see you differently? Try to feel the emotions associated with this transformation."
   },
   {
     id: "visualization",
-    question: "Take a moment and imagine how it would feel to achieve this goal. Why would it be satisfying?",
-    hint: "Imagine the relevant events and experiences as vividly as possible—really let your mind go! What will you be able to do? How will you feel? Who will you become?"
+    question: "Describe a vivid scene where you're applying your newly mastered knowledge or skills. What are you doing and how does it feel?",
+    hint: "Create a mental movie of a specific moment: Where are you? Who else is there? What exactly are you doing with your new abilities? What sights, sounds, or sensations are present? How do you feel emotionally as you demonstrate your mastery? Make this scene as detailed and immersive as possible."
   }
 ]
 
@@ -78,14 +78,14 @@ export default function GuidedLongTermGoal({
       {
         id: uuidv4(),
         sender: "bot",
-        content: `Hi there! 👋 Let's define your long-term learning goal related to this course/task.
+        content: `Hi there! 👋 Let's define your long-term learning goal through vivid visualization.
 
-Looking at what makes an excellent long-term goal:
-• Goal Clarity: ✨ Clearly defined with specific focus areas, measurable criteria, and sub-goals
-• Goal Orientation: 🎯 Primarily mastery-oriented, emphasizing skill development and understanding
-• Visualization: 💭 Rich description of successful outcome with personal relevance and emotional elements
+Creating powerful learning goals involves three key elements:
+• Goal Clarity: ✨ Clearly defined outcomes with specific, measurable achievements
+• Identity Connection: 🧠 How this knowledge becomes part of who you are and transforms you
+• Sensory Visualization: 🌈 Creating mental movies with rich details you can see, hear, and feel
 
-I'll guide you through a series of questions that will help you create a meaningful goal that meets these criteria.`,
+I'll guide you to create a compelling mental image of your success that will motivate and direct your learning journey.`,
         timestamp: new Date(),
         type: "question"
       },
@@ -446,14 +446,14 @@ Visualization: ${responses["visualization"] || ""}
       {
         id: uuidv4(),
         sender: "bot",
-        content: `Hi there! 👋 Let's define your long-term learning goal related to this course/task.
+        content: `Hi there! 👋 Let's define your long-term learning goal through vivid visualization.
 
-Looking at what makes an excellent long-term goal:
-• Goal Clarity: ✨ Clearly defined with specific focus areas, measurable criteria, and sub-goals
-• Goal Orientation: 🎯 Primarily mastery-oriented, emphasizing skill development and understanding
-• Visualization: 💭 Rich description of successful outcome with personal relevance and emotional elements
+Creating powerful learning goals involves three key elements:
+• Goal Clarity: ✨ Clearly defined outcomes with specific, measurable achievements
+• Identity Connection: 🧠 How this knowledge becomes part of who you are and transforms you
+• Sensory Visualization: 🌈 Creating mental movies with rich details you can see, hear, and feel
 
-I'll guide you through a series of questions that will help you create a meaningful goal that meets these criteria.`,
+I'll guide you to create a compelling mental image of your success that will motivate and direct your learning journey.`,
         timestamp: new Date(),
         type: "question"
       },
@@ -680,7 +680,7 @@ I'll guide you through a series of questions that will help you create a meaning
                 <User size={16} />
               </div>
               <Textarea
-                placeholder="Ask a question about your long-term goal..."
+                placeholder="Describe more details about how you visualize achieving your goal..."
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 onKeyDown={(e) => {
