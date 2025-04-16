@@ -14,12 +14,17 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
   // Remove instructor metadata from the message (appears as HTML comments)
   let cleanedContent = content.replace(/<!--\s*INSTRUCTOR_METADATA[\s\S]*?-->/g, '');
   
+  // Debug logs
+  console.log("Phase:", phase);
+  console.log("Content starts with:", cleanedContent.substring(0, 100));
+  
   // Common indicators for different sections
   const hasAssessment = content.includes("## Assessment") || 
                       content.includes("Assessment:") || 
                       content.includes("Looking at your") || 
                       content.includes("⚠️") ||
-                      content.includes("Progress Checks:");
+                      content.includes("Progress Checks:") ||
+                      content.includes("Looking at your monitoring");
                       
   const hasGuidance = content.includes("## Guidance") || 
                     content.includes("Guidance:") || 
@@ -27,16 +32,23 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
                     content.includes("Let's develop") ||
                     content.includes("template") || 
                     content.includes("Since we're") ||
-                    content.includes("Complete this template:");
+                    content.includes("Complete this template:") ||
+                    content.includes("PROGRESS METRICS:") ||
+                    content.includes("Since this needs more detail");
                     
   const hasNextSteps = content.includes("## Next Steps") || 
                       content.includes("Next Steps:") || 
                       content.includes("Please revise") || 
                       content.includes("📝") ||
-                      content.includes("revise your");
+                      content.includes("revise your") ||
+                      content.includes("filling in the specifics");
+  
+  // Debug logs for section detection                    
+  console.log("Has sections:", { hasAssessment, hasGuidance, hasNextSteps });
   
   // If no section indicators, render with minimal styling
   if (!hasAssessment && !hasGuidance && !hasNextSteps) {
+    console.log("No sections detected, using minimal styling");
     return (
       <div className="border-l-4 border-teal-500/40 pl-3 rounded">
         <MarkdownRenderer content={cleanedContent} />
@@ -75,22 +87,28 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
          line.includes("Looking at your") || 
          line.includes("⚠️") || 
          line.match(/Progress Checks:/) || 
-         line.includes("Assessment"))) {
+         line.includes("Assessment") ||
+         line.match(/•\s+Progress\s+Checks:/i) ||
+         line.match(/•\s+[^:]+:\s+⚠️/i))) {
       currentSection = "assessment";
     }
     else if (currentSection !== "intro" && !currentSection.includes("nextSteps") && (
               line.includes("Complete this template") || 
               line.includes("Since your") ||
               line.includes("Since we're") ||
+              line.includes("Since this needs") ||
               line.match(/PROGRESS METRICS:/) ||
-              line.includes("template:"))) {
+              line.includes("template:") ||
+              line.includes("REFLECTION SCHEDULE:") ||
+              line.includes("ADAPTATION TRIGGERS"))) {
       currentSection = "guidance";
     }
     else if (line.includes("Please revise") || 
               line.includes("Remember") || 
               line.includes("📝") ||
               line.match(/^\d+\.\s+If\s+\_+/) ||
-              line.includes("revise your")) {
+              line.includes("revise your") ||
+              line.includes("filling in the specifics")) {
       currentSection = "nextSteps";
     }
     
@@ -102,6 +120,25 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
   Object.keys(sections).forEach(key => {
     sections[key] = sections[key].trim();
   });
+
+  // Log the extracted sections for debugging
+  console.log("Extracted sections:", {
+    introLength: sections.intro.length,
+    assessmentLength: sections.assessment.length,
+    guidanceLength: sections.guidance.length,
+    nextStepsLength: sections.nextSteps.length
+  });
+  
+  // Log the first 100 chars of each section for diagnosis
+  if (sections.assessment.length > 0) {
+    console.log("Assessment section start:", sections.assessment.substring(0, 100));
+  }
+  if (sections.guidance.length > 0) {
+    console.log("Guidance section start:", sections.guidance.substring(0, 100));
+  }
+  if (sections.nextSteps.length > 0) {
+    console.log("Next Steps section start:", sections.nextSteps.substring(0, 100));
+  }
   
   // Format assessment content to improve table-like structure
   const formatAssessmentContent = (content: string) => {
@@ -211,10 +248,10 @@ export function formatMessageContent(content: string, phase?: string): ReactNode
       )}
       
       {sections.guidance && (
-        <div className="border-l-4 border-teal-500 py-3 rounded-md overflow-hidden shadow-md">
-          <div className="bg-teal-800/20 mb-3 py-2 pl-3 border-b border-teal-500/30">
-            <div className="text-teal-300 font-semibold text-lg flex items-center">
-              <span className="text-teal-300 mr-2 text-xl">💡</span>
+        <div className={`border-l-4 ${phase === 'phase5' ? 'border-purple-500' : 'border-teal-500'} py-3 rounded-md overflow-hidden shadow-md`}>
+          <div className={`${phase === 'phase5' ? 'bg-purple-800/20' : 'bg-teal-800/20'} mb-3 py-2 pl-3 border-b ${phase === 'phase5' ? 'border-purple-500/30' : 'border-teal-500/30'}`}>
+            <div className={`${phase === 'phase5' ? 'text-purple-300' : 'text-teal-300'} font-semibold text-lg flex items-center`}>
+              <span className={`${phase === 'phase5' ? 'text-purple-300' : 'text-teal-300'} mr-2 text-xl`}>💡</span>
               Guidance
             </div>
           </div>
