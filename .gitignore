@@ -58,4 +58,9 @@ debug.log
 npm-debug.log*
 
 # Screenshot directory
-screenshots/ 
+screenshots/ .vercel/
+deploy-fix/
+deploy-package/
+deploy-render/
+patterns.txt
+video/
