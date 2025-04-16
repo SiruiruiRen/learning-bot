@@ -46,12 +46,12 @@ type Message = {
 
 // Loading messages that cycle during evaluation
 const loadingMessages = [
-  "Setting clear goals improves learning outcomes...",
-  "Personal relevance increases motivation...",
-  "Visualizing success builds self-efficacy...",
-  "Connecting learning to your values deepens engagement...",
-  "Measurable goals help track your progress...",
-  "Personal meaning enhances knowledge retention...",
+  "Long-term goals give direction to your learning journey...",
+  "Goals aligned with personal values enhance motivation...",
+  "Mastery-oriented goals lead to deeper understanding...",
+  "Visualization helps make abstract goals concrete...",
+  "Clear goals help you select effective learning strategies...",
+  "Meaningful goals sustain effort during challenges..."
 ]
 
 export default function GuidedLongTermGoal({

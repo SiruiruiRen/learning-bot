@@ -46,12 +46,12 @@ type Message = {
 
 // Loading messages that cycle during evaluation
 const loadingMessages = [
-  "Specific goals are easier to achieve...",
-  "Measurable criteria track your progress...",
-  "Action plans create a roadmap for success...",
-  "Timeline commitments improve follow-through...",
-  "Realistic goals build confidence and momentum...",
-  "Short-term goals are building blocks for long-term success...",
+  "SMART goals transform intentions into actions...",
+  "Specific objectives clarify exactly what to accomplish...",
+  "Measurable criteria show when you've succeeded...",
+  "Achievable goals build confidence through success...",
+  "Relevant goals connect directly to your larger purpose...",
+  "Time-bound deadlines create productive urgency..."
 ]
 
 export default function GuidedShortTermGoal({

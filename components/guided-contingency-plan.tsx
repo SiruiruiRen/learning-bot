@@ -45,12 +45,12 @@ type Message = {
 
 // Loading messages that cycle during evaluation
 const loadingMessages = [
-  "Implementation intentions turn plans into habits...",
-  "Specific if-then plans bypass willpower barriers...",
-  "Anticipating obstacles increases success rates...",
-  "Practical responses to distractions maintain momentum...",
-  "Small, immediate actions are easier to implement...",
-  "Planning for distractions is a form of time protection...",
+  "If-then plans bypass the need for willpower...",
+  "Anticipating obstacles is key to overcoming them...",
+  "Specific triggers make responses automatic...",
+  "Mental contrasting connects goals with obstacles...",
+  "Planning for distractions protects study time...",
+  "Implementation intentions turn goals into habits..."
 ]
 
 export default function GuidedContingencyPlan({

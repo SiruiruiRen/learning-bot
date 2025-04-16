@@ -47,12 +47,12 @@ type Message = {
 
 // Loading messages that cycle during evaluation
 const loadingMessages = [
-  "Regular monitoring prevents learning gaps...",
-  "Adaptation is a sign of effective learning...",
-  "Progress metrics create accountability...",
-  "Alternative strategies build learning resilience...",
-  "Early adjustments prevent larger problems...",
-  "Expert learners continuously monitor progress...",
+  "Tracking progress makes learning visible...",
+  "Regular reflection reveals improvement opportunities...",
+  "Feedback loops accelerate skill development...",
+  "Strategic adjustments optimize learning efficiency...",
+  "Monitoring helps identify what works best for you...",
+  "Adaptation is the hallmark of expert learners..."
 ]
 
 export default function GuidedMonitoringAdaptation({
