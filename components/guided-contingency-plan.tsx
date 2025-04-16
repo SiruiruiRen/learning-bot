@@ -337,19 +337,8 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       );
     }
     
-    // Remove instructor metadata from the message (appears as HTML comments)
-    let cleanedContent = content.replace(/<!--\s*INSTRUCTOR_METADATA[\s\S]*?-->/g, '');
-    
-    // Determine if the message has sections based on its content
-    const hasAssessment = content.includes("## Assessment") || content.includes("Assessment") || content.includes("Looking at your");
-    const hasGuidance = content.includes("## Guidance") || content.includes("Guidance") || 
-      content.includes("Here's a template") || content.includes("IF Triggers") || 
-      content.includes("Try this template") || content.includes("Let's strengthen your plan") || 
-      content.includes("Let's make your implementation") || content.includes("template to make it more specific");
-    const hasNextSteps = content.includes("## Next Steps") || content.includes("Next Steps") || content.includes("Please revise");
-    
-    // If we detect this is a message with sections, format it properly with colored borders
-    if (hasAssessment || hasGuidance || hasNextSteps) {
+    // Extract sections using section headers pattern
+    if (content.includes("## Assessment") || content.includes("## Guidance") || content.includes("## Next Steps")) {
       // Split the content into sections
       const sections: {[key: string]: string} = {
         intro: "",
@@ -359,32 +348,22 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       };
       
       // Process the content to identify sections
-      const lines = cleanedContent.split('\n');
+      const lines = content.split('\n');
       let currentSection = "intro";
       
-      // Parse message by line to extract sections
       for (const line of lines) {
         // Check for section markers and transition to that section
-        if (line.includes("## Assessment") || line.includes("Looking at your") || 
-            line.match(/^Assessment\b/) || line.includes("⚠️ Assessment")) {
+        if (line.startsWith("## Assessment")) {
           currentSection = "assessment";
-          // Skip the ## Assessment line itself if present
-          if (line.trim() === "## Assessment") continue;
+          continue; // Skip the header line
         }
-        else if (line.includes("## Guidance") || line.includes("Here's a template") || 
-                 line.includes("IF Triggers") || line.includes("Try this template") || 
-                 line.includes("Let's strengthen your plan") || line.match(/^🎯 Let's make/) || 
-                 line.includes("template to make it more specific") || line.includes("For example:")) {
+        else if (line.startsWith("## Guidance")) {
           currentSection = "guidance";
-          // Skip the ## Guidance line itself if present
-          if (line.trim() === "## Guidance") continue;
+          continue; // Skip the header line
         }
-        else if (line.includes("## Next Steps") || line.includes("Next Steps") || 
-                 line.includes("Please revise") || line.match(/^📝 Next Steps/) || 
-                 line.match(/^📝 Please revise/)) {
+        else if (line.startsWith("## Next Steps")) {
           currentSection = "nextSteps";
-          // Skip the ## Next Steps line itself if present
-          if (line.trim() === "## Next Steps") continue;
+          continue; // Skip the header line
         }
         
         // Add line to current section
@@ -400,23 +379,41 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       return (
         <div className="flex flex-col space-y-4">
           {sections.intro && (
-            <div className="text-purple-200">{sections.intro}</div>
+            <div className="text-white/90">
+              <MarkdownRenderer content={sections.intro} />
+            </div>
           )}
           
           {sections.assessment && (
-            <div className="border-l-2 border-amber-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+            <div className="border-l-4 border-amber-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
+              <div className="text-amber-400 font-medium text-lg mb-3 flex items-center">
+                <span className="text-amber-400 mr-2 text-xl">⚠️</span>
+                Assessment
+              </div>
               <MarkdownRenderer content={sections.assessment} />
             </div>
           )}
           
           {sections.guidance && (
-            <div className="border-l-2 border-purple-500 pl-3 py-2 bg-slate-800/30 rounded-md">
-              <MarkdownRenderer content={sections.guidance} />
+            <div className="border-l-4 border-purple-500 py-3 rounded-md overflow-hidden shadow-md">
+              <div className="bg-purple-800/20 mb-3 py-2 pl-3 border-b border-purple-500/30">
+                <div className="text-purple-300 font-semibold text-lg flex items-center">
+                  <span className="text-purple-300 mr-2 text-xl">📝</span>
+                  Guidance
+                </div>
+              </div>
+              <div className="bg-slate-800/40 px-4 py-3 border border-slate-700/60">
+                <MarkdownRenderer content={sections.guidance} className="prose prose-invert max-w-none text-slate-100" />
+              </div>
             </div>
           )}
           
           {sections.nextSteps && (
-            <div className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-800/30 rounded-md">
+            <div className="border-l-4 border-blue-500 pl-3 py-3 bg-slate-800/40 rounded-md shadow-md">
+              <div className="text-blue-400 font-medium text-lg mb-3 flex items-center">
+                <span className="text-blue-400 mr-2 text-xl">📝</span>
+                Next Steps
+              </div>
               <MarkdownRenderer content={sections.nextSteps} />
             </div>
           )}
@@ -424,10 +421,10 @@ Feasibility Considerations: ${responses["feasibility"] || ""}
       );
     }
     
-    // For messages with no special formatting, just render the cleaned content
+    // For regular messages with no special formatting
     return (
-      <div className="border-l-2 border-purple-500 pl-3 py-2 rounded-md">
-        <MarkdownRenderer content={cleanedContent} />
+      <div className="border-l-4 border-purple-500/40 pl-3 rounded">
+        <MarkdownRenderer content={content} />
       </div>
     );
   }
