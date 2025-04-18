@@ -20,9 +20,9 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 
 # Remove manager agent import and replace with direct LLM utility
-from backend.utils.llm import call_claude
+from backend.utils.llm import call_claude_api
 from backend.models.schemas import ChatRequest, ChatResponse
-from backend.utils.db import save_message, get_user_profile, get_messages, _memory_db, _using_memory_db
+from backend.utils.db import save_message, get_user_profile, get_messages, _memory_db, _using_memory_db, save_scaffolding_level
 
 logger = logging.getLogger("solbot.routes.chat")
 
@@ -304,7 +304,7 @@ async def process_chat(request: dict):
             logger.error(f"Error saving user message: {e}")
         
         # Make API call to Claude with all necessary context for logging
-        response = await call_claude(
+        response = await call_claude_api(
             system_prompt=system_prompt,
             user_message=message,
             chat_history=formatted_history,
@@ -575,6 +575,19 @@ async def process_chat(request: dict):
                     if "assessments" not in _memory_db:
                         _memory_db["assessments"] = []
                     _memory_db["assessments"].append(assessment_data)
+                    
+                # Save the scaffolding level to the database
+                try:
+                    save_scaffolding_level(
+                        user_id=user_id, 
+                        phase=phase, 
+                        component=component,
+                        level=recommended_scaffolding,
+                        conversation_id=conversation_id,
+                        reason=f"Submission evaluation for {request.get('submission_type', 'goal')}"
+                    )
+                except Exception as scaffolding_err:
+                    logger.error(f"Error saving scaffolding level: {scaffolding_err}")
         except Exception as e:
             logger.error(f"Error saving submission: {e}")
             # Continue even if saving fails
