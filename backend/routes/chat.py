@@ -20,7 +20,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 
 # Remove manager agent import and replace with direct LLM utility
-from backend.utils.llm import call_claude_api
+from backend.utils.llm import call_claude
 from backend.models.schemas import ChatRequest, ChatResponse
 from backend.utils.db import save_message, get_user_profile, get_messages, _memory_db, _using_memory_db, save_scaffolding_level
 
@@ -304,7 +304,7 @@ async def process_chat(request: dict):
             logger.error(f"Error saving user message: {e}")
         
         # Make API call to Claude with all necessary context for logging
-        response = await call_claude_api(
+        response = await call_claude(
             system_prompt=system_prompt,
             user_message=message,
             chat_history=formatted_history,
