@@ -445,7 +445,8 @@ export default function Phase1Content() {
                   
                   <Button 
                     onClick={nextCard}
-                    className="text-[#3b2a1c] font-semibold"
+                    className="font-semibold"
+                    style={{ color: "#1f1408" }}
                     style={{
                       background: "linear-gradient(135deg, #d8b26f, #c89b51)",
                       boxShadow: "0 10px 24px rgba(0,0,0,0.25)",

@@ -586,10 +586,11 @@ export default function Phase2Page() {
                 
                 {currentCardIndex < cards.length - 1 ? (
                   <Button 
-                    className="text-[#0e1c1a] font-semibold px-6 py-2 rounded-lg"
+                    className="font-semibold px-6 py-2 rounded-lg"
             style={{
               background: "linear-gradient(135deg, #d8b26f, #c89b51)",
               boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+              color: "#1f1408",
             }}
                     onClick={nextCard}
                     disabled={(currentCardIndex === 3 && !quizCompleted)}
@@ -598,10 +599,11 @@ export default function Phase2Page() {
                   </Button>
                 ) : (
                   <Button 
-                    className="text-[#0e1c1a] font-semibold px-6 py-3 rounded-full shadow-lg"
+                    className="font-semibold px-6 py-3 rounded-full shadow-lg"
                     style={{
                       background: "linear-gradient(135deg, #d8b26f, #c89b51)",
                       boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+                      color: "#1f1408",
                     }}
                     onClick={nextCard}
                   >

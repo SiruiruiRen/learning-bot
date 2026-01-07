@@ -202,10 +202,11 @@ export default function Phase4IntroPage() {
 
                 <div className="flex justify-end mt-8">
                   <Button 
-                    className="text-[#1a1524] font-semibold px-8 py-3 rounded-lg text-lg"
+                    className="font-semibold px-8 py-3 rounded-lg text-lg"
                     style={{
-                      background: "linear-gradient(135deg, #c2a7ff, #b28bff)",
-                      boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                      color: "#1f1408",
                     }}
                     onClick={handleComplete}
                   >

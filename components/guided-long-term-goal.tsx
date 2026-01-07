@@ -312,11 +312,22 @@ export default function GuidedLongTermGoal({
     }
   };
   
-   const renderInputArea = () => {
+   const accent = "#d8b26f"
+  const neutralSurface = "hsl(var(--card) / 0.96)"
+  const neutralBorder = "hsl(var(--border) / 0.8)"
+  const mutedText = "hsl(var(--muted-foreground))"
+  const primaryButtonStyle = {
+    backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
+    color: "#1f1408",
+    border: `1px solid ${neutralBorder}`,
+    boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+  }
+
+  const renderInputArea = () => {
     if (interactionState === 'guiding') {
       return (
         <div className="flex flex-col space-y-2">
-          <div className="flex items-center text-xs text-gray-400">
+          <div className="flex items-center text-xs" style={{ color: mutedText }}>
             <div className="flex-1">Question {currentQuestionIndex + 1} of {LONGTERM_QUESTIONS.length}</div>
             <div>{userInput.length} / {CHARACTER_LIMIT}</div>
           </div>
@@ -326,11 +337,16 @@ export default function GuidedLongTermGoal({
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               maxLength={CHARACTER_LIMIT}
-              className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
+              className="flex-1 min-h-[80px]"
+              style={{ 
+                backgroundColor: neutralSurface, 
+                borderColor: neutralBorder,
+                color: "hsl(var(--foreground))"
+              }}
               rows={3}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendResponse(); }}}
             />
-            <Button onClick={handleSendResponse} className="h-auto bg-purple-600 hover:bg-purple-500 py-3" disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
+            <Button onClick={handleSendResponse} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
               <Send size={18} />
             </Button>
           </div>
@@ -339,8 +355,8 @@ export default function GuidedLongTermGoal({
     } else if (interactionState === 'confirming') {
       return (
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleEditResponses} disabled={isLoading}>Edit</Button>
-          <Button onClick={handleSubmitForFeedback} disabled={isLoading} className="bg-purple-600 hover:bg-purple-700">
+          <Button variant="outline" onClick={handleEditResponses} disabled={isLoading} style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}>Edit</Button>
+          <Button onClick={handleSubmitForFeedback} disabled={isLoading} style={primaryButtonStyle}>
             <Check size={16} className="mr-2"/>Confirm & Submit
           </Button>
         </div>
@@ -354,17 +370,22 @@ export default function GuidedLongTermGoal({
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               maxLength={CHARACTER_LIMIT}
-              className="flex-1 bg-slate-800/50 border-slate-700 focus:border-purple-500 min-h-[80px]"
+              className="flex-1 min-h-[80px]"
+              style={{ 
+                backgroundColor: neutralSurface, 
+                borderColor: neutralBorder,
+                color: "hsl(var(--foreground))"
+              }}
               rows={3}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChatMessage(); }}}
             />
-            <Button onClick={handleSendChatMessage} className="h-auto bg-purple-600 hover:bg-purple-500 py-3" disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
+            <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
               <Send size={18} />
             </Button>
           </div>
           {showRetryOption && (
             <div className="flex justify-center mt-2">
-              <Button onClick={handleRetryFeedback} variant="outline" className="border-purple-500 text-purple-400 hover:bg-purple-500/10">
+              <Button onClick={handleRetryFeedback} variant="outline" style={{ borderColor: accent, color: accent }}>
                 🔄 Try Again for Feedback
               </Button>
             </div>
@@ -389,25 +410,32 @@ export default function GuidedLongTermGoal({
             className={`flex items-start gap-2 w-full ${message.sender === "bot" ? "justify-start" : "justify-end"}`}
           >
             {message.sender === "bot" && (
-              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
-                <Bot size={16} />
+              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
+                <Bot size={16} style={{ color: "#1f1408" }} />
               </div>
             )}
-            <Card className={`${message.type === 'evaluation' ? 'w-full' : 'max-w-[85%]'} ${message.sender === "bot" ? "bg-slate-800/70" : "bg-purple-900/70"} border-slate-700`}>
+            <Card 
+              className={`${message.type === 'evaluation' ? 'w-full' : 'max-w-[85%]'}`}
+              style={{ 
+                backgroundColor: neutralSurface, 
+                borderColor: neutralBorder,
+                color: "hsl(var(--foreground))"
+              }}
+            >
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                  {message.type === 'confirmation' && typeof message.content === 'object' ? (
                     <div className="space-y-3">
                       <p>Thank you for your thoughtful responses! Here is your complete long-term goal. Please review it.</p>
-                      <div className="p-3 bg-slate-700/50 rounded-md border border-slate-600">
-                        <h4 className="font-semibold text-purple-400 mb-1">Specific Goal:</h4>
+                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
+                        <h4 className="font-semibold mb-1" style={{ color: accent }}>Specific Goal:</h4>
                         <p className="whitespace-pre-wrap">{message.content.specific_goal}</p>
                       </div>
-                      <div className="p-3 bg-slate-700/50 rounded-md border border-slate-600">
-                        <h4 className="font-semibold text-purple-400 mb-1">Goal Orientation:</h4>
+                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
+                        <h4 className="font-semibold mb-1" style={{ color: accent }}>Goal Orientation:</h4>
                         <p className="whitespace-pre-wrap">{message.content.goal_orientation}</p>
                       </div>
-                      <div className="p-3 bg-slate-700/50 rounded-md border border-slate-600">
-                        <h4 className="font-semibold text-purple-400 mb-1">Visualization:</h4>
+                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
+                        <h4 className="font-semibold mb-1" style={{ color: accent }}>Visualization:</h4>
                         <p className="whitespace-pre-wrap">{message.content.visualization}</p>
                       </div>
                     </div>
@@ -419,8 +447,8 @@ export default function GuidedLongTermGoal({
               </CardContent>
             </Card>
             {message.sender === "user" && (
-              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-slate-600">
-                <User size={16} />
+              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: "hsl(var(--muted))" }}>
+                <User size={16} style={{ color: "hsl(var(--foreground))" }} />
               </div>
             )}
           </motion.div>
@@ -430,8 +458,8 @@ export default function GuidedLongTermGoal({
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex items-center gap-2"
           >
-            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
-                <Bot size={16} />
+            <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
+                <Bot size={16} style={{ color: "#1f1408" }} />
             </div>
             <div className="typing-indicator" data-message={loadingMessages[currentLoadingMessage]}>
                 <span></span><span></span><span></span>
@@ -439,7 +467,7 @@ export default function GuidedLongTermGoal({
           </motion.div>
         )}
       </div>
-      <div className="border-t border-gray-700 p-4">
+      <div className="border-t p-4" style={{ borderColor: neutralBorder }}>
         {renderInputArea()}
       </div>
       

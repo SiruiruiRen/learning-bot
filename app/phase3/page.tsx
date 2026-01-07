@@ -707,10 +707,11 @@ export default function Phase3Content() {
                 ) : null}
                 
                 <Button 
-                  className="text-[#1a1524] font-semibold px-6 py-2 rounded-lg"
+                  className="font-semibold px-6 py-2 rounded-lg"
                   style={{
-                    background: "linear-gradient(135deg, #f5c09a, #ffd2b4)",
-                    boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
+                    background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                    boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                    color: "#1f1408",
                   }}
                   onClick={nextCard}
                   disabled={(currentCardIndex === 4 && !quizCompleted)}
