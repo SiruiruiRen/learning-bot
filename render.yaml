@@ -40,5 +40,4 @@ services:
         sync: false  # 与 NEXT_PUBLIC_SUPABASE_URL 相同，用于 API 路由
       - key: DATABASE_ENABLED
         value: true
-      - key: PORT
-        value: 3000
+      # PORT 由 Render 自动设置，无需手动配置
