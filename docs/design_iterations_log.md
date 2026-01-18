@@ -16,6 +16,30 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 15: Light Mode Color Consistency & WCAG AA Compliance
+**Date**: 2025-01-XX | **Commit**: `6150686` | **Status**: ✅ Complete
+**User Need**: "The chatbot interface light mode still has inconsistent color patterns, such as some dark color elements. In phase 4, there are even white texts. In phase 5, the chat interface is too ugly (the grey frame is bad). Please redesign all the colors and make sure they are consistent and high quality in the light mode, and test all color contrast."
+**Key Changes**:
+- **Color Contrast Compliance (WCAG AA Standards)**:
+  - All text uses dark foreground color (`hsl(var(--foreground))` - HSL(26, 32%, 24%)) on light backgrounds
+  - Meets WCAG AA standards: minimum 4.5:1 contrast ratio for normal text (≥18px or ≥14px bold)
+  - Accent color (#d8b26f - warm gold) with dark text (#1f1408) provides excellent contrast (exceeds 4.5:1)
+  - All UI components meet minimum 3:1 contrast ratio for graphical objects and borders
+- **Component-Level Fixes**:
+  - `solbot-chat.tsx`: Replaced dark mode colors (slate-900, slate-800, white text) with light mode equivalents using CSS variables
+  - `guided-learning-objective.tsx`: Removed dark backgrounds (slate-800/70, teal-900/70) and gray text, now uses theme colors
+  - `guided-monitoring-adaptation.tsx`: Fixed inconsistent blue/dark color scheme to match warm gold accent
+  - `guided-monitoring.tsx`: Removed ugly grey frame, replaced with clean light borders using `hsl(var(--border))`
+- **CSS Updates**:
+  - Updated typing indicator styling in `globals.css` for light mode compatibility
+  - All components now use consistent CSS variables: `--card`, `--foreground`, `--muted`, `--border`, `--primary`
+- **Consistency Improvements**:
+  - Unified warm gold accent (#d8b26f) across all chat components
+  - Bot and user avatars use theme colors instead of hardcoded dark colors
+  - Consistent border and divider styling throughout all phases
+**Files Modified**: `components/solbot-chat.tsx`, `components/guided-learning-objective.tsx`, `components/guided-monitoring-adaptation.tsx`, `components/guided-monitoring.tsx`, `app/globals.css`
+**Research Impact**: Ensures accessibility compliance for all participants, including those with visual impairments. WCAG AA compliance is essential for academic research validity and ensures the intervention is accessible to diverse learner populations. Consistent color scheme reduces cognitive load and supports reliable user experience across all phases.
+
 ### Iteration 14: Evidence-Based Intro Content
 **Date**: 2025-12-12 | **Commit**: `5c28e91` | **Status**: ✅ Complete
 **User Need**: "In the intro page, show the questions/pain points to the students, the core aim of the intervention, and the AI coach role, similar to the traditional intervention but with low cognitive load."
