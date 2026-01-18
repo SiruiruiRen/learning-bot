@@ -137,7 +137,9 @@ def log_assessment(
     phase: str,
     component: str,
     attempt_number: int,
-    evaluation: Dict[str, Any]
+    evaluation: Dict[str, Any],
+    feedback_style: Optional[str] = None,
+    evaluation_method: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Logs a full assessment record for research purposes.
@@ -155,11 +157,15 @@ def log_assessment(
         "phase": phase,
         "component": component,
         "attempt_number": attempt_number,
-        "overall_score": evaluation.get("overall_score"),
-        "lowest_category": evaluation.get("lowest_category"),
-        "scaffolding_level": evaluation.get("scaffolding_level"),
+        "overall_score": evaluation.get("overall_score") or evaluation.get("Overall_Score"),
+        "lowest_category": evaluation.get("lowest_category") or evaluation.get("Lowest_Category"),
+        "scaffolding_level": evaluation.get("scaffolding_level") or evaluation.get("Scaffolding"),
         "rationale": evaluation.get("rationale"),
         "full_evaluation": json.dumps(evaluation) if evaluation else None,
+        "evaluation_method": evaluation_method or evaluation.get("evaluation_method", "standard"),
+        "feedback_style": feedback_style,
+        "evaluation_time_ms": evaluation.get("evaluation_time_ms"),
+        "feedback_time_ms": evaluation.get("feedback_time_ms"),
     }
 
     try:

@@ -96,18 +96,46 @@ def get_evaluation_prompt(prompt_name: str) -> str:
     
     base_prompt = base_prompts[prompt_name]
     
-    # Create evaluation-only guidelines (no style)
-    evaluation_guidelines = """
+    # Create evaluation-only guidelines (no style) - RUBRIC-BASED
+    # Extract criteria from base prompt to ensure we use the exact rubric
+    base_prompt = base_prompts[prompt_name]
+    
+    # Extract the rubric criteria table from the base prompt
+    criteria_section = ""
+    in_criteria_table = False
+    for line in base_prompt.split('\n'):
+        if '| Criteria |' in line or '**Criteria**' in line:
+            in_criteria_table = True
+        if in_criteria_table:
+            criteria_section += line + '\n'
+            if '{COMMON_GUIDELINES}' in line:
+                break
+    
+    evaluation_guidelines = f"""
+# RUBRIC-BASED EVALUATION (CRITICAL)
+You MUST evaluate the student's submission using ONLY the rubric criteria defined below.
+Do NOT use your own judgment - strictly follow the rubric definitions.
+
+{criteria_section}
+
 # CATEGORIZATION GUIDELINES
-Assess each criterion with an integer score and category:
-- Score 0 = LOW (⚠️)
-- Score 1 = MEDIUM (💡) 
-- Score 2 = HIGH (✅)
+Assess each criterion with an integer score and category based on the rubric above:
+- Score 0 = LOW (⚠️) - matches the LOW definition in the rubric
+- Score 1 = MEDIUM (💡) - matches the MEDIUM definition in the rubric
+- Score 2 = HIGH (✅) - matches the HIGH definition in the rubric
 - OVERALL score is the SUM of all individual criteria scores
 - Scaffolding level based on the LOWEST category across all criteria:
   • ANY criterion LOW = Template + example
   • LOWEST criteria MEDIUM (no LOW) = 2-3 targeted suggestions + Template
   • ALL criteria HIGH = 2-3 reflection question
+
+# EVALUATION PROCESS
+1. Read the student's submission carefully
+2. For EACH criterion in the rubric, determine which level (LOW/MEDIUM/HIGH) it matches
+3. Assign the corresponding score (0/1/2) based on the rubric definitions
+4. Calculate the OVERALL score as the sum of all criterion scores
+5. Determine the LOWEST category across all criteria
+6. Determine the scaffolding level based on the lowest category
 
 # RESPONSE STRUCTURE
 ## Assessment

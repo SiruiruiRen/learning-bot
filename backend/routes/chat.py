@@ -161,23 +161,27 @@ async def process_chat(request: ChatRequest):
             prompt_name = f"phase{request.phase}_{request.component}"
             
             if request.is_submission:
-                # Step 1: Get evaluation first (no style, just assessment)
+                # Chain Prompting: Step 1 (Evaluation) -> Step 2 (Feedback)
+                # This ensures evaluation consistency across styles
+                eval_start_time = time.time()
                 try:
                     evaluation_prompt = get_evaluation_prompt(prompt_name)
                     
-                    # First call: Evaluation only
+                    # Step 1: Evaluation only (rubric-based, no style)
                     eval_response = await call_claude(
                         system_prompt=evaluation_prompt,
                         user_message=request.message,
                         chat_history=formatted_history,
-                        temperature=0.2,  # Very low temperature for consistent evaluation
+                        temperature=0.2,  # Very low temperature for consistent rubric-based evaluation
                         max_tokens=400  # Shorter for evaluation only
                     )
                     
+                    eval_time_ms = int((time.time() - eval_start_time) * 1000)
                     eval_content = eval_response.get("content", "")
                     evaluation_metadata = _extract_evaluation_metadata(eval_content)
                     
                     # Step 2: Generate feedback with preferred style based on evaluation
+                    feedback_start_time = time.time()
                     if evaluation_metadata:
                         feedback_prompt = get_feedback_prompt(
                             prompt_name, 
@@ -185,7 +189,7 @@ async def process_chat(request: ChatRequest):
                             evaluation_metadata=evaluation_metadata
                         )
                         
-                        # Second call: Generate styled feedback
+                        # Second call: Generate styled feedback (parallel with evaluation if possible)
                         feedback_response = await call_claude(
                             system_prompt=feedback_prompt,
                             user_message=f"Student submission: {request.message}\n\nGenerate feedback in {coach_tone} style using the evaluation results provided above.",
@@ -194,6 +198,7 @@ async def process_chat(request: ChatRequest):
                             max_tokens=800
                         )
                         
+                        feedback_time_ms = int((time.time() - feedback_start_time) * 1000)
                         feedback_content = feedback_response.get("content", "")
                         # Verify evaluation is preserved
                         feedback_eval = _extract_evaluation_metadata(feedback_content)
@@ -202,11 +207,16 @@ async def process_chat(request: ChatRequest):
                         
                         if feedback_eval and original_score and feedback_score and abs(float(original_score) - float(feedback_score)) < 0.1:
                             cleaned_content = _clean_message_for_student(feedback_content)
+                            # Store timing info in metadata for analytics
+                            evaluation_metadata['evaluation_time_ms'] = eval_time_ms
+                            evaluation_metadata['feedback_time_ms'] = feedback_time_ms
+                            evaluation_metadata['evaluation_method'] = 'chain'
                         else:
                             # Fallback: use original evaluation response
                             logger.warning(f"Evaluation mismatch: original={original_score}, feedback={feedback_score}")
                             cleaned_content = _clean_message_for_student(eval_content)
                             evaluation_metadata = _extract_evaluation_metadata(eval_content)
+                            evaluation_metadata['evaluation_method'] = 'chain_fallback'
                     else:
                         # If evaluation extraction failed, use standard prompt
                         logger.warning("Failed to extract evaluation, using standard prompt")
@@ -276,7 +286,9 @@ async def process_chat(request: ChatRequest):
                     session_id=request.session_id, user_id=session_details["user_id"],
                     submission_message_id=user_message_record["id"], feedback_message_id=assistant_message_record["id"],
                     phase=request.phase, component=request.component,
-                    attempt_number=request.attempt_number, evaluation=evaluation_metadata
+                    attempt_number=request.attempt_number, evaluation=evaluation_metadata,
+                    feedback_style=coach_tone,
+                    evaluation_method=evaluation_metadata.get("evaluation_method", "standard")
                 )
         
         logger.info(f"Request for session {request.session_id} completed in {time.time() - start_time:.2f}s")

@@ -415,27 +415,56 @@ async function handleFeedbackStyleView(sessionId: string, userId: string, phase:
     }
   });
 
-  // Also track in a dedicated table if it exists, or create a summary record
-  // This allows easy querying of feedback style preferences
+  // Get the most recent assessment for this session/phase/component
+  const { data: assessment } = await supabase
+    .from('assessments')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('phase', phase)
+    .eq('component', component)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  // Log to dedicated feedback_style_views table if it exists
   try {
-    await supabase.from('user_inputs').insert({
+    await supabase.from('feedback_style_views').insert({
       session_id: sessionId,
       user_id: userId,
-      input_type: 'feedback_style_choice',
-      field_name: 'feedback_style',
-      input_value: metadata.style,
+      assessment_id: assessment?.id || null,
       phase: phase,
       component: component || 'feedback',
-      metadata: {
-        view_type: metadata.view_type,
-        evaluation_score: metadata.evaluation_score,
-        view_duration_seconds: metadata.previous_view_duration_seconds,
-        timestamp: metadata.timestamp
-      },
-      timestamp: metadata.timestamp || new Date().toISOString()
+      view_type: metadata.view_type,
+      style_viewed: metadata.style,
+      evaluation_score: metadata.evaluation_score,
+      evaluation_category: metadata.evaluation_category,
+      view_start_time: metadata.timestamp || new Date().toISOString(),
+      view_duration_seconds: metadata.previous_view_duration_seconds,
+      previous_view_duration_seconds: metadata.previous_view_duration_seconds
     });
   } catch (error) {
-    console.error('Error logging feedback style view to user_inputs:', error);
+    // Table might not exist yet, log to user_inputs as fallback
+    console.warn('feedback_style_views table not found, using user_inputs:', error);
+    try {
+      await supabase.from('user_inputs').insert({
+        session_id: sessionId,
+        user_id: userId,
+        input_type: 'feedback_style_choice',
+        field_name: 'feedback_style',
+        input_value: metadata.style,
+        phase: phase,
+        component: component || 'feedback',
+        metadata: {
+          view_type: metadata.view_type,
+          evaluation_score: metadata.evaluation_score,
+          view_duration_seconds: metadata.previous_view_duration_seconds,
+          timestamp: metadata.timestamp
+        },
+        timestamp: metadata.timestamp || new Date().toISOString()
+      });
+    } catch (fallbackError) {
+      console.error('Error logging feedback style view to user_inputs:', fallbackError);
+    }
   }
 }
 
