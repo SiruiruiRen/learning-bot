@@ -290,6 +290,32 @@ CREATE INDEX IF NOT EXISTS idx_llm_interactions_session_id ON llm_interactions(s
 CREATE INDEX IF NOT EXISTS idx_llm_interactions_model ON llm_interactions(model_name);
 CREATE INDEX IF NOT EXISTS idx_llm_interactions_created_at ON llm_interactions(created_at);
 
+-- 6d. User Chat Analytics - Chat interaction analysis
+CREATE TABLE IF NOT EXISTS user_chat_analytics (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  phase TEXT,
+  component TEXT,
+  chat_start_time TIMESTAMP WITH TIME ZONE,
+  chat_end_time TIMESTAMP WITH TIME ZONE,
+  total_duration_seconds INTEGER,
+  message_count INTEGER DEFAULT 0,
+  user_message_count INTEGER DEFAULT 0,
+  bot_message_count INTEGER DEFAULT 0,
+  average_response_time_seconds REAL,
+  longest_pause_seconds INTEGER,
+  typing_patterns JSONB DEFAULT '[]'::jsonb,
+  engagement_score REAL,
+  completion_quality TEXT CHECK (completion_quality IN ('incomplete', 'basic', 'thorough', 'excellent')),
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_analytics_session_id ON user_chat_analytics(session_id);
+CREATE INDEX IF NOT EXISTS idx_chat_analytics_user_id ON user_chat_analytics(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_analytics_phase ON user_chat_analytics(phase);
+
 -- 7. Knowledge Check / Quiz Data - Comprehensive quiz tracking
 CREATE TABLE IF NOT EXISTS knowledge_check_attempts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
