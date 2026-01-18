@@ -9,6 +9,7 @@ import { UserDataTracker } from "@/components/UserDataTracker"
 import { ThemeToggle } from "@/components/theme-toggle"
 import FloatingChatbot from "@/components/floating-chatbot"
 import ClickTracker from "@/components/click-tracker"
+import NavigationTracker from "@/components/navigation-tracker"
 
 export default function ClientLayout({
   children,
@@ -28,6 +29,7 @@ export default function ClientLayout({
       <ThemeToggle />
       <FloatingChatbotWrapper />
       <ClickTracker />
+      <NavigationTracker />
     </ThemeProvider>
   )
 }

@@ -58,6 +58,15 @@ export async function POST(request: NextRequest) {
       case 'user_click':
         await handleUserClick(session_id, userId, phase, metadata);
         break;
+      case 'next_button':
+      case 'page_view':
+      case 'phase_transition':
+        await handleNavigationEvent(session_id, userId, phase, event_type, metadata);
+        break;
+      case 'form_input':
+      case 'text_input':
+        await handleUserInput(session_id, userId, phase, component, metadata);
+        break;
       case 'revision_submitted':
         await handleRevisionEvent(session_id, userId, phase, component, metadata);
         break;
@@ -163,9 +172,44 @@ async function handleChatMessage(sessionId: string, userId: string, phase: strin
     interaction_data: {
       role: metadata.role, // 'user' or 'assistant'
       content: metadata.content,
-      timestamp: metadata.timestamp
+      timestamp: metadata.timestamp,
+      evaluation: metadata.evaluation, // Include scoring/feedback if available
+      score: metadata.score
     }
   });
+
+  // Also log user inputs if it's a user message
+  if (metadata.role === 'user') {
+    await supabase.from('user_inputs').insert({
+      session_id: sessionId,
+      user_id: userId,
+      input_type: 'chat_message',
+      field_name: component || 'chat',
+      input_value: metadata.content,
+      phase: phase,
+      component: component || 'chat',
+      is_submission: metadata.is_submission || false,
+      attempt_number: metadata.attempt_number || 1,
+      metadata: metadata,
+      timestamp: metadata.timestamp || new Date().toISOString()
+    });
+  }
+
+  // Update chat conversation record
+  if (metadata.role === 'assistant' && metadata.evaluation) {
+    // This is a feedback/assessment response
+    await supabase.from('chat_conversations').upsert({
+      session_id: sessionId,
+      user_id: userId,
+      phase: phase,
+      component: component || 'chat',
+      has_assessment: true,
+      assessment_score: metadata.evaluation?.overall_score || metadata.score,
+      assessment_feedback: metadata.content,
+      evaluation_metadata: metadata.evaluation,
+      conversation_end_time: metadata.timestamp || new Date().toISOString()
+    }, { onConflict: 'session_id,phase,component' });
+  }
 }
 
 async function handleUserClick(sessionId: string, userId: string, phase: string, metadata: any) {
@@ -185,6 +229,78 @@ async function handleUserClick(sessionId: string, userId: string, phase: string,
       },
       timestamp: metadata.timestamp
     }
+  });
+
+  // Also log in click_events table for detailed click analysis
+  const targetElement = metadata.target_element || {};
+  await supabase.from('click_events').insert({
+    session_id: sessionId,
+    user_id: userId,
+    click_type: targetElement.tag === 'button' ? 'button' : targetElement.tag === 'a' ? 'link' : 'element',
+    element_tag: targetElement.tag,
+    element_id: targetElement.id,
+    element_class: targetElement.className,
+    element_text: targetElement.text,
+    button_text: targetElement.tag === 'button' ? targetElement.text : null,
+    x_position: metadata.x_position,
+    y_position: metadata.y_position,
+    pathname: metadata.pathname,
+    phase: phase,
+    component: metadata.pathname,
+    metadata: metadata,
+    timestamp: metadata.timestamp || new Date().toISOString()
+  });
+}
+
+async function handleNavigationEvent(sessionId: string, userId: string, phase: string, eventType: string, metadata: any) {
+  // Log navigation events (Next button clicks, page views, phase transitions)
+  await supabase.from('navigation_events').insert({
+    session_id: sessionId,
+    user_id: userId,
+    event_type: eventType,
+    from_path: metadata.from_path || metadata.previous_pathname,
+    to_path: metadata.to_path || metadata.pathname,
+    from_phase: metadata.from_phase,
+    to_phase: metadata.to_phase || phase,
+    button_text: metadata.button_text,
+    button_id: metadata.button_id,
+    time_on_page_seconds: metadata.time_on_page_seconds,
+    metadata: metadata,
+    timestamp: metadata.timestamp || new Date().toISOString()
+  });
+
+  // Also log as click event if it's a button click
+  if (eventType === 'next_button') {
+    await supabase.from('click_events').insert({
+      session_id: sessionId,
+      user_id: userId,
+      click_type: 'navigation',
+      element_tag: 'button',
+      element_id: metadata.button_id,
+      button_text: metadata.button_text,
+      pathname: metadata.from_path,
+      phase: metadata.from_phase,
+      component: 'navigation',
+      metadata: metadata,
+      timestamp: metadata.timestamp || new Date().toISOString()
+    });
+  }
+}
+
+async function handleUserInput(sessionId: string, userId: string, phase: string, component: string, metadata: any) {
+  // Log all user text inputs
+  await supabase.from('user_inputs').insert({
+    session_id: sessionId,
+    user_id: userId,
+    input_type: metadata.input_type || 'form_field',
+    field_name: metadata.field_name,
+    input_value: metadata.input_value || metadata.value,
+    phase: phase,
+    component: component,
+    is_submission: metadata.is_submission || false,
+    attempt_number: metadata.attempt_number || 1,
+    metadata: metadata,
+    timestamp: metadata.timestamp || new Date().toISOString()
   });
 }
 
