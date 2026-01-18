@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle, HelpCircle, ArrowRight } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 interface KnowledgeCheckProps {
   questionNumber: number
@@ -30,28 +31,123 @@ export default function KnowledgeCheck({
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const pathname = usePathname()
+  const questionStartTime = useRef<number>(Date.now())
+  const firstInteractionTime = useRef<number | null>(null)
+  const answerChanges = useRef<Array<{timestamp: string, answer: string}>>([])
   
-  // Determine if this is the final question
-  const isFinalQuestion = questionNumber === totalQuestions
+  // Detect phase from pathname
+  const phaseMatch = pathname.match(/\/phase(\d+)/)
+  const phase = phaseMatch ? `phase${phaseMatch[1]}` : "unknown"
+  
+  // Get session ID
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem("session_id")
+    if (storedSessionId) {
+      setSessionId(storedSessionId)
+      
+      // Log quiz started on first question
+      if (questionNumber === 1) {
+        logQuizEvent('quiz_started', {})
+      }
+    }
+  }, [questionNumber])
+  
+  // Track first interaction
+  useEffect(() => {
+    if (selectedOption && !firstInteractionTime.current) {
+      firstInteractionTime.current = Date.now()
+    }
+    
+    // Track answer changes
+    if (selectedOption && submitted === false) {
+      const lastChange = answerChanges.current[answerChanges.current.length - 1]
+      if (!lastChange || lastChange.answer !== selectedOption) {
+        answerChanges.current.push({
+          timestamp: new Date().toISOString(),
+          answer: selectedOption
+        })
+      }
+    }
+  }, [selectedOption, submitted])
 
-  const handleSubmit = () => {
+  const logQuizEvent = async (eventType: string, metadata: any) => {
+    if (!sessionId) return
+    
+    try {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: eventType,
+          phase: phase,
+          component: 'knowledge_check',
+          metadata: metadata
+        })
+      })
+    } catch (error) {
+      console.error(`Failed to log ${eventType}:`, error)
+    }
+  }
+
+  const handleSubmit = async () => {
     if (!selectedOption) return
 
     const correct = selectedOption === correctAnswer
     setIsCorrect(correct)
     setSubmitted(true)
     
-    // No auto-advancement - require button click
+    // Calculate timing metrics
+    const timeToAnswer = Math.round((Date.now() - questionStartTime.current) / 1000)
+    const timeToFirstInteraction = firstInteractionTime.current 
+      ? Math.round((firstInteractionTime.current - questionStartTime.current) / 1000)
+      : null
+    
+    // Log question answer
+    await logQuizEvent('quiz_question_answered', {
+      question_id: `question_${questionNumber}`,
+      question_text: question,
+      question_type: 'multiple_choice',
+      attempt_number: 1,
+      selected_answer: selectedOption,
+      correct_answer: correctAnswer,
+      is_correct: correct,
+      time_to_answer_seconds: timeToAnswer,
+      time_to_first_interaction_seconds: timeToFirstInteraction,
+      answer_changed: answerChanges.current.length > 1,
+      answer_changes: answerChanges.current,
+      options_shown: options,
+      explanation_viewed: false,
+      retry_count: 0
+    })
   }
 
-  const handleTryAgain = () => {
+  const handleTryAgain = async () => {
     setSelectedOption(null)
     setSubmitted(false)
+    questionStartTime.current = Date.now()
+    firstInteractionTime.current = null
+    answerChanges.current = []
   }
 
-  const handleManualComplete = () => {
+  const handleManualComplete = async () => {
+    // If this is the final question, log quiz completion
+    if (isFinalQuestion && isCorrect) {
+      await logQuizEvent('quiz_completed', {
+        total_questions: totalQuestions,
+      })
+    }
     onComplete()
   }
+  
+  // Reset tracking when question changes
+  useEffect(() => {
+    questionStartTime.current = Date.now()
+    firstInteractionTime.current = null
+    answerChanges.current = []
+  }, [questionNumber])
 
   return (
     <Card className="bg-slate-800/50 border border-indigo-500/30">
