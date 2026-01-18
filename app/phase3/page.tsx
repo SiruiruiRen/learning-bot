@@ -11,6 +11,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import VideoPlayer from "@/components/video-player"
 import KnowledgeCheck from "./knowledge-check"
+import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
+import { phase3KnowledgeChecks } from "@/lib/knowledge-check-questions"
 import { Bot } from "lucide-react"
 import SolBotChat from "@/components/solbot-chat"
 import { getNextPhase } from "@/lib/phase-data"
@@ -374,7 +376,10 @@ export default function Phase3Content() {
   const router = useRouter()
   const [viewingVideo, setViewingVideo] = useState(false)
   const [videoCompleted, setVideoCompleted] = useState(false)
-  const [quizCompleted, setQuizCompleted] = useState(false)
+  const [preTestCompleted, setPreTestCompleted] = useState(false)
+  const [postTestCompleted, setPostTestCompleted] = useState(false)
+  const [videoSkipped, setVideoSkipped] = useState(false)
+  const [preTestAnswers, setPreTestAnswers] = useState<{ [questionId: number]: string }>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userName, setUserName] = useState("")
   const [step, setStep] = useState(1)
@@ -386,8 +391,9 @@ export default function Phase3Content() {
     { id: "intro", title: "Introduction to Learning Strategies" },
     { id: "self-explanation", title: "Deep Dive: Self-Explanation" },
     { id: "spacing-effect", title: "Deep Dive: Spacing Effect" },
+    { id: "pre-test", title: "Pre-Test: Check Your Knowledge" },
     { id: "video", title: "Watch: Key Learning Strategies" },
-    { id: "knowledge-check", title: "Knowledge Check" },
+    { id: "post-test", title: "Knowledge Check: After Video" },
   ]
 
   // Function to navigate to the next card
@@ -486,9 +492,19 @@ export default function Phase3Content() {
     icon: <BookMarked className="h-10 w-10 text-purple-400" />,
   }
 
-  // Handle moving to next question
-  const onKnowledgeCheckComplete = () => {
-    setQuizCompleted(true)
+  const handlePreTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
+    setPreTestAnswers(answers)
+    setPreTestCompleted(true)
+  }
+  
+  const handleSkipVideo = () => {
+    setVideoSkipped(true)
+    setVideoCompleted(true) // Mark as completed so they can proceed
+    nextCard() // Move to post-test
+  }
+  
+  const handlePostTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
+    setPostTestCompleted(true)
   }
 
   const handleWatchVideo = () => {
@@ -537,7 +553,11 @@ export default function Phase3Content() {
         totalCards={cards.length}
         onPrev={prevCard}
         onNext={nextCard}
-        isNextDisabled={currentCardIndex === 4 && !quizCompleted}
+        isNextDisabled={
+          (currentCardIndex === 3 && !preTestCompleted) ||
+          (currentCardIndex === 4 && !videoCompleted && !videoSkipped) ||
+          (currentCardIndex === 5 && !postTestCompleted)
+        }
       />
 
       {/* Fixed Title Header */}

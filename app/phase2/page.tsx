@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label"
 import ModuleBar from "@/components/module-bar"
 import VideoPlayer from "@/components/video-player"
 import { VerticalNav } from "@/components/vertical-nav"
+import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
+import { phase2KnowledgeChecks } from "@/lib/knowledge-check-questions"
 
 const accent = "#d8b26f"
 const neutralSurface = "hsl(var(--card) / 0.9)"
@@ -360,57 +362,21 @@ export default function Phase2Page() {
   const [userName, setUserName] = useState("")
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [videoWatched, setVideoWatched] = useState(false)
-  const [quizCompleted, setQuizCompleted] = useState(false)
+  const [preTestCompleted, setPreTestCompleted] = useState(false)
+  const [postTestCompleted, setPostTestCompleted] = useState(false)
+  const [videoSkipped, setVideoSkipped] = useState(false)
+  const [preTestAnswers, setPreTestAnswers] = useState<{ [questionId: number]: string }>({})
 
   const cards = [
     { id: "intro", title: "Understand Your Task" },
     { id: "objectives", title: "Cognitive Levels of Understanding" },
     { id: "resources", title: "Why Prior Knowledge & Resources Matter" },
-    { id: "knowledge-check", title: "Knowledge Check" },
+    { id: "pre-test", title: "Pre-Test: Check Your Knowledge" },
     { id: "video", title: "Watch: Introduction to Learning Task Analysis" },
+    { id: "post-test", title: "Knowledge Check: After Video" },
   ]
 
-  const knowledgeChecks = [
-    {
-      id: 1,
-      title: "Learning Objectives Importance",
-      question: "Why are learning objectives important to study?",
-      options: [
-        "They are like a study guide where the verb gives you the type of question that the instructor will ask",
-        "They should be studied verbatim because the instructor will ask you a question about what the learning objective said",
-        "They aren't important to study and you should ignore them",
-        "They help give you a brief overview of the course concepts so you can gauge the difficulty of the course"
-      ],
-      correctAnswer: "They are like a study guide where the verb gives you the type of question that the instructor will ask",
-      explanation: "Learning objectives are like a hidden study guide. The verb in the objective reveals a lot about the concepts instructors want to emphasize and the type of questions they will ask on exams."
-    },
-    {
-      id: 2,
-      title: "Interpreting Learning Objectives",
-      question: "Ms. Anna gave her students the following learning objective: \"Identify the characteristics and basic needs of living organisms and ecosystems.\" Based on this learning objective, which student did the best job interpreting the objective and selecting an appropriate learning strategy?",
-      options: [
-        "Ally finds the information in her textbook and class notes and chooses to rehearse it using retrieval practice strategies every few days",
-        "Barry rereads the textbook with this information in it until he is confident he knows the material",
-        "Claire studies the basic definition of living organisms and ecosystems using her textbook and her notes she took during the lecture",
-        "Dan decides to focus in lecture whenever the keywords in this learning objective are recited"
-      ],
-      correctAnswer: "Ally finds the information in her textbook and class notes and chooses to rehearse it using retrieval practice strategies every few days",
-      explanation: "We can classify this learning objective as knowledge level (the verb 'identify' indicates recall/recognition). To solidify knowledge-level information, we need to find the information in our resources and use effective memorization strategies like retrieval practice."
-    },
-    {
-      id: 3,
-      title: "Cognitive Level Analysis",
-      question: "Which student approaches the following learning objective correctly? \"Describe the intricate relationship between various cellular structures and their corresponding functions.\"",
-      options: [
-        "Andy finds the word \"cellular structure\" and \"function\" in his textbook and memorizes/defines these words",
-        "Brad creates a relationship diagram to analyze the connections between different cellular structures and their functions",
-        "Cory discusses the definition of cellular structures and functions and writes it down to memorize later",
-        "Dani rereads the textbook with this information until it is memorized"
-      ],
-      correctAnswer: "Brad creates a relationship diagram to analyze the connections between different cellular structures and their functions",
-      explanation: "The verb 'describe' and the phrase 'intricate relationship' indicate this is a comprehension or analysis level objective. Brad's approach of creating a relationship diagram helps him understand and explain the connections, which matches the cognitive level required."
-    }
-  ]
+  // Knowledge checks are now imported from lib/knowledge-check-questions.ts
 
   const nextCard = () => {
     if (currentCardIndex < cards.length - 1) {
@@ -430,8 +396,22 @@ export default function Phase2Page() {
     setVideoWatched(true)
   }
 
-  const onKnowledgeCheckComplete = () => {
-    setQuizCompleted(true)
+  const handlePreTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
+    setPreTestAnswers(answers)
+    setPreTestCompleted(true)
+    if (allCorrect) {
+      // Offer to skip video - user can choose
+    }
+  }
+  
+  const handleSkipVideo = () => {
+    setVideoSkipped(true)
+    setVideoWatched(true) // Mark as "watched" so they can proceed
+    nextCard() // Move to post-test
+  }
+  
+  const handlePostTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
+    setPostTestCompleted(true)
   }
 
   useEffect(() => {
@@ -546,12 +526,22 @@ export default function Phase2Page() {
               {currentCardIndex === 3 && (
                 <div>
                   <div className="text-muted-foreground mb-4">
-                    <p>Let's check your understanding of learning objectives and cognitive levels before watching the video.</p>
+                    <p className="mb-2">
+                      <strong style={{ color: accent }}>Before watching the video:</strong> Let's check what you already know about self-regulated learning and task analysis.
+                    </p>
+                    <p className="text-sm">
+                      If you get both questions correct, you can skip the video and go straight to the next section!
+                    </p>
                   </div>
-                  <KnowledgeCheckQuiz onComplete={onKnowledgeCheckComplete} knowledgeChecks={knowledgeChecks} />
+                  <PrePostKnowledgeCheck
+                    questions={phase2KnowledgeChecks.preTest}
+                    testType="pre"
+                    onComplete={handlePreTestComplete}
+                    onSkipVideo={handleSkipVideo}
+                  />
                 </div>
               )}
-              {currentCardIndex === 4 && (
+              {currentCardIndex === 4 && !videoSkipped && (
                 <div className="mt-6 space-y-6">
                   <p className="text-center text-muted-foreground">
                     Learn how to analyze learning objectives and select effective learning strategies.
@@ -569,6 +559,30 @@ export default function Phase2Page() {
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
                     <p className="text-muted-foreground text-sm">You will proceed to an interactive chat with SoL2LBot.</p>
                   </div>
+                </div>
+              )}
+              {currentCardIndex === 4 && videoSkipped && (
+                <div className="mt-6 space-y-6">
+                  <div className="p-4 rounded-lg border text-center" style={{ backgroundColor: "hsl(var(--muted) / 0.3)", borderColor: accent }}>
+                    <p className="font-semibold mb-2" style={{ color: accent }}>✅ Video Skipped</p>
+                    <p className="text-muted-foreground text-sm">
+                      Since you demonstrated strong understanding in the pre-test, you've skipped the video. Let's check your knowledge with a few more questions!
+                    </p>
+                  </div>
+                </div>
+              )}
+              {currentCardIndex === 5 && (
+                <div>
+                  <div className="text-muted-foreground mb-4">
+                    <p>
+                      <strong style={{ color: accent }}>After the video:</strong> Let's check your understanding of the four-stage model of self-regulated learning.
+                    </p>
+                  </div>
+                  <PrePostKnowledgeCheck
+                    questions={phase2KnowledgeChecks.postTest}
+                    testType="post"
+                    onComplete={handlePostTestComplete}
+                  />
                 </div>
               )}
               
@@ -593,11 +607,15 @@ export default function Phase2Page() {
               color: "#1f1408",
             }}
                     onClick={nextCard}
-                    disabled={(currentCardIndex === 3 && !quizCompleted)}
+                    disabled={
+                      (currentCardIndex === 3 && !preTestCompleted) ||
+                      (currentCardIndex === 4 && !videoWatched && !videoSkipped) ||
+                      (currentCardIndex === 5 && !postTestCompleted)
+                    }
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
-                ) : (
+                ) : currentCardIndex === cards.length - 1 ? (
                   <Button 
                     className="font-semibold px-6 py-3 rounded-full shadow-lg"
                     style={{
@@ -609,7 +627,7 @@ export default function Phase2Page() {
                   >
                     Continue to Chat <ChevronRight className="h-5 w-5 ml-2" />
                   </Button>
-                )}
+                ) : null}
               </div>
             </CardContent>
           </Card>
