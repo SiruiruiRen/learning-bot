@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 sys.path.append(os.path.abspath('..'))
-from prompt_engineering.scripts.final_prompts import get_prompt
+from prompt_engineering.scripts.final_prompts import get_prompt, get_evaluation_prompt, get_feedback_prompt
 from backend.utils import db
 from backend.utils.llm import call_claude
 
@@ -150,60 +150,117 @@ async def process_chat(request: ChatRequest):
                     elif coach_tone not in ["warm", "direct"]:
                         coach_tone = "warm"
         
-        # Chain Prompting: Step 1 - Evaluation only
+        # Chain Prompting Approach:
+        # Step 1: Evaluation (get scores/categories) - only for submissions
+        # Step 2: Generate feedback with user's preferred style based on evaluation
+        
         evaluation_metadata = None
         cleaned_content = ""
         
         try:
             prompt_name = f"phase{request.phase}_{request.component}"
             
-            # Step 1: Get evaluation (no style, just assessment)
-            evaluation_prompt = get_prompt(prompt_name, style="warm")  # Use base prompt for evaluation
-            # For now, we'll extract evaluation from the first response
-            # In future, we can separate evaluation and feedback prompts
-            
-            # Step 2: Generate feedback with user's preferred style
-            system_prompt = get_prompt(prompt_name, style=coach_tone)
-        except ValueError:
-            system_prompt = "You are SoL2LBot, an AI tutor for self-regulated learning."
-        
-        # First call: Get evaluation
-        llm_response = await call_claude(
-            system_prompt=system_prompt, user_message=request.message,
-            chat_history=formatted_history, temperature=0.3, max_tokens=800  # Lower temperature for consistency
-        )
-        
-        response_content = llm_response.get("content", "")
-        evaluation_metadata = _extract_evaluation_metadata(response_content)
-        
-        # If we have evaluation metadata, generate feedback with preferred style
-        if evaluation_metadata and request.is_submission:
-            try:
-                from prompt_engineering.scripts.final_prompts import get_feedback_prompt
-                feedback_prompt = get_feedback_prompt(prompt_name, style=coach_tone, evaluation_metadata=evaluation_metadata)
-                
-                # Second call: Generate styled feedback based on evaluation
-                feedback_response = await call_claude(
-                    system_prompt=feedback_prompt,
-                    user_message=f"Student submission: {request.message}\n\nGenerate feedback in {coach_tone} style based on the evaluation results above.",
-                    chat_history=[],  # Don't include history for feedback generation
-                    temperature=0.5,  # Slightly higher for more natural language
+            if request.is_submission:
+                # Step 1: Get evaluation first (no style, just assessment)
+                try:
+                    evaluation_prompt = get_evaluation_prompt(prompt_name)
+                    
+                    # First call: Evaluation only
+                    eval_response = await call_claude(
+                        system_prompt=evaluation_prompt,
+                        user_message=request.message,
+                        chat_history=formatted_history,
+                        temperature=0.2,  # Very low temperature for consistent evaluation
+                        max_tokens=400  # Shorter for evaluation only
+                    )
+                    
+                    eval_content = eval_response.get("content", "")
+                    evaluation_metadata = _extract_evaluation_metadata(eval_content)
+                    
+                    # Step 2: Generate feedback with preferred style based on evaluation
+                    if evaluation_metadata:
+                        feedback_prompt = get_feedback_prompt(
+                            prompt_name, 
+                            style=coach_tone, 
+                            evaluation_metadata=evaluation_metadata
+                        )
+                        
+                        # Second call: Generate styled feedback
+                        feedback_response = await call_claude(
+                            system_prompt=feedback_prompt,
+                            user_message=f"Student submission: {request.message}\n\nGenerate feedback in {coach_tone} style using the evaluation results provided above.",
+                            chat_history=[],  # Fresh context for feedback
+                            temperature=0.5,  # Higher for natural language
+                            max_tokens=800
+                        )
+                        
+                        feedback_content = feedback_response.get("content", "")
+                        # Verify evaluation is preserved
+                        feedback_eval = _extract_evaluation_metadata(feedback_content)
+                        original_score = evaluation_metadata.get('overall_score') or evaluation_metadata.get('Overall_Score')
+                        feedback_score = feedback_eval.get('overall_score') or feedback_eval.get('Overall_Score')
+                        
+                        if feedback_eval and original_score and feedback_score and abs(float(original_score) - float(feedback_score)) < 0.1:
+                            cleaned_content = _clean_message_for_student(feedback_content)
+                        else:
+                            # Fallback: use original evaluation response
+                            logger.warning(f"Evaluation mismatch: original={original_score}, feedback={feedback_score}")
+                            cleaned_content = _clean_message_for_student(eval_content)
+                            evaluation_metadata = _extract_evaluation_metadata(eval_content)
+                    else:
+                        # If evaluation extraction failed, use standard prompt
+                        logger.warning("Failed to extract evaluation, using standard prompt")
+                        system_prompt = get_prompt(prompt_name, style=coach_tone)
+                        llm_response = await call_claude(
+                            system_prompt=system_prompt,
+                            user_message=request.message,
+                            chat_history=formatted_history,
+                            temperature=0.5,
+                            max_tokens=800
+                        )
+                        response_content = llm_response.get("content", "")
+                        evaluation_metadata = _extract_evaluation_metadata(response_content)
+                        cleaned_content = _clean_message_for_student(response_content)
+                except Exception as chain_error:
+                    # Fallback to single-step if chain prompting fails
+                    logger.warning(f"Chain prompting failed, using standard approach: {chain_error}")
+                    system_prompt = get_prompt(prompt_name, style=coach_tone)
+                    llm_response = await call_claude(
+                        system_prompt=system_prompt,
+                        user_message=request.message,
+                        chat_history=formatted_history,
+                        temperature=0.5,
+                        max_tokens=800
+                    )
+                    response_content = llm_response.get("content", "")
+                    evaluation_metadata = _extract_evaluation_metadata(response_content)
+                    cleaned_content = _clean_message_for_student(response_content)
+            else:
+                # For non-submissions, use standard prompt
+                system_prompt = get_prompt(prompt_name, style=coach_tone)
+                llm_response = await call_claude(
+                    system_prompt=system_prompt,
+                    user_message=request.message,
+                    chat_history=formatted_history,
+                    temperature=0.5,
                     max_tokens=800
                 )
-                
-                feedback_content = feedback_response.get("content", "")
-                # Verify evaluation metadata is preserved
-                feedback_eval = _extract_evaluation_metadata(feedback_content)
-                if feedback_eval and feedback_eval.get('overall_score') == evaluation_metadata.get('overall_score'):
-                    cleaned_content = _clean_message_for_student(feedback_content)
-                else:
-                    # Fallback to original response if evaluation doesn't match
-                    cleaned_content = _clean_message_for_student(response_content)
-            except Exception as feedback_error:
-                logger.warning(f"Failed to generate styled feedback, using original: {feedback_error}")
+                response_content = llm_response.get("content", "")
+                evaluation_metadata = _extract_evaluation_metadata(response_content)
                 cleaned_content = _clean_message_for_student(response_content)
-        else:
-            # For non-submissions or if evaluation failed, use original response
+                
+        except ValueError:
+            # Fallback if prompt not found
+            system_prompt = "You are SoL2LBot, an AI tutor for self-regulated learning."
+            llm_response = await call_claude(
+                system_prompt=system_prompt,
+                user_message=request.message,
+                chat_history=formatted_history,
+                temperature=0.5,
+                max_tokens=800
+            )
+            response_content = llm_response.get("content", "")
+            evaluation_metadata = _extract_evaluation_metadata(response_content)
             cleaned_content = _clean_message_for_student(response_content)
         
         assistant_message_record = db.log_message(
