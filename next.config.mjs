@@ -31,10 +31,12 @@ const nextConfig = {
     return config;
   },
   async rewrites() {
+    // Use environment variable for backend URL, fallback to Render backend
+    const backendUrl = process.env.BACKEND_URL || 'https://solbot-backend.onrender.com';
     return [
       {
         source: '/api/:path*',
-        destination: 'https://sol2l-bot.onrender.com/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
       },
     ]
   },

@@ -5,15 +5,16 @@ services:
     runtime: python
     buildCommand: pip install -r backend/requirements.txt
     startCommand: cd backend && PYTHONPATH=$PYTHONPATH:$(pwd)/.. python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: starter  # Pro subscription - no sleep, better performance
     envVars:
       - key: ANTHROPIC_API_KEY
-        sync: false
+        sync: false  # 需要在 Render Dashboard 手动设置
       - key: CLAUDE_MODEL
         value: claude-sonnet-4-20250514
       - key: USE_MEMORY_DB
         value: true
       - key: ENABLE_WARMUP
-        value: true
+        value: false  # Pro 订阅不需要 warmup（不会休眠）
       - key: SERVICE_URL
         fromService:
           type: web
@@ -28,6 +29,7 @@ services:
     runtime: node
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm start
+    plan: starter  # Pro subscription - no sleep, better performance
     envVars:
       - key: NODE_ENV
         value: production
@@ -40,6 +42,8 @@ services:
         sync: false  # 需要在 Render Dashboard 手动设置
       - key: SUPABASE_SERVICE_KEY
         sync: false  # 需要在 Render Dashboard 手动设置
+      - key: SUPABASE_URL
+        sync: false  # 与 NEXT_PUBLIC_SUPABASE_URL 相同，用于 API 路由
       - key: DATABASE_ENABLED
         value: true
       - key: PORT
