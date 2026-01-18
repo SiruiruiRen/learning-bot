@@ -131,13 +131,20 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
       })
 
       if (!response.ok) {
-        throw new Error("Failed to get response from server.")
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.details || "Failed to get response from server.")
       }
 
       const result = await response.json()
+      
+      // Handle error responses
+      if (result.error || !result.data) {
+        throw new Error(result.error || result.details || "Invalid response from server")
+      }
+
       const assistantMessage = {
         role: "assistant",
-        content: result.data.message,
+        content: result.data.message || result.data.content || "I received your message but couldn't process it properly.",
       }
 
       setMessages(prev => [...prev, assistantMessage])
