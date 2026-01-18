@@ -141,7 +141,7 @@ p, span, li, input, button, textarea {
 
 /* Enhanced typing indicator styling with engaging animations */
 .typing-indicator {
-  background-color: rgba(20, 30, 48, 0.9);
+  background-color: hsl(var(--muted));
   will-change: transform;
   width: auto;
   border-radius: 16px;
@@ -151,9 +151,9 @@ p, span, li, input, button, textarea {
   margin: 0;
   position: relative;
   animation: 2s bulge infinite ease-out;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(94, 234, 212, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid hsl(var(--border));
   min-width: 80px;
-  backdrop-filter: blur(5px);
 }
 
 .typing-indicator::before {
@@ -161,8 +161,8 @@ p, span, li, input, button, textarea {
   position: absolute;
   top: -30px;
   left: 0;
-  background-color: rgba(20, 30, 45, 0.95);
-  color: #5eead4;
+  background-color: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 12px;
@@ -173,8 +173,8 @@ p, span, li, input, button, textarea {
   max-width: 100%;
   text-overflow: ellipsis;
   overflow: visible;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  border-left: 2px solid #5eead4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid hsl(var(--border));
   z-index: 20;
 }
 
@@ -183,11 +183,10 @@ p, span, li, input, button, textarea {
   width: 8px;
   float: left;
   margin: 0 2px;
-  background-color: #5eead4;
+  background-color: hsl(var(--primary));
   display: block;
   border-radius: 50%;
-  opacity: 0.6;
-  filter: drop-shadow(0 0 3px rgba(94, 234, 212, 0.6));
+  opacity: 0.7;
 }
 
 .typing-indicator span:nth-of-type(1) {

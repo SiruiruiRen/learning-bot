@@ -74,7 +74,7 @@ export default function SolBotChat({
   attemptNumber = 1,
   onNewMessage,
   initialMessages = [],
-  isLoading,
+  isLoading: isLoadingProp,
   isError,
   taskContext,
 }: SolBotChatProps) {
@@ -84,6 +84,7 @@ export default function SolBotChat({
   const [sessionId, setSessionId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [loadingMessage, setLoadingMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const textAreaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -182,7 +183,7 @@ export default function SolBotChat({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/80 border border-purple-500/20 rounded-lg shadow-xl">
+    <div className="flex flex-col h-full bg-card border border-border rounded-lg shadow-lg" style={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}>
       {/* Chat messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
@@ -194,46 +195,53 @@ export default function SolBotChat({
             className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}
           >
             {msg.role === 'assistant' && (
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-fuchsia-600 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: "hsl(var(--primary))" }}>
+                <Bot className="w-5 h-5" style={{ color: "hsl(var(--primary-foreground))" }} />
                 </div>
               )}
             <div
               className={`max-w-md p-3 rounded-lg ${
                 msg.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-none'
-                  : 'bg-slate-800 text-white/90 rounded-bl-none'
+                  ? 'rounded-br-none'
+                  : 'rounded-bl-none'
               }`}
+              style={{
+                backgroundColor: msg.role === 'user' 
+                  ? "hsl(var(--primary) / 0.15)" 
+                  : "hsl(var(--muted))",
+                color: "hsl(var(--foreground))",
+                border: `1px solid ${msg.role === 'user' ? "hsl(var(--primary) / 0.3)" : "hsl(var(--border))"}`
+              }}
             >
               <ChatMessageParser content={msg.content} />
                                   </div>
             {msg.role === 'user' && (
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                <User className="w-5 h-5 text-white/80" />
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: "hsl(var(--muted))" }}>
+                <User className="w-5 h-5" style={{ color: "hsl(var(--foreground))" }} />
                 </div>
               )}
             </motion.div>
         ))}
-        {isLoading && (
+        {(isLoading || isLoadingProp) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             className="flex items-start gap-3"
           >
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-fuchsia-600 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" />
+            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: "hsl(var(--primary))" }}>
+              <Bot className="w-5 h-5" style={{ color: "hsl(var(--primary-foreground))" }} />
             </div>
-            <div className="max-w-md p-3 rounded-lg bg-slate-800 text-white/90 rounded-bl-none">
+            <div className="max-w-md p-3 rounded-lg rounded-bl-none" style={{ backgroundColor: "hsl(var(--muted))", color: "hsl(var(--foreground))", border: "1px solid hsl(var(--border))" }}>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: "hsl(var(--primary))" }}></div>
                 <motion.div
                   key={loadingMessage}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.5 }}
-                  className="text-white/70"
+                  style={{ color: "hsl(var(--muted-foreground))" }}
                 >
                   {loadingMessage}
                 </motion.div>
@@ -245,24 +253,33 @@ export default function SolBotChat({
       </div>
       
       {/* Input area */}
-      <div className="border-t border-purple-500/20 p-4 bg-slate-900/50">
+      <div className="border-t p-4" style={{ borderColor: "hsl(var(--border))", backgroundColor: "hsl(var(--card))" }}>
         <div className="relative">
               <Textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
-            className="bg-slate-800 border-slate-700 focus:border-purple-500 text-white rounded-lg pr-20"
+            className="rounded-lg pr-20"
+            style={{
+              backgroundColor: "hsl(var(--card))",
+              borderColor: "hsl(var(--border))",
+              color: "hsl(var(--foreground))"
+            }}
                 rows={2}
-            disabled={isLoading}
+            disabled={isLoading || isLoadingProp}
           />
           <Button
             onClick={handleSend}
-            disabled={isLoading || !input.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white rounded-md px-3 py-1.5 disabled:opacity-50"
+            disabled={(isLoading || isLoadingProp) || !input.trim()}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-3 py-1.5 disabled:opacity-50"
+            style={{ 
+              backgroundColor: "hsl(var(--primary))",
+              color: "hsl(var(--primary-foreground))"
+            }}
           >
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            {(isLoading || isLoadingProp) ? (
+              <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: "hsl(var(--primary-foreground))", borderTopColor: "transparent" }}></div>
             ) : (
               <Send className="w-4 h-4" />
             )}
