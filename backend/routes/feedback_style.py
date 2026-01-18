@@ -31,39 +31,28 @@ async def get_alternative_feedback(request: AlternativeFeedbackRequest):
             for msg in chat_history if msg["role"] in ["user", "assistant"]
         ] if chat_history else []
         
-        # Get prompt with alternative style
+        # Use chain prompting: Generate feedback based on evaluation results
         try:
             prompt_name = f"phase{request.phase}_{request.component}"
-            system_prompt = get_prompt(prompt_name, style=request.alternative_style)
+            from prompt_engineering.scripts.final_prompts import get_feedback_prompt
             
-            # Add instruction to use the same evaluation results
-            import json
-            evaluation_str = json.dumps(request.evaluation_metadata, indent=2) if isinstance(request.evaluation_metadata, dict) else str(request.evaluation_metadata)
-            
-            system_prompt += f"""
-
-# CRITICAL INSTRUCTION - EVALUATION CONSISTENCY
-You have already evaluated this student's submission. The evaluation results MUST remain EXACTLY the same:
-
-{evaluation_str}
-
-**MANDATORY REQUIREMENTS:**
-1. Use the EXACT same scores: Overall_Score: {request.evaluation_metadata.get('Overall_Score', request.evaluation_metadata.get('overall_score', 'N/A'))}
-2. Use the EXACT same categories: Lowest_Category: {request.evaluation_metadata.get('Lowest_Category', request.evaluation_metadata.get('lowest_category', 'N/A'))}
-3. Use the EXACT same criterion ratings (LOW/MEDIUM/HIGH) for each criterion
-4. Keep the same scaffolding level
-5. ONLY change the TONE, WORDING, and COMMUNICATION STYLE to match {request.alternative_style}
-6. The assessment scores and categories in your response MUST match the metadata above exactly
-7. Include the same metadata block at the end with identical scores
-
-Your task is to present the SAME evaluation results but in a {request.alternative_style} communication style.
-- Keep the same scores and categories
-- Keep the same assessment criteria
-- Only change the TONE and WORDING to match the {request.alternative_style} style
-- The content and guidance should be equivalent, just presented differently
-"""
+            # Use feedback prompt with evaluation metadata (chain prompting step 2)
+            system_prompt = get_feedback_prompt(
+                prompt_name, 
+                style=request.alternative_style, 
+                evaluation_metadata=request.evaluation_metadata
+            )
         except ValueError:
-            system_prompt = f"You are SoL2LBot, an AI tutor for self-regulated learning. Present feedback in a {request.alternative_style} style."
+            # Fallback if prompt not found
+            import json
+            eval_str = json.dumps(request.evaluation_metadata, indent=2)
+            system_prompt = f"""You are SoL2LBot, an AI tutor for self-regulated learning.
+
+# EVALUATION RESULTS (DO NOT CHANGE)
+{eval_str}
+
+Generate feedback in {request.alternative_style} style using the EXACT evaluation results above.
+Only change the tone and wording, keep all scores identical."""
         
         # Generate alternative feedback
         llm_response = await call_claude(

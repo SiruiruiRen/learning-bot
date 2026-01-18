@@ -78,9 +78,148 @@ Resource_Specificity: [LOW/MEDIUM/HIGH]
 
 COMMON_GUIDELINES = get_common_guidelines("warm")  # Default for backward compatibility
 
+def get_evaluation_prompt(prompt_name: str) -> str:
+    """
+    Get evaluation-only prompt (no style, just assessment).
+    This is used in the first step of chain prompting.
+    
+    Args:
+        prompt_name: Name of the prompt (e.g., "phase2_learning_objectives")
+    
+    Returns:
+        The evaluation prompt without style guidelines
+    """
+    base_prompts = get_base_prompts()
+    
+    if prompt_name not in base_prompts:
+        raise ValueError(f"Prompt '{prompt_name}' not found")
+    
+    base_prompt = base_prompts[prompt_name]
+    
+    # Create evaluation-only guidelines (no style)
+    evaluation_guidelines = """
+# CATEGORIZATION GUIDELINES
+Assess each criterion with an integer score and category:
+- Score 0 = LOW (⚠️)
+- Score 1 = MEDIUM (💡) 
+- Score 2 = HIGH (✅)
+- OVERALL score is the SUM of all individual criteria scores
+- Scaffolding level based on the LOWEST category across all criteria:
+  • ANY criterion LOW = Template + example
+  • LOWEST criteria MEDIUM (no LOW) = 2-3 targeted suggestions + Template
+  • ALL criteria HIGH = 2-3 reflection question
+
+# RESPONSE STRUCTURE
+## Assessment
+Looking at your learning plan (keep each bullet under 15 words, do NOT use code blocks):
+- [Criterion 1]: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- [Criterion 2]: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [SUM Score]/[Max Score]
+
+# METADATA FORMAT
+<!-- INSTRUCTOR_METADATA
+Overall_Score: [sum numeric score]
+Lowest_Category: [LOW/MEDIUM/HIGH]
+Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
+[Criterion_1]: [LOW/MEDIUM/HIGH]
+[Criterion_2]: [LOW/MEDIUM/HIGH]
+-->
+"""
+    
+    # Replace {COMMON_GUIDELINES} with evaluation-only version
+    return base_prompt.replace("{COMMON_GUIDELINES}", evaluation_guidelines)
+
+def get_feedback_prompt(prompt_name: str, style: str = "warm", evaluation_metadata: dict = None) -> str:
+    """
+    Get feedback generation prompt based on evaluation results.
+    This is used in the second step of chain prompting.
+    
+    Args:
+        prompt_name: Name of the prompt (e.g., "phase2_learning_objectives")
+        style: Communication style ("warm" or "direct")
+        evaluation_metadata: The evaluation results from step 1
+    
+    Returns:
+        The feedback prompt with style guidelines and evaluation results
+    """
+    base_prompts = get_base_prompts()
+    
+    if prompt_name not in base_prompts:
+        raise ValueError(f"Prompt '{prompt_name}' not found")
+    
+    base_prompt = base_prompts[prompt_name]
+    style_guidelines = get_common_guidelines(style)
+    
+    # Extract role and criteria from base prompt
+    role_section = ""
+    criteria_section = ""
+    lines = base_prompt.split('\n')
+    in_role = False
+    in_criteria = False
+    for line in lines:
+        if '# ROLE & PERSONA' in line:
+            in_role = True
+        elif '# KEY CRITERIA' in line:
+            in_role = False
+            in_criteria = True
+        elif '{COMMON_GUIDELINES}' in line:
+            in_criteria = False
+            break
+        if in_role:
+            role_section += line + '\n'
+        if in_criteria:
+            criteria_section += line + '\n'
+    
+    # Build feedback prompt
+    import json
+    eval_str = json.dumps(evaluation_metadata, indent=2) if evaluation_metadata else "No evaluation provided"
+    
+    feedback_prompt = f"""
+# ROLE & PERSONA
+{role_section.strip()}
+
+# EVALUATION RESULTS (DO NOT CHANGE)
+The student's submission has been evaluated. Here are the EXACT evaluation results:
+{eval_str}
+
+**CRITICAL**: You MUST use these EXACT scores and categories. Do NOT re-evaluate.
+
+{style_guidelines}
+
+# RESPONSE STRUCTURE
+## Greeting
+Brief personalized greeting with 2-3 emojis (adjust based on style).
+
+## Assessment
+Present the evaluation results using the EXACT scores from above:
+- [Criterion 1]: [EXACT Score from evaluation]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- [Criterion 2]: [EXACT Score from evaluation]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [EXACT Overall_Score from evaluation]/[Max Score]
+
+Your response MUST use "## " for all section titles (e.g., "## Guidance").
+
+## Guidance
+Provide support based on the LOWEST category rating from the evaluation. Include full templates and examples as needed.
+
+## Next Steps
+Provide next steps based on the evaluation.
+- IF ANY criterion LOW/MEDIUM: "📝 Please revise your answer using this template as a guide, focusing on your specific course details."
+- IF ALL criteria HIGH: "🚀 Excellent work! You have a clear and actionable learning objective. Press 'Next to Phase 3' to continue."
+
+# METADATA FORMAT
+<!-- INSTRUCTOR_METADATA
+Overall_Score: {evaluation_metadata.get('Overall_Score', evaluation_metadata.get('overall_score', 'N/A'))}
+Lowest_Category: {evaluation_metadata.get('Lowest_Category', evaluation_metadata.get('lowest_category', 'N/A'))}
+Scaffolding: {evaluation_metadata.get('Scaffolding', evaluation_metadata.get('scaffolding_level', 'N/A'))}
+-->
+"""
+    
+    return feedback_prompt
+
 def get_prompt(prompt_name: str, style: str = "warm") -> str:
     """
-    Get a prompt by name with specified communication style.
+    Get a prompt by name with specified communication style (legacy method).
+    For new chain prompting, use get_evaluation_prompt() and get_feedback_prompt() instead.
     
     Args:
         prompt_name: Name of the prompt (e.g., "phase2_learning_objectives")

@@ -150,20 +150,61 @@ async def process_chat(request: ChatRequest):
                     elif coach_tone not in ["warm", "direct"]:
                         coach_tone = "warm"
         
+        # Chain Prompting: Step 1 - Evaluation only
+        evaluation_metadata = None
+        cleaned_content = ""
+        
         try:
             prompt_name = f"phase{request.phase}_{request.component}"
+            
+            # Step 1: Get evaluation (no style, just assessment)
+            evaluation_prompt = get_prompt(prompt_name, style="warm")  # Use base prompt for evaluation
+            # For now, we'll extract evaluation from the first response
+            # In future, we can separate evaluation and feedback prompts
+            
+            # Step 2: Generate feedback with user's preferred style
             system_prompt = get_prompt(prompt_name, style=coach_tone)
         except ValueError:
             system_prompt = "You are SoL2LBot, an AI tutor for self-regulated learning."
         
+        # First call: Get evaluation
         llm_response = await call_claude(
             system_prompt=system_prompt, user_message=request.message,
-            chat_history=formatted_history, temperature=0.5, max_tokens=800
+            chat_history=formatted_history, temperature=0.3, max_tokens=800  # Lower temperature for consistency
         )
         
         response_content = llm_response.get("content", "")
         evaluation_metadata = _extract_evaluation_metadata(response_content)
-        cleaned_content = _clean_message_for_student(response_content)
+        
+        # If we have evaluation metadata, generate feedback with preferred style
+        if evaluation_metadata and request.is_submission:
+            try:
+                from prompt_engineering.scripts.final_prompts import get_feedback_prompt
+                feedback_prompt = get_feedback_prompt(prompt_name, style=coach_tone, evaluation_metadata=evaluation_metadata)
+                
+                # Second call: Generate styled feedback based on evaluation
+                feedback_response = await call_claude(
+                    system_prompt=feedback_prompt,
+                    user_message=f"Student submission: {request.message}\n\nGenerate feedback in {coach_tone} style based on the evaluation results above.",
+                    chat_history=[],  # Don't include history for feedback generation
+                    temperature=0.5,  # Slightly higher for more natural language
+                    max_tokens=800
+                )
+                
+                feedback_content = feedback_response.get("content", "")
+                # Verify evaluation metadata is preserved
+                feedback_eval = _extract_evaluation_metadata(feedback_content)
+                if feedback_eval and feedback_eval.get('overall_score') == evaluation_metadata.get('overall_score'):
+                    cleaned_content = _clean_message_for_student(feedback_content)
+                else:
+                    # Fallback to original response if evaluation doesn't match
+                    cleaned_content = _clean_message_for_student(response_content)
+            except Exception as feedback_error:
+                logger.warning(f"Failed to generate styled feedback, using original: {feedback_error}")
+                cleaned_content = _clean_message_for_student(response_content)
+        else:
+            # For non-submissions or if evaluation failed, use original response
+            cleaned_content = _clean_message_for_student(response_content)
         
         assistant_message_record = db.log_message(
             session_id=request.session_id, role="assistant", content=cleaned_content,
