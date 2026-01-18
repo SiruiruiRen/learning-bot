@@ -21,9 +21,7 @@ export default function Phase4TasksPage() {
   }, []);
 
   const tasks = [
-    { id: 'long_term_goals', title: 'Long-Term Learning Goals', description: 'Define your big-picture learning objectives.', icon: Target, href: '/phase4/long_term_goals' },
-    { id: 'short_term_goals', title: 'Short-Term SMART Objectives', description: 'Create specific, measurable steps.', icon: ListTodo, href: '/phase4/short_term_goals' },
-    { id: 'contingency_strategies', title: 'Contingency Strategies', description: 'Develop "if-then" plans for obstacles.', icon: ShieldCheck, href: '/phase4/contingency_strategies' },
+    { id: 'mcii', title: 'MCII: Mental Contrasting with Implementation Intentions', description: 'Complete the integrated MCII exercise: Pick a goal, visualize success, identify obstacles, and create implementation intentions.', icon: Target, href: '/phase4/mcii' },
   ];
 
   const getNextTask = () => {
@@ -56,7 +54,7 @@ export default function Phase4TasksPage() {
         >
           <h2 className="text-3xl font-bold" style={{ color: accent }}>Phase 4: Strategic Learning Plan</h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Let's build your strategic plan. Complete the following tasks in order to create a roadmap for your success.
+            Complete the MCII (Mental Contrasting with Implementation Intentions) exercise to build your strategic learning plan.
           </p>
 
           <div className="mt-8 space-y-4 text-left">
@@ -82,7 +80,7 @@ export default function Phase4TasksPage() {
                       </div>
                     ) : isNext ? (
                       <Button onClick={() => router.push(task.href)} className="shadow-md" style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}>
-                        Start Task {index + 1}
+                        Start MCII Exercise
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     ) : null}

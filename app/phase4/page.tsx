@@ -188,17 +188,9 @@ export default function Phase4IntroPage() {
                     }}
                   >
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will proceed to interactive tasks to build your strategic plan.</p>
+                    <p className="text-muted-foreground text-sm">You will proceed to complete the MCII (Mental Contrasting with Implementation Intentions) exercise to build your strategic plan.</p>
                   </div>
                 </div>
-                
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center text-emerald-400 font-medium pt-2"
-                >
-                  <p>Great! Now you're ready to complete the 3 strategic planning tasks.</p>
-                </motion.div>
 
                 <div className="flex justify-end mt-8">
                   <Button 
