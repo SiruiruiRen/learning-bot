@@ -273,11 +273,4 @@ function generateNextSteps(extractedInfo: any, phasesCompleted: number): string[
   }
   
   return nextSteps;
-  } catch (error) {
-    console.error('Error fetching summary data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch summary data' },
-      { status: 500 }
-    );
-  }
 }
