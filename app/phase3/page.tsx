@@ -671,8 +671,10 @@ export default function Phase3Content() {
               {/* Spacing Effect Guide Card */}
               {currentCardIndex === 2 && <SpacingEffectGuide />}
 
+              {/* Pre-Test Card - already handled above */}
+              
               {/* Video Card */}
-              {currentCardIndex === 3 && (
+              {currentCardIndex === 4 && !videoSkipped && (
                 <div className="space-y-4">
                   <p className="text-center text-muted-foreground">
                     Watch this video to learn about powerful, evidence-based study techniques.
@@ -703,7 +705,33 @@ export default function Phase3Content() {
                 </div>
               )}
               
-              {/* This card index is now used for post-test (index 5) */}
+              {/* Video Skipped Message */}
+              {currentCardIndex === 4 && videoSkipped && (
+                <div className="mt-6 space-y-6">
+                  <div className="p-4 rounded-lg border text-center" style={{ backgroundColor: "hsl(var(--muted) / 0.3)", borderColor: accent }}>
+                    <p className="font-semibold mb-2" style={{ color: accent }}>✅ Video Skipped</p>
+                    <p className="text-muted-foreground text-sm">
+                      Since you demonstrated strong understanding in the pre-test, you've skipped the video. Let's check your knowledge with a few more questions!
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Post-Test Card */}
+              {currentCardIndex === 5 && (
+                <div>
+                  <div className="text-muted-foreground mb-4">
+                    <p>
+                      <strong style={{ color: accent }}>After the video:</strong> Let's test your understanding of these evidence-based learning strategies.
+                    </p>
+                  </div>
+                  <PrePostKnowledgeCheck
+                    questions={phase3KnowledgeChecks.postTest}
+                    testType="post"
+                    onComplete={handlePostTestComplete}
+                  />
+                </div>
+              )}
               
               {/* Navigation buttons at the bottom of each card */}
               <div className="flex justify-between mt-8">
