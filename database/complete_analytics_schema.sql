@@ -63,8 +63,19 @@ CREATE TABLE IF NOT EXISTS assessments (
   overall_score REAL,
   evaluation JSONB, -- Contains detailed scoring breakdown
   feedback_content TEXT, -- Full feedback text
+  full_evaluation TEXT, -- Full evaluation JSON as text (for backend compatibility)
+  lowest_category TEXT, -- LOW/MEDIUM/HIGH
+  scaffolding_level TEXT, -- Template + example/Targeted suggestions + Template/Reflection questions
+  rationale TEXT, -- Assessment rationale
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add missing columns if table already exists
+ALTER TABLE assessments 
+  ADD COLUMN IF NOT EXISTS full_evaluation TEXT,
+  ADD COLUMN IF NOT EXISTS lowest_category TEXT,
+  ADD COLUMN IF NOT EXISTS scaffolding_level TEXT,
+  ADD COLUMN IF NOT EXISTS rationale TEXT;
 
 -- ============================================
 -- ANALYTICS TABLES
@@ -247,6 +258,37 @@ CREATE INDEX IF NOT EXISTS idx_video_events_user_id ON video_interaction_events(
 CREATE INDEX IF NOT EXISTS idx_video_events_phase ON video_interaction_events(phase);
 CREATE INDEX IF NOT EXISTS idx_video_events_type ON video_interaction_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_video_events_timestamp ON video_interaction_events(event_timestamp);
+
+-- 6c. LLM Interactions - Track all LLM API calls
+CREATE TABLE IF NOT EXISTS llm_interactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  conversation_id UUID,
+  message_id UUID REFERENCES messages(id),
+  phase TEXT,
+  component TEXT,
+  system_prompt TEXT,
+  user_message TEXT,
+  raw_llm_response TEXT,
+  processed_response TEXT,
+  model_name TEXT NOT NULL,
+  temperature REAL,
+  max_tokens INTEGER,
+  input_tokens INTEGER DEFAULT 0,
+  output_tokens INTEGER DEFAULT 0,
+  request_timestamp TIMESTAMP WITH TIME ZONE,
+  response_timestamp TIMESTAMP WITH TIME ZONE,
+  duration_ms INTEGER,
+  cache_hit BOOLEAN DEFAULT FALSE,
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_llm_interactions_user_id ON llm_interactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_llm_interactions_session_id ON llm_interactions(session_id);
+CREATE INDEX IF NOT EXISTS idx_llm_interactions_model ON llm_interactions(model_name);
+CREATE INDEX IF NOT EXISTS idx_llm_interactions_created_at ON llm_interactions(created_at);
 
 -- 7. Knowledge Check / Quiz Data - Comprehensive quiz tracking
 CREATE TABLE IF NOT EXISTS knowledge_check_attempts (
