@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
 
     switch (event_type) {
       case 'video_watch_completed':
+      case 'video_watch_started':
         await handleVideoEvent(session_id, userId, phase, metadata);
         break;
       case 'video_pause':
@@ -39,7 +40,15 @@ export async function POST(request: NextRequest) {
       case 'video_fast_forward':
       case 'video_loaded':
       case 'video_progress_milestone':
+      case 'video_ended':
+      case 'video_error':
+      case 'video_seek':
         await handleVideoInteraction(session_id, userId, phase, event_type, metadata);
+        break;
+      case 'quiz_question_answered':
+      case 'quiz_started':
+      case 'quiz_completed':
+        await handleQuizEvent(session_id, userId, phase, event_type, metadata);
         break;
       case 'chat_started':
         const chatData = await handleChatStarted(session_id, userId, phase, component);
@@ -123,22 +132,46 @@ async function handleRevisionEvent(sessionId: string, userId: string, phase: str
 }
 
 async function handleVideoInteraction(sessionId: string, userId: string, phase: string, eventType: string, metadata: any) {
-  // Update video analytics with interaction details
-  const { video_title, current_time, total_watched_seconds, pause_count, seek_count, is_rewind } = metadata;
+  const { video_title, video_src, current_time, total_watched_seconds, pause_count, seek_count, is_rewind, duration } = metadata;
   
+  // Log individual video interaction event
+  await supabase.from('video_interaction_events').insert({
+    session_id: sessionId,
+    user_id: userId,
+    phase: phase,
+    video_name: video_title || 'Unknown',
+    event_type: eventType.replace('video_', ''), // Remove 'video_' prefix
+    current_time: current_time || 0,
+    total_watched_seconds: total_watched_seconds || 0,
+    event_timestamp: metadata.timestamp || new Date().toISOString(),
+    metadata: metadata
+  });
+  
+  // Update video analytics summary
   if (video_title) {
+    // Calculate completion percentage
+    const completionPercentage = duration && total_watched_seconds 
+      ? (total_watched_seconds / duration) * 100 
+      : 0;
+    
     // Upsert video analytics with latest interaction
     await supabase.from('user_video_analytics').upsert({
       session_id: sessionId,
       user_id: userId,
       phase,
       video_name: video_title,
+      video_src: video_src,
+      total_duration_seconds: duration ? Math.round(duration) : null,
       watched_duration_seconds: Math.round(total_watched_seconds || 0),
+      completion_percentage: completionPercentage,
       pause_count: pause_count || 0,
       rewind_count: is_rewind ? (seek_count || 0) : 0,
       fast_forward_count: !is_rewind ? (seek_count || 0) : 0,
+      seek_count: seek_count || 0,
+      last_position: current_time || 0,
       last_interaction_at: new Date().toISOString(),
-      watch_patterns: metadata.watch_patterns || []
+      watch_patterns: metadata.watch_patterns || [],
+      completed_at: eventType === 'video_ended' ? new Date().toISOString() : null
     }, { onConflict: 'session_id, video_name' });
   }
 }
@@ -304,6 +337,62 @@ async function handleUserInput(sessionId: string, userId: string, phase: string,
   });
 }
 
+async function handleQuizEvent(sessionId: string, userId: string, phase: string, eventType: string, metadata: any) {
+  if (eventType === 'quiz_question_answered') {
+    // Log individual question attempt
+    await supabase.from('knowledge_check_attempts').insert({
+      session_id: sessionId,
+      user_id: userId,
+      phase: phase,
+      question_id: metadata.question_id,
+      question_text: metadata.question_text || metadata.question,
+      question_type: metadata.question_type || 'multiple_choice',
+      attempt_number: metadata.attempt_number || 1,
+      selected_answer: metadata.selected_answer,
+      correct_answer: metadata.correct_answer,
+      is_correct: metadata.is_correct,
+      time_to_answer_seconds: metadata.time_to_answer_seconds,
+      time_to_first_interaction_seconds: metadata.time_to_first_interaction_seconds,
+      confidence_level: metadata.confidence_level,
+      help_used: metadata.help_used || false,
+      answer_changed: metadata.answer_changed || false,
+      answer_changes: metadata.answer_changes || [],
+      thinking_time_seconds: metadata.thinking_time_seconds,
+      options_shown: metadata.options || metadata.options_shown,
+      explanation_viewed: metadata.explanation_viewed || false,
+      retry_count: metadata.retry_count || 0,
+      metadata: metadata
+    });
+  } else if (eventType === 'quiz_started') {
+    // Create or update quiz session summary
+    await supabase.from('quiz_session_summary').upsert({
+      session_id: sessionId,
+      user_id: userId,
+      phase: phase,
+      quiz_start_time: new Date().toISOString(),
+      completed: false
+    }, { onConflict: 'session_id,phase' });
+  } else if (eventType === 'quiz_completed') {
+    // Update quiz session summary with final results
+    const { total_questions, correct_answers, incorrect_answers, total_time_seconds } = metadata;
+    const accuracy = total_questions > 0 ? (correct_answers / total_questions) * 100 : 0;
+    
+    await supabase.from('quiz_session_summary').upsert({
+      session_id: sessionId,
+      user_id: userId,
+      phase: phase,
+      total_questions: total_questions || 0,
+      correct_answers: correct_answers || 0,
+      incorrect_answers: incorrect_answers || 0,
+      accuracy_percentage: accuracy,
+      total_time_seconds: total_time_seconds,
+      quiz_end_time: new Date().toISOString(),
+      completed: true,
+      metadata: metadata
+    }, { onConflict: 'session_id,phase' });
+  }
+}
+
 async function handlePhaseCompleted(sessionId: string, userId: string, phase: string) {
     const { data: phaseData } = await supabase
       .from('user_engagement_sessions')
@@ -315,6 +404,17 @@ async function handlePhaseCompleted(sessionId: string, userId: string, phase: st
     const chat_time_seconds = phaseData?.filter(d => d.activity_type === 'chat').reduce((sum, d) => sum + (d.duration_seconds || 0), 0) || 0;
     const knowledge_check_time_seconds = phaseData?.filter(d => d.activity_type === 'knowledge_check').reduce((sum, d) => sum + (d.duration_seconds || 0), 0) || 0;
 
+    // Get quiz time and score
+    const { data: quizData } = await supabase
+      .from('quiz_session_summary')
+      .select('total_time_seconds, accuracy_percentage')
+      .eq('session_id', sessionId)
+      .eq('phase', phase)
+      .single();
+    
+    const quiz_time_seconds = quizData?.total_time_seconds || 0;
+    const quiz_score = quizData?.accuracy_percentage || null;
+
     await supabase.from('phase_completion_analytics').insert({
         session_id: sessionId, user_id: userId, phase,
         completed_successfully: true,
@@ -322,6 +422,8 @@ async function handlePhaseCompleted(sessionId: string, userId: string, phase: st
         video_time_seconds,
         chat_time_seconds,
         knowledge_check_time_seconds,
-        total_time_seconds: video_time_seconds + chat_time_seconds + knowledge_check_time_seconds,
+        quiz_time_seconds,
+        quiz_score: quiz_score,
+        total_time_seconds: video_time_seconds + chat_time_seconds + knowledge_check_time_seconds + quiz_time_seconds,
     });
 } 

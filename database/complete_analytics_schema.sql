@@ -182,31 +182,119 @@ CREATE INDEX IF NOT EXISTS idx_clicks_user_id ON click_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_clicks_timestamp ON click_events(timestamp);
 CREATE INDEX IF NOT EXISTS idx_clicks_type ON click_events(click_type);
 
--- 6. Video Analytics (if not exists)
+-- 6. Video Analytics - Comprehensive video watching data
 CREATE TABLE IF NOT EXISTS user_video_analytics (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   phase TEXT NOT NULL,
   video_name TEXT NOT NULL,
-  total_duration_seconds INTEGER,
-  watched_duration_seconds INTEGER DEFAULT 0,
-  completion_percentage REAL DEFAULT 0,
-  play_count INTEGER DEFAULT 1,
-  pause_count INTEGER DEFAULT 0,
-  rewind_count INTEGER DEFAULT 0,
-  fast_forward_count INTEGER DEFAULT 0,
-  watch_patterns JSONB DEFAULT '[]'::jsonb,
-  completed_at TIMESTAMP WITH TIME ZONE,
-  first_play_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  last_interaction_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  video_src TEXT, -- Video source URL
+  total_duration_seconds INTEGER, -- Total video length
+  watched_duration_seconds INTEGER DEFAULT 0, -- Total time watched
+  completion_percentage REAL DEFAULT 0, -- Percentage of video watched
+  play_count INTEGER DEFAULT 1, -- Number of times video was played
+  pause_count INTEGER DEFAULT 0, -- Number of times video was paused
+  rewind_count INTEGER DEFAULT 0, -- Number of times user rewound
+  fast_forward_count INTEGER DEFAULT 0, -- Number of times user fast-forwarded
+  seek_count INTEGER DEFAULT 0, -- Total seek operations
+  watch_patterns JSONB DEFAULT '[]'::jsonb, -- Array of {timestamp, action, position}
+  watch_segments JSONB DEFAULT '[]'::jsonb, -- Array of watched time segments
+  skipped_segments JSONB DEFAULT '[]'::jsonb, -- Array of skipped segments
+  completed_at TIMESTAMP WITH TIME ZONE, -- When video was completed
+  first_play_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- First time video was played
+  last_interaction_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- Last interaction time
+  last_position REAL DEFAULT 0, -- Last watched position in seconds
+  engagement_score REAL, -- Calculated engagement score
   UNIQUE(session_id, video_name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_video_analytics_session_id ON user_video_analytics(session_id);
 CREATE INDEX IF NOT EXISTS idx_video_analytics_user_id ON user_video_analytics(user_id);
+CREATE INDEX IF NOT EXISTS idx_video_analytics_phase ON user_video_analytics(phase);
+CREATE INDEX IF NOT EXISTS idx_video_analytics_video_name ON user_video_analytics(video_name);
 
--- 7. Phase Completion Analytics
+-- 6b. Video Interaction Events - Detailed video event log
+CREATE TABLE IF NOT EXISTS video_interaction_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  phase TEXT NOT NULL,
+  video_name TEXT NOT NULL,
+  event_type TEXT NOT NULL CHECK (event_type IN ('play', 'pause', 'seek', 'rewind', 'fast_forward', 'progress_milestone', 'loaded', 'ended', 'error')),
+  current_time REAL, -- Current playback position in seconds
+  total_watched_seconds REAL, -- Cumulative watched time
+  event_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  metadata JSONB, -- Additional event details
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_video_events_session_id ON video_interaction_events(session_id);
+CREATE INDEX IF NOT EXISTS idx_video_events_user_id ON video_interaction_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_video_events_phase ON video_interaction_events(phase);
+CREATE INDEX IF NOT EXISTS idx_video_events_type ON video_interaction_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_video_events_timestamp ON video_interaction_events(event_timestamp);
+
+-- 7. Knowledge Check / Quiz Data - Comprehensive quiz tracking
+CREATE TABLE IF NOT EXISTS knowledge_check_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  phase TEXT NOT NULL,
+  question_id TEXT, -- Unique identifier for the question
+  question_text TEXT NOT NULL, -- The actual question text
+  question_type TEXT, -- 'multiple_choice', 'true_false', 'short_answer', etc.
+  attempt_number INTEGER DEFAULT 1, -- Which attempt (1st, 2nd, etc.)
+  selected_answer TEXT, -- User's selected answer
+  correct_answer TEXT, -- The correct answer
+  is_correct BOOLEAN, -- Whether the answer was correct
+  time_to_answer_seconds INTEGER, -- Time taken to answer
+  time_to_first_interaction_seconds INTEGER, -- Time before first interaction
+  confidence_level INTEGER CHECK (confidence_level BETWEEN 1 AND 5), -- User confidence (1-5)
+  help_used BOOLEAN DEFAULT FALSE, -- Whether user used hints/help
+  answer_changed BOOLEAN DEFAULT FALSE, -- Whether user changed their answer
+  answer_changes JSONB DEFAULT '[]'::jsonb, -- Array of answer changes with timestamps
+  thinking_time_seconds INTEGER, -- Time spent thinking before answering
+  options_shown JSONB, -- Available options for multiple choice
+  explanation_viewed BOOLEAN DEFAULT FALSE, -- Whether user viewed explanation
+  retry_count INTEGER DEFAULT 0, -- Number of retries
+  metadata JSONB, -- Additional quiz metadata
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_knowledge_check_session_id ON knowledge_check_attempts(session_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_check_user_id ON knowledge_check_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_check_phase ON knowledge_check_attempts(phase);
+CREATE INDEX IF NOT EXISTS idx_knowledge_check_question_id ON knowledge_check_attempts(question_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_check_is_correct ON knowledge_check_attempts(is_correct);
+
+-- 7b. Quiz Session Summary - Overall quiz performance per phase
+CREATE TABLE IF NOT EXISTS quiz_session_summary (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  phase TEXT NOT NULL,
+  total_questions INTEGER DEFAULT 0,
+  correct_answers INTEGER DEFAULT 0,
+  incorrect_answers INTEGER DEFAULT 0,
+  accuracy_percentage REAL, -- (correct_answers / total_questions) * 100
+  average_time_per_question_seconds REAL,
+  total_time_seconds INTEGER, -- Total time spent on quiz
+  first_attempt_accuracy REAL, -- Accuracy on first attempts only
+  retry_accuracy REAL, -- Accuracy after retries
+  questions_answered JSONB DEFAULT '[]'::jsonb, -- Array of question IDs answered
+  quiz_start_time TIMESTAMP WITH TIME ZONE,
+  quiz_end_time TIMESTAMP WITH TIME ZONE,
+  completed BOOLEAN DEFAULT FALSE,
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_quiz_summary_session_id ON quiz_session_summary(session_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_summary_user_id ON quiz_session_summary(user_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_summary_phase ON quiz_session_summary(phase);
+
+-- 8. Phase Completion Analytics
 CREATE TABLE IF NOT EXISTS phase_completion_analytics (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
@@ -218,8 +306,10 @@ CREATE TABLE IF NOT EXISTS phase_completion_analytics (
   video_time_seconds INTEGER DEFAULT 0,
   chat_time_seconds INTEGER DEFAULT 0,
   knowledge_check_time_seconds INTEGER DEFAULT 0,
+  quiz_time_seconds INTEGER DEFAULT 0, -- Time spent on quizzes
   revision_count INTEGER DEFAULT 0,
   final_assessment_score REAL,
+  quiz_score REAL, -- Average quiz score for this phase
   learning_efficiency_score REAL,
   engagement_quality TEXT CHECK (engagement_quality IN ('low', 'medium', 'high', 'excellent')),
   completed_successfully BOOLEAN DEFAULT FALSE,
@@ -295,6 +385,65 @@ SELECT
 FROM chat_conversations cc
 LEFT JOIN assessments a ON cc.session_id = a.session_id AND cc.phase = a.phase AND cc.component = a.component;
 
+-- View: Video Watching Summary
+CREATE OR REPLACE VIEW video_watching_summary AS
+SELECT 
+  uva.session_id,
+  uva.user_id,
+  uva.phase,
+  uva.video_name,
+  uva.total_duration_seconds,
+  uva.watched_duration_seconds,
+  uva.completion_percentage,
+  uva.play_count,
+  uva.pause_count,
+  uva.rewind_count,
+  uva.fast_forward_count,
+  uva.seek_count,
+  COUNT(vie.id) as total_interaction_events,
+  uva.first_play_at,
+  uva.last_interaction_at,
+  uva.completed_at,
+  CASE 
+    WHEN uva.completion_percentage >= 90 THEN 'Complete'
+    WHEN uva.completion_percentage >= 50 THEN 'Partial'
+    ELSE 'Minimal'
+  END as engagement_level
+FROM user_video_analytics uva
+LEFT JOIN video_interaction_events vie ON uva.session_id = vie.session_id AND uva.video_name = vie.video_name
+GROUP BY uva.id, uva.session_id, uva.user_id, uva.phase, uva.video_name, uva.total_duration_seconds,
+  uva.watched_duration_seconds, uva.completion_percentage, uva.play_count, uva.pause_count,
+  uva.rewind_count, uva.fast_forward_count, uva.seek_count, uva.first_play_at, uva.last_interaction_at, uva.completed_at;
+
+-- View: Quiz Performance Summary
+CREATE OR REPLACE VIEW quiz_performance_summary AS
+SELECT 
+  qss.session_id,
+  qss.user_id,
+  qss.phase,
+  qss.total_questions,
+  qss.correct_answers,
+  qss.incorrect_answers,
+  qss.accuracy_percentage,
+  qss.average_time_per_question_seconds,
+  qss.total_time_seconds,
+  qss.first_attempt_accuracy,
+  qss.retry_accuracy,
+  qss.quiz_start_time,
+  qss.quiz_end_time,
+  qss.completed,
+  COUNT(kca.id) as total_attempts,
+  AVG(kca.time_to_answer_seconds) as avg_time_per_question,
+  AVG(kca.confidence_level) as avg_confidence,
+  SUM(CASE WHEN kca.help_used THEN 1 ELSE 0 END) as questions_with_help,
+  SUM(CASE WHEN kca.answer_changed THEN 1 ELSE 0 END) as questions_with_answer_changes
+FROM quiz_session_summary qss
+LEFT JOIN knowledge_check_attempts kca ON qss.session_id = kca.session_id AND qss.phase = kca.phase
+GROUP BY qss.id, qss.session_id, qss.user_id, qss.phase, qss.total_questions, qss.correct_answers,
+  qss.incorrect_answers, qss.accuracy_percentage, qss.average_time_per_question_seconds,
+  qss.total_time_seconds, qss.first_attempt_accuracy, qss.retry_accuracy,
+  qss.quiz_start_time, qss.quiz_end_time, qss.completed;
+
 -- Refresh PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
 
@@ -308,6 +457,7 @@ AND table_name IN (
   'users', 'sessions', 'user_data', 'messages', 'assessments',
   'content_interaction_logs', 'navigation_events', 'user_inputs',
   'chat_conversations', 'click_events', 'user_video_analytics',
+  'video_interaction_events', 'knowledge_check_attempts', 'quiz_session_summary',
   'phase_completion_analytics'
 )
 ORDER BY table_name;
