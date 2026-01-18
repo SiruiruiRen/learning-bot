@@ -311,11 +311,16 @@ def get_prompt(phase_name: str, style: str = "warm") -> str:
 
 # Example usage
 if __name__ == "__main__":
+    base_prompts = get_base_prompts()
     print("Available improved prompts:")
-    for phase in IMPROVED_PROMPTS.keys():
+    for phase in base_prompts.keys():
         print(f"- {phase}")
     
     # Example of using a prompt
-    prompt = get_prompt("phase2_learning_objectives")
-    print("\nExample improved prompt for phase2_learning_objectives:")
+    prompt = get_prompt("phase2_learning_objectives", style="warm")
+    print("\nExample improved prompt for phase2_learning_objectives (warm style):")
     print(prompt)
+    
+    prompt_direct = get_prompt("phase2_learning_objectives", style="direct")
+    print("\nExample improved prompt for phase2_learning_objectives (direct style):")
+    print(prompt_direct)
