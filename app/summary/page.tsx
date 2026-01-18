@@ -138,6 +138,7 @@ export default function SummaryPage() {
   const neutralSurface = "hsl(var(--card) / 0.96)"
   const neutralBorder = "hsl(var(--border) / 0.8)"
   const mutedText = "hsl(var(--muted-foreground))"
+  const foreground = "hsl(var(--foreground))"
   const primaryButtonStyle = {
     backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
     color: "#1f1408",
