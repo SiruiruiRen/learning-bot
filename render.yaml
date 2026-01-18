@@ -10,7 +10,7 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false  # 需要在 Render Dashboard 手动设置
       - key: CLAUDE_MODEL
-        value: claude-sonnet-4-20250514  # Claude Sonnet 4.5 (latest stable)
+        value: claude-sonnet-4-5  # Claude Sonnet 4.5
       - key: USE_MEMORY_DB
         value: true
       - key: ENABLE_WARMUP
