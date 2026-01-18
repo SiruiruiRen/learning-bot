@@ -7,25 +7,25 @@
 
 @layer base {
   :root {
-    /* Warm light */
-    --background: 40 36% 96%;      /* soft cream */
-    --foreground: 26 32% 24%;      /* warm brown */
+    /* Warm light - Enhanced contrast */
+    --background: 40 36% 94%;      /* slightly darker cream for better contrast */
+    --foreground: 26 32% 18%;      /* darker warm brown - enhanced contrast */
     --card: 0 0% 100%;             /* white cards */
-    --card-foreground: 26 32% 24%;
+    --card-foreground: 26 32% 18%; /* darker text for better readability */
     --popover: 0 0% 100%;
-    --popover-foreground: 26 32% 24%;
+    --popover-foreground: 26 32% 18%;
     --primary: 35 55% 55%;         /* warm gold accent */
-    --primary-foreground: 26 32% 20%;
+    --primary-foreground: 26 32% 16%; /* darker text on primary for better contrast */
     --secondary: 35 28% 88%;
-    --secondary-foreground: 26 32% 24%;
+    --secondary-foreground: 26 32% 18%;
     --muted: 35 24% 86%;
-    --muted-foreground: 26 20% 45%;
+    --muted-foreground: 26 20% 35%; /* darker muted text - enhanced contrast */
     --accent: 35 55% 55%;
-    --accent-foreground: 26 32% 20%;
+    --accent-foreground: 26 32% 16%;
     --destructive: 4 70% 50%;
     --destructive-foreground: 35 36% 96%;
-    --border: 35 20% 80%;
-    --input: 35 20% 80%;
+    --border: 35 20% 75%;         /* slightly darker border for better visibility */
+    --input: 35 20% 75%;
     --ring: 35 55% 55%;
     --radius: 1rem;
   }
