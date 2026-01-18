@@ -513,7 +513,8 @@ export default function SummaryPage() {
               Return Home
             </Button>
           </div>
-        </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   )
