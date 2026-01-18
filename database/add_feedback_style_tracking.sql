@@ -45,7 +45,7 @@ SELECT
   fsv.assessment_id,
   fsv.phase,
   fsv.component,
-  a.evaluation_score as original_score,
+  a.overall_score as original_score,  -- Fixed: use overall_score instead of evaluation_score
   a.feedback_style as primary_style,
   COUNT(DISTINCT CASE WHEN fsv.view_type = 'original' THEN fsv.id END) as original_views,
   COUNT(DISTINCT CASE WHEN fsv.view_type = 'alternative' THEN fsv.id END) as alternative_views,
@@ -55,4 +55,4 @@ SELECT
   SUM(CASE WHEN fsv.view_type = 'alternative' THEN fsv.view_duration_seconds ELSE 0 END) as total_alternative_view_time
 FROM feedback_style_views fsv
 LEFT JOIN assessments a ON fsv.assessment_id = a.id
-GROUP BY fsv.session_id, fsv.user_id, fsv.assessment_id, fsv.phase, fsv.component, a.evaluation_score, a.feedback_style;
+GROUP BY fsv.session_id, fsv.user_id, fsv.assessment_id, fsv.phase, fsv.component, a.overall_score, a.feedback_style;
