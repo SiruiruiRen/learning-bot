@@ -209,6 +209,15 @@ CREATE TABLE IF NOT EXISTS user_video_analytics (
   UNIQUE(session_id, video_name)
 );
 
+-- Add missing columns if table already exists (for existing databases)
+ALTER TABLE user_video_analytics 
+  ADD COLUMN IF NOT EXISTS video_src TEXT,
+  ADD COLUMN IF NOT EXISTS seek_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS watch_segments JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS skipped_segments JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS last_position REAL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS engagement_score REAL;
+
 CREATE INDEX IF NOT EXISTS idx_video_analytics_session_id ON user_video_analytics(session_id);
 CREATE INDEX IF NOT EXISTS idx_video_analytics_user_id ON user_video_analytics(user_id);
 CREATE INDEX IF NOT EXISTS idx_video_analytics_phase ON user_video_analytics(phase);
@@ -228,6 +237,10 @@ CREATE TABLE IF NOT EXISTS video_interaction_events (
   metadata JSONB, -- Additional event details
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add missing columns if table already exists
+ALTER TABLE video_interaction_events 
+  ADD COLUMN IF NOT EXISTS playback_position REAL;
 
 CREATE INDEX IF NOT EXISTS idx_video_events_session_id ON video_interaction_events(session_id);
 CREATE INDEX IF NOT EXISTS idx_video_events_user_id ON video_interaction_events(user_id);
