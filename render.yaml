@@ -1,0 +1,46 @@
+services:
+  # 后端服务
+  - type: web
+    name: solbot-backend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && PYTHONPATH=$PYTHONPATH:$(pwd)/.. python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CLAUDE_MODEL
+        value: claude-sonnet-4-20250514
+      - key: USE_MEMORY_DB
+        value: true
+      - key: ENABLE_WARMUP
+        value: true
+      - key: SERVICE_URL
+        fromService:
+          type: web
+          name: solbot-backend
+          property: url
+      - key: PING_INTERVAL
+        value: 600
+
+  # 前端服务（Next.js）
+  - type: web
+    name: solbot-frontend
+    runtime: node
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: solbot-backend
+          property: url
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false  # 需要在 Render Dashboard 手动设置
+      - key: SUPABASE_SERVICE_KEY
+        sync: false  # 需要在 Render Dashboard 手动设置
+      - key: DATABASE_ENABLED
+        value: true
+      - key: PORT
+        value: 3000

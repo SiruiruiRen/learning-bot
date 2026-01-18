@@ -87,11 +87,13 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",          # Local development
     "http://localhost:3004",          # Local development alternate port
-    "https://sol-bot-seven.vercel.app", # Vercel domain
-    "https://learning-bot.vercel.app",   # Alternate Vercel domain
-    "https://solbot.vercel.app",         # Another possible Vercel domain
-    "https://sol-kfr2d09v1-rensirui-uncedus-projects.vercel.app", # Current Vercel domain
-    "*"  # Allow all origins temporarily for testing
+    "https://sol-bot-seven.vercel.app", # Vercel domain (legacy)
+    "https://learning-bot.vercel.app",   # Alternate Vercel domain (legacy)
+    "https://solbot.vercel.app",         # Another possible Vercel domain (legacy)
+    "https://sol-kfr2d09v1-rensirui-uncedus-projects.vercel.app", # Current Vercel domain (legacy)
+    "https://solbot-frontend.onrender.com",  # Render frontend domain
+    "https://*.onrender.com",          # All Render subdomains
+    "*"  # Allow all origins temporarily for testing (remove in production)
 ]
 
 app.add_middleware(
