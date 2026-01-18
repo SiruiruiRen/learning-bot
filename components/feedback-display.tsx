@@ -139,9 +139,6 @@ const FeedbackDisplay = ({
   }
 
   const displayContent = showAlternative && alternativeContent ? alternativeContent : content
-  // Split the content by "## " to get the sections
-  const sections = content.split("## ").filter(s => s.trim() !== "");
-
   const sections = displayContent.split("## ").filter(s => s.trim() !== "")
 
   return (

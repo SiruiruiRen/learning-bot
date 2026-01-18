@@ -396,6 +396,49 @@ async function handleQuizEvent(sessionId: string, userId: string, phase: string,
   }
 }
 
+async function handleFeedbackStyleView(sessionId: string, userId: string, phase: string, component: string, metadata: any) {
+  // Log feedback style view events for research
+  await supabase.from('content_interaction_logs').insert({
+    session_id: sessionId,
+    user_id: userId,
+    interaction_type: 'feedback_style_view',
+    content_type: component || 'feedback',
+    phase: phase,
+    component: component || 'feedback',
+    interaction_data: {
+      view_type: metadata.view_type, // 'original' or 'alternative'
+      style: metadata.style, // 'warm' or 'direct'
+      evaluation_score: metadata.evaluation_score,
+      evaluation_category: metadata.evaluation_category,
+      previous_view_duration_seconds: metadata.previous_view_duration_seconds,
+      timestamp: metadata.timestamp || new Date().toISOString()
+    }
+  });
+
+  // Also track in a dedicated table if it exists, or create a summary record
+  // This allows easy querying of feedback style preferences
+  try {
+    await supabase.from('user_inputs').insert({
+      session_id: sessionId,
+      user_id: userId,
+      input_type: 'feedback_style_choice',
+      field_name: 'feedback_style',
+      input_value: metadata.style,
+      phase: phase,
+      component: component || 'feedback',
+      metadata: {
+        view_type: metadata.view_type,
+        evaluation_score: metadata.evaluation_score,
+        view_duration_seconds: metadata.previous_view_duration_seconds,
+        timestamp: metadata.timestamp
+      },
+      timestamp: metadata.timestamp || new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error logging feedback style view to user_inputs:', error);
+  }
+}
+
 async function handlePhaseCompleted(sessionId: string, userId: string, phase: string) {
     const { data: phaseData } = await supabase
       .from('user_engagement_sessions')
