@@ -113,10 +113,21 @@ export default function SummaryPage() {
   })
   const [userName, setUserName] = useState("")
   const [summaryData, setSummaryData] = useState({
-    total_time_seconds: 0,
-    phases_completed: 0,
-    score_improvement: 0,
+    totalTimeSeconds: 0,
+    totalTimeMinutes: 0,
+    totalTimeHours: 0,
+    phasesCompleted: 0,
+    averageScore: null as number | null,
+    scoreImprovement: null as number | null,
+    firstScore: null as number | null,
+    lastScore: null as number | null,
+    totalAssessments: 0,
+    totalRevisions: 0,
   })
+  const [phaseStats, setPhaseStats] = useState<any[]>([])
+  const [assessments, setAssessments] = useState<any[]>([])
+  const [quizScores, setQuizScores] = useState<any[]>([])
+  const [videoStats, setVideoStats] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [feedback, setFeedback] = useState("")
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
@@ -134,17 +145,17 @@ export default function SummaryPage() {
     boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
   }
 
-  // Load saved data from localStorage on component mount
+  // Load saved data from localStorage and fetch user data from API
   useEffect(() => {
-    const loadSavedData = () => {
+    const loadData = async () => {
       try {
-        // Load strategic plan
+        // Load strategic plan from localStorage
         const savedPlan = localStorage.getItem("solbot_strategic_plan")
         if (savedPlan) {
           setLearningPlan(JSON.parse(savedPlan))
         }
 
-        // Load monitoring system
+        // Load monitoring system from localStorage
         const savedMonitoring = localStorage.getItem("solbot_monitoring_system")
         if (savedMonitoring) {
           setMonitoringSystem(JSON.parse(savedMonitoring))
@@ -156,7 +167,47 @@ export default function SummaryPage() {
         }
 
         const storedSessionId = localStorage.getItem("session_id")
-        if (storedSessionId) setSessionId(storedSessionId)
+        if (storedSessionId) {
+          setSessionId(storedSessionId)
+          
+          // Fetch personalized summary data from API
+          try {
+            const response = await fetch(`/api/summary?session_id=${storedSessionId}`)
+            if (response.ok) {
+              const data = await response.json()
+              
+              // Update user name if available
+              if (data.user?.name) {
+                setUserName(data.user.name)
+              }
+              
+              // Update summary data
+              if (data.summary) {
+                setSummaryData({
+                  totalTimeSeconds: data.summary.totalTimeSeconds || 0,
+                  totalTimeMinutes: data.summary.totalTimeMinutes || 0,
+                  totalTimeHours: data.summary.totalTimeHours || 0,
+                  phasesCompleted: data.summary.phasesCompleted || 0,
+                  averageScore: data.summary.averageScore,
+                  scoreImprovement: data.summary.scoreImprovement,
+                  firstScore: data.summary.firstScore,
+                  lastScore: data.summary.lastScore,
+                  totalAssessments: data.summary.totalAssessments || 0,
+                  totalRevisions: data.summary.totalRevisions || 0,
+                })
+              }
+              
+              // Update phase stats and other data
+              if (data.phaseStats) setPhaseStats(data.phaseStats)
+              if (data.assessments) setAssessments(data.assessments)
+              if (data.quizScores) setQuizScores(data.quizScores)
+              if (data.videoStats) setVideoStats(data.videoStats)
+            }
+          } catch (error) {
+            console.error("Error fetching summary data:", error)
+            // Continue with localStorage data if API fails
+          }
+        }
 
         setLoading(false)
       } catch (error) {
@@ -165,7 +216,7 @@ export default function SummaryPage() {
       }
     }
 
-    loadSavedData()
+    loadData()
   }, [])
 
   // Fix the handleTabChange function with proper type
@@ -374,6 +425,78 @@ export default function SummaryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
+              {/* Personalized Summary Section */}
+              {summaryData.phasesCompleted > 0 && (
+                <div className="mb-8 p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
+                  <h4 className="text-xl font-bold mb-4" style={{ color: accent }}>
+                    Your Learning Journey
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-sm" style={{ color: mutedText }}>Phases Completed</p>
+                      <p className="text-2xl font-bold" style={{ color: foreground }}>
+                        {summaryData.phasesCompleted}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm" style={{ color: mutedText }}>Total Time</p>
+                      <p className="text-2xl font-bold" style={{ color: foreground }}>
+                        {summaryData.totalTimeHours > 0 
+                          ? `${summaryData.totalTimeHours}h`
+                          : `${summaryData.totalTimeMinutes}m`
+                        }
+                      </p>
+                    </div>
+                    {summaryData.averageScore !== null && (
+                      <div>
+                        <p className="text-sm" style={{ color: mutedText }}>Average Score</p>
+                        <p className="text-2xl font-bold" style={{ color: foreground }}>
+                          {Math.round(summaryData.averageScore)}%
+                        </p>
+                      </div>
+                    )}
+                    {summaryData.scoreImprovement !== null && summaryData.scoreImprovement > 0 && (
+                      <div>
+                        <p className="text-sm" style={{ color: mutedText }}>Score Improvement</p>
+                        <p className="text-2xl font-bold" style={{ color: accent }}>
+                          +{Math.round(summaryData.scoreImprovement)}%
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Phase-by-phase breakdown */}
+                  {phaseStats.length > 0 && (
+                    <div className="mt-6">
+                      <h5 className="font-semibold mb-3" style={{ color: foreground }}>Phase Performance</h5>
+                      <div className="space-y-2">
+                        {phaseStats.map((phase, idx) => (
+                          <div 
+                            key={idx} 
+                            className="p-3 rounded border flex justify-between items-center"
+                            style={{ backgroundColor: "hsl(var(--card))", borderColor: neutralBorder }}
+                          >
+                            <div>
+                              <p className="font-medium" style={{ color: foreground }}>
+                                {phase.phase.replace('phase', 'Phase ')}
+                              </p>
+                              <p className="text-sm" style={{ color: mutedText }}>
+                                {Math.round(phase.timeSpent / 60)} min
+                                {phase.score !== null && ` • Score: ${Math.round(phase.score)}%`}
+                                {phase.quizScore !== null && ` • Quiz: ${Math.round(phase.quizScore)}%`}
+                              </p>
+                            </div>
+                            {phase.completed && (
+                              <CheckCircle className="h-5 w-5" style={{ color: accent }} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <SrlSummary />
               <SrlFeedback />
             </CardContent>

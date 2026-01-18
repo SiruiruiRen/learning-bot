@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, Star } from "lucide-react"
@@ -15,12 +15,12 @@ export function SrlFeedback() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
 
-  useState(() => {
+  useEffect(() => {
     const storedSessionId = localStorage.getItem("session_id");
     if (storedSessionId) {
       setSessionId(storedSessionId);
     }
-  });
+  }, []);
 
   const handleRating = (question: keyof typeof ratings, value: number) => {
     setRatings(prev => ({ ...prev, [question]: value }));
@@ -50,64 +50,116 @@ export function SrlFeedback() {
     }
   };
 
+  const accent = "hsl(var(--primary))";
+  const borderColor = "hsl(var(--border))";
+  const foreground = "hsl(var(--foreground))";
+  const mutedForeground = "hsl(var(--muted-foreground))";
+  const cardBg = "hsl(var(--card))";
+  const mutedBg = "hsl(var(--muted))";
+
   return (
-    <div className="bg-slate-800/70 p-6 rounded-lg border border-indigo-500/30 mt-8">
-      <h3 className="text-lg font-semibold text-indigo-300 mb-4 flex items-center gap-2">
+    <div 
+      className="p-6 rounded-lg border mt-8"
+      style={{
+        backgroundColor: mutedBg,
+        borderColor: borderColor
+      }}
+    >
+      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: accent }}>
         <Star className="h-5 w-5" />
         Final Feedback
       </h3>
       
       {feedbackSubmitted ? (
-        <div className="text-center text-emerald-400 font-medium py-4">
+        <div className="text-center font-medium py-4" style={{ color: accent }}>
           Thank you for your feedback!
         </div>
       ) : (
         <div className="space-y-6">
           <div className="space-y-2">
-            <p className="text-white/80">How useful were the learning strategies presented?</p>
+            <p style={{ color: foreground }}>How useful were the learning strategies presented?</p>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map(value => (
-                <button key={value} onClick={() => handleRating('usefulness', value)} className={`p-2 rounded ${ratings.usefulness >= value ? 'bg-amber-500' : 'bg-slate-700'} hover:bg-amber-400`}>
-                  <Star className="h-5 w-5 text-white" />
+                <button 
+                  key={value} 
+                  onClick={() => handleRating('usefulness', value)} 
+                  className="p-2 rounded transition-colors"
+                  style={{
+                    backgroundColor: ratings.usefulness >= value ? accent : mutedBg,
+                    border: `1px solid ${borderColor}`,
+                    color: ratings.usefulness >= value ? "hsl(var(--primary-foreground))" : mutedForeground
+                  }}
+                >
+                  <Star className="h-5 w-5" />
                 </button>
               ))}
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-white/80">How satisfied are you with your overall experience?</p>
+            <p style={{ color: foreground }}>How satisfied are you with your overall experience?</p>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map(value => (
-                <button key={value} onClick={() => handleRating('satisfaction', value)} className={`p-2 rounded ${ratings.satisfaction >= value ? 'bg-amber-500' : 'bg-slate-700'} hover:bg-amber-400`}>
-                  <Star className="h-5 w-5 text-white" />
+                <button 
+                  key={value} 
+                  onClick={() => handleRating('satisfaction', value)} 
+                  className="p-2 rounded transition-colors"
+                  style={{
+                    backgroundColor: ratings.satisfaction >= value ? accent : mutedBg,
+                    border: `1px solid ${borderColor}`,
+                    color: ratings.satisfaction >= value ? "hsl(var(--primary-foreground))" : mutedForeground
+                  }}
+                >
+                  <Star className="h-5 w-5" />
                 </button>
               ))}
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-white/80">How likely are you to recommend this training to others?</p>
+            <p style={{ color: foreground }}>How likely are you to recommend this training to others?</p>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map(value => (
-                <button key={value} onClick={() => handleRating('recommendation', value)} className={`p-2 rounded ${ratings.recommendation >= value ? 'bg-amber-500' : 'bg-slate-700'} hover:bg-amber-400`}>
-                  <Star className="h-5 w-5 text-white" />
+                <button 
+                  key={value} 
+                  onClick={() => handleRating('recommendation', value)} 
+                  className="p-2 rounded transition-colors"
+                  style={{
+                    backgroundColor: ratings.recommendation >= value ? accent : mutedBg,
+                    border: `1px solid ${borderColor}`,
+                    color: ratings.recommendation >= value ? "hsl(var(--primary-foreground))" : mutedForeground
+                  }}
+                >
+                  <Star className="h-5 w-5" />
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <p className="text-white/80 mb-2">Additional comments or feedback (optional):</p>
+            <p className="mb-2" style={{ color: foreground }}>Additional comments or feedback (optional):</p>
             <div className="flex items-center gap-2">
               <Textarea
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder="Type your feedback here..."
-                className="bg-slate-800 border-indigo-500/30 focus:border-indigo-400 text-white flex-grow"
+                className="flex-grow"
+                style={{
+                  backgroundColor: cardBg,
+                  borderColor: borderColor,
+                  color: foreground
+                }}
                 rows={3}
               />
             </div>
           </div>
           <div className="text-right">
-            <Button onClick={handleFeedbackSubmit} disabled={Object.values(ratings).some(r => r === 0)}>
+            <Button 
+              onClick={handleFeedbackSubmit} 
+              disabled={Object.values(ratings).some(r => r === 0)}
+              style={Object.values(ratings).some(r => r === 0) ? {} : {
+                background: `linear-gradient(135deg, ${accent}, #e6c98c)`,
+                color: "hsl(var(--primary-foreground))"
+              }}
+            >
               <Send className="h-4 w-4 mr-2" />
               Submit Feedback
             </Button>
