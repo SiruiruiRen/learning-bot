@@ -703,15 +703,7 @@ export default function Phase3Content() {
                 </div>
               )}
               
-              {/* Knowledge Check Card */}
-              {currentCardIndex === 4 && (
-                <div>
-                  <div className="text-muted-foreground mb-4">
-                    <p>Let's test your understanding of these evidence-based learning strategies.</p>
-                  </div>
-                  <KnowledgeCheckQuiz onComplete={onKnowledgeCheckComplete} knowledgeChecks={knowledgeChecks} sessionId={sessionId} />
-                </div>
-              )}
+              {/* This card index is now used for post-test (index 5) */}
               
               {/* Navigation buttons at the bottom of each card */}
               <div className="flex justify-between mt-8">
@@ -734,7 +726,11 @@ export default function Phase3Content() {
                     color: "#1f1408",
                   }}
                   onClick={nextCard}
-                  disabled={(currentCardIndex === 4 && !quizCompleted)}
+                  disabled={
+                    (currentCardIndex === 3 && !preTestCompleted) ||
+                    (currentCardIndex === 4 && !videoCompleted && !videoSkipped) ||
+                    (currentCardIndex === 5 && !postTestCompleted)
+                  }
                 >
                   {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
