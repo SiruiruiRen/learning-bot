@@ -56,6 +56,7 @@ const MarkdownRenderer = ({ content, className = '' }: MarkdownRendererProps) =>
         lineHeight: '1.6',
         wordBreak: 'break-word',
         overflowWrap: 'anywhere',
+        color: 'hsl(var(--foreground))',
       }}
     />
   )
