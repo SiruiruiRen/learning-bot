@@ -7,6 +7,8 @@ import HomeButton from "@/components/home-button"
 import { usePathname } from "next/navigation"
 import { UserDataTracker } from "@/components/UserDataTracker"
 import { ThemeToggle } from "@/components/theme-toggle"
+import FloatingChatbot from "@/components/floating-chatbot"
+import ClickTracker from "@/components/click-tracker"
 
 export default function ClientLayout({
   children,
@@ -24,8 +26,26 @@ export default function ClientLayout({
       <HomeButtonWrapper />
       <UserDataTracker />
       <ThemeToggle />
+      <FloatingChatbotWrapper />
+      <ClickTracker />
     </ThemeProvider>
   )
+}
+
+// Client component to conditionally render the floating chatbot
+function FloatingChatbotWrapper() {
+  const pathname = usePathname()
+  
+  // Detect current phase from pathname
+  const phaseMatch = pathname.match(/\/phase(\d+)/)
+  const currentPhase = phaseMatch ? `phase${phaseMatch[1]}` : "default"
+  
+  // Don't show on landing/intro pages
+  if (pathname === "/landing" || pathname === "/" || pathname === "/intro") {
+    return null
+  }
+  
+  return <FloatingChatbot currentPhase={currentPhase} />
 }
 
 // Client component to conditionally render the home button

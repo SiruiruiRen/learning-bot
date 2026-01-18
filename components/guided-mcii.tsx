@@ -198,6 +198,27 @@ export default function GuidedMCII({
     // Save the request for potential retry
     setLastFailedRequest(message);
 
+    // Log user message
+    try {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: 'chat_message',
+          phase: phase,
+          component: component,
+          metadata: {
+            role: 'user',
+            content: message,
+            timestamp: new Date().toISOString()
+          }
+        })
+      })
+    } catch (error) {
+      console.error("Failed to log user message:", error)
+    }
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -209,15 +230,41 @@ export default function GuidedMCII({
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || "Server error");
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.details || "Server error")
       }
       
       const data = await response.json();
-      const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message, type: "evaluation" };
+      
+      if (!data || !data.data) {
+        throw new Error("Invalid response format from server")
+      }
+
+      const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation" };
       setMessages(prev => [...prev, botFeedback]);
       setFeedbackReceived(true);
       setLastFailedRequest(null); // Clear on success
+
+      // Log AI response
+      try {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'chat_message',
+            phase: phase,
+            component: component,
+            metadata: {
+              role: 'assistant',
+              content: botFeedback.content,
+              timestamp: new Date().toISOString()
+            }
+          })
+        })
+      } catch (error) {
+        console.error("Failed to log AI response:", error)
+      }
     } catch (error: any) {
       console.error("Chat API error:", error);
       

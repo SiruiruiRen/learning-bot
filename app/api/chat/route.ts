@@ -224,6 +224,19 @@ export async function POST(request: NextRequest) {
       const data = await backendResponse.json()
       console.log("Backend response:", data)
 
+      // Ensure proper response structure
+      if (!data || !data.data) {
+        console.error("Invalid backend response structure:", data)
+        return NextResponse.json(
+          { 
+            error: "Invalid response from backend", 
+            details: "Backend returned unexpected format",
+            status: "error" 
+          },
+          { status: 500 }
+        )
+      }
+
       // Return the response to the client
       return NextResponse.json(data)
     } catch (fetchError: any) {

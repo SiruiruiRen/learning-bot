@@ -133,6 +133,27 @@ export default function SolBotChat({
     setInput("")
     setIsLoading(true)
 
+    // Log user message to analytics
+    try {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: 'chat_message',
+          phase: phase,
+          component: component,
+          metadata: {
+            role: 'user',
+            content: input,
+            timestamp: new Date().toISOString()
+          }
+        })
+      })
+    } catch (error) {
+      console.error("Failed to log user message:", error)
+    }
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -152,15 +173,42 @@ export default function SolBotChat({
       }
 
       const result = await response.json()
+      
+      // Handle error responses
+      if (result.error || !result.data) {
+        throw new Error(result.error || result.details || "Invalid response from server")
+      }
+
       const assistantMessage = {
         role: "assistant",
-        content: result.data.message,
+        content: result.data.message || result.data.content || "I received your message but couldn't process it properly.",
         evaluation: result.data.evaluation,
       }
       
       setMessages(prev => [...prev, assistantMessage])
       if (onNewMessage) {
         onNewMessage(assistantMessage)
+      }
+
+      // Log chat message to analytics
+      try {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'chat_message',
+            phase: phase,
+            component: component,
+            metadata: {
+              role: 'assistant',
+              content: assistantMessage.content,
+              timestamp: new Date().toISOString()
+            }
+          })
+        })
+      } catch (error) {
+        console.error("Failed to log chat message:", error)
       }
 
         } catch (error) {

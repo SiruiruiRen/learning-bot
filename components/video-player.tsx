@@ -171,9 +171,11 @@ export default function VideoPlayer({
     logAnalyticsEvent('video_pause', {
       pause_count: newPauseCount,
       current_time: video.currentTime,
-      total_watched_seconds: totalWatchedTime.current
+      total_watched_seconds: totalWatchedTime.current,
+      video_title: videoTitle,
+      timestamp: new Date().toISOString()
     });
-  }, [pauseCount, logAnalyticsEvent]);
+  }, [pauseCount, logAnalyticsEvent, videoTitle]);
 
   const handleSeeked = useCallback(() => {
     const video = videoRef.current;
@@ -189,11 +191,13 @@ export default function VideoPlayer({
       seek_count: newSeekCount,
       from_time: lastTimeRef.current,
       to_time: video.currentTime,
-      is_rewind: isRewind
+      is_rewind: isRewind,
+      video_title: videoTitle,
+      timestamp: new Date().toISOString()
     });
 
     lastTimeRef.current = video.currentTime;
-  }, [seekCount, logAnalyticsEvent]);
+  }, [seekCount, logAnalyticsEvent, videoTitle]);
 
   const handleTimeUpdate = useCallback(() => {
     const video = videoRef.current;

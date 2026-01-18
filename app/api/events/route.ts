@@ -33,12 +33,30 @@ export async function POST(request: NextRequest) {
       case 'video_watch_completed':
         await handleVideoEvent(session_id, userId, phase, metadata);
         break;
+      case 'video_pause':
+      case 'video_play':
+      case 'video_rewind':
+      case 'video_fast_forward':
+      case 'video_loaded':
+      case 'video_progress_milestone':
+        await handleVideoInteraction(session_id, userId, phase, event_type, metadata);
+        break;
       case 'chat_started':
         const chatData = await handleChatStarted(session_id, userId, phase, component);
         responseData = chatData;
         break;
       case 'chat_ended':
         await handleChatEnded(metadata.chat_analytics_id, metadata);
+        break;
+      case 'floating_chat_question':
+      case 'floating_chat_response':
+        await handleFloatingChatEvent(session_id, userId, phase, event_type, metadata);
+        break;
+      case 'chat_message':
+        await handleChatMessage(session_id, userId, phase, component, metadata);
+        break;
+      case 'user_click':
+        await handleUserClick(session_id, userId, phase, metadata);
         break;
       case 'revision_submitted':
         await handleRevisionEvent(session_id, userId, phase, component, metadata);
@@ -92,6 +110,81 @@ async function handleRevisionEvent(sessionId: string, userId: string, phase: str
     session_id: sessionId, user_id: userId, phase, component,
     revision_number: metadata.attempt_number,
     content_changes: metadata.content_changes,
+  });
+}
+
+async function handleVideoInteraction(sessionId: string, userId: string, phase: string, eventType: string, metadata: any) {
+  // Update video analytics with interaction details
+  const { video_title, current_time, total_watched_seconds, pause_count, seek_count, is_rewind } = metadata;
+  
+  if (video_title) {
+    // Upsert video analytics with latest interaction
+    await supabase.from('user_video_analytics').upsert({
+      session_id: sessionId,
+      user_id: userId,
+      phase,
+      video_name: video_title,
+      watched_duration_seconds: Math.round(total_watched_seconds || 0),
+      pause_count: pause_count || 0,
+      rewind_count: is_rewind ? (seek_count || 0) : 0,
+      fast_forward_count: !is_rewind ? (seek_count || 0) : 0,
+      last_interaction_at: new Date().toISOString(),
+      watch_patterns: metadata.watch_patterns || []
+    }, { onConflict: 'session_id, video_name' });
+  }
+}
+
+async function handleFloatingChatEvent(sessionId: string, userId: string, phase: string, eventType: string, metadata: any) {
+  // Log floating chatbot interactions
+  await supabase.from('user_chat_analytics').insert({
+    session_id: sessionId,
+    user_id: userId,
+    phase,
+    component: 'floating_chatbot',
+    chat_start_time: eventType === 'floating_chat_question' ? new Date().toISOString() : null,
+    message_count: 1,
+    metadata: {
+      event_type: eventType,
+      content: eventType === 'floating_chat_question' ? metadata.question : metadata.response,
+      timestamp: metadata.timestamp
+    }
+  });
+}
+
+async function handleChatMessage(sessionId: string, userId: string, phase: string, component: string, metadata: any) {
+  // Log all chat messages (both user and AI) for complete conversation tracking
+  await supabase.from('content_interaction_logs').insert({
+    session_id: sessionId,
+    user_id: userId,
+    interaction_type: 'chat_message',
+    content_type: component || 'chat',
+    phase,
+    component: component || 'chat',
+    interaction_data: {
+      role: metadata.role, // 'user' or 'assistant'
+      content: metadata.content,
+      timestamp: metadata.timestamp
+    }
+  });
+}
+
+async function handleUserClick(sessionId: string, userId: string, phase: string, metadata: any) {
+  // Log all user clicks for detailed analytics
+  await supabase.from('content_interaction_logs').insert({
+    session_id: sessionId,
+    user_id: userId,
+    interaction_type: 'user_click',
+    content_type: 'page_interaction',
+    phase,
+    component: metadata.pathname,
+    interaction_data: {
+      target_element: metadata.target_element,
+      position: {
+        x: metadata.x_position,
+        y: metadata.y_position
+      },
+      timestamp: metadata.timestamp
+    }
   });
 }
 
