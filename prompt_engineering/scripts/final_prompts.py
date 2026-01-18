@@ -6,8 +6,33 @@ This file contains enhanced prompts for phases 2, 4, and 5 of the SoLBot learnin
 These prompts use both numeric scoring (1-5 scale) AND categorical classification for more precise assessment.
 """
 
+# Communication style templates
+WARM_STYLE_GUIDE = """
+# COMMUNICATION STYLE: Warm & Encouraging
+- Use supportive, empathetic language
+- Celebrate effort and progress, not just outcomes
+- Use phrases like "Great job!", "You're on the right track!", "I can see you're really thinking this through"
+- Include motivational elements and positive reinforcement
+- Acknowledge challenges while emphasizing growth potential
+- Use encouraging emojis (🌟, 💪, ✨, 🎯)
+"""
+
+DIRECT_STYLE_GUIDE = """
+# COMMUNICATION STYLE: Concise & Direct
+- Be clear, straightforward, and action-oriented
+- Focus on specific, actionable feedback
+- Use direct statements without excessive praise
+- Get to the point quickly
+- Emphasize what needs to be done, not feelings
+- Use minimal emojis, only when necessary for clarity
+"""
+
 # Common prompt components used across all phases
-COMMON_GUIDELINES = """
+def get_common_guidelines(style: str = "warm") -> str:
+    """Returns common guidelines with style-specific communication instructions."""
+    style_guide = WARM_STYLE_GUIDE if style == "warm" else DIRECT_STYLE_GUIDE
+    
+    return f"""
 # CATEGORIZATION GUIDELINES
 Assess each criterion with an integer score and category:
 - Score 0 = LOW (⚠️)
@@ -19,9 +44,11 @@ Assess each criterion with an integer score and category:
   • LOWEST criteria MEDIUM (no LOW) = 2-3 targeted suggestions + Template
   • ALL criteria HIGH = 2-3 reflection question
 
+{style_guide}
+
 # RESPONSE STRUCTURE
 ## Greeting
-Brief personalized greeting with 2-3 emojis.
+Brief personalized greeting with 2-3 emojis (adjust based on style).
 
 ## Assessment
 Looking at your learning plan (keep each bullet under 15 words, do NOT use code blocks):
@@ -49,8 +76,35 @@ Resource_Specificity: [LOW/MEDIUM/HIGH]
 -->
 """
 
-# Improved prompts for all phases
-IMPROVED_PROMPTS = {
+COMMON_GUIDELINES = get_common_guidelines("warm")  # Default for backward compatibility
+
+def get_prompt(prompt_name: str, style: str = "warm") -> str:
+    """
+    Get a prompt by name with specified communication style.
+    
+    Args:
+        prompt_name: Name of the prompt (e.g., "phase2_learning_objectives")
+        style: Communication style ("warm" or "direct")
+    
+    Returns:
+        The prompt string with appropriate style guidelines
+    """
+    # Map prompt names to their base content
+    base_prompts = get_base_prompts()
+    
+    if prompt_name not in base_prompts:
+        raise ValueError(f"Prompt '{prompt_name}' not found")
+    
+    # Get the base prompt and replace COMMON_GUIDELINES with style-specific version
+    base_prompt = base_prompts[prompt_name]
+    style_guidelines = get_common_guidelines(style)
+    
+    # Replace {COMMON_GUIDELINES} placeholder with style-specific version
+    return base_prompt.replace("{COMMON_GUIDELINES}", style_guidelines)
+
+def get_base_prompts() -> dict:
+    """Returns base prompts without style-specific guidelines."""
+    return {
     "phase2_learning_objectives": f"""
 # CRITICAL: Keep Assessment feedback brief (max 15 words per criterion). Guidance should be complete with full templates/examples.
 
@@ -231,21 +285,29 @@ REMEMBER: Keep Assessment feedback brief (15 words max per criterion). Provide c
 """
 }
 
-def get_prompt(phase_name):
+def get_prompt(phase_name: str, style: str = "warm") -> str:
     """
-    Returns the improved prompt for the specified phase.
+    Returns the improved prompt for the specified phase with the specified communication style.
     
     Args:
         phase_name (str): The name of the phase to get the prompt for.
+        style (str): Communication style - "warm" or "direct" (default: "warm")
         
     Returns:
-        str: The improved prompt for the specified phase.
+        str: The improved prompt for the specified phase with style-specific guidelines.
     """
-    if phase_name in IMPROVED_PROMPTS:
-        return IMPROVED_PROMPTS[phase_name]
-    else:
-        available_phases = list(IMPROVED_PROMPTS.keys())
+    base_prompts = get_base_prompts()
+    
+    if phase_name not in base_prompts:
+        available_phases = list(base_prompts.keys())
         raise ValueError(f"Phase '{phase_name}' not found. Available phases: {available_phases}")
+    
+    # Get the base prompt and replace {COMMON_GUIDELINES} with style-specific version
+    base_prompt = base_prompts[phase_name]
+    style_guidelines = get_common_guidelines(style)
+    
+    # Replace {COMMON_GUIDELINES} placeholder with style-specific version
+    return base_prompt.replace("{COMMON_GUIDELINES}", style_guidelines)
 
 # Example usage
 if __name__ == "__main__":

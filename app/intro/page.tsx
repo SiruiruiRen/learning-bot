@@ -415,10 +415,12 @@ export default function IntroPage() {
 
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-foreground">How should SoLBot communicate with you?</Label>
+                      <p className="text-xs" style={{ color: mutedText }}>
+                        You can view feedback in both styles after each assessment.
+                      </p>
                       <div className="flex gap-2">
                         {[
                           { value: "warm", label: "Warm & encouraging" },
-                          { value: "balanced", label: "Balanced" },
                           { value: "direct", label: "Concise & direct" },
                         ].map((option) => (
                           <button

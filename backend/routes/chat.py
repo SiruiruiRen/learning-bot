@@ -133,9 +133,26 @@ async def process_chat(request: ChatRequest):
             for msg in chat_history if msg["role"] in ["user", "assistant"]
         ] if chat_history else []
         
+        # Get user's communication style preference
+        session_details = db.get_session_by_id(request.session_id)
+        coach_tone = "warm"  # default
+        if session_details:
+            user_id = session_details.get("user_id")
+            if user_id:
+                user_data = db.get_user_by_id(user_id)
+                if user_data and user_data.get("profile_data"):
+                    import json
+                    profile_data = json.loads(user_data["profile_data"]) if isinstance(user_data["profile_data"], str) else user_data["profile_data"]
+                    coach_tone = profile_data.get("coach_tone", "warm")
+                    # Map "balanced" to "warm" for now, or keep as is
+                    if coach_tone == "balanced":
+                        coach_tone = "warm"
+                    elif coach_tone not in ["warm", "direct"]:
+                        coach_tone = "warm"
+        
         try:
             prompt_name = f"phase{request.phase}_{request.component}"
-            system_prompt = get_prompt(prompt_name)
+            system_prompt = get_prompt(prompt_name, style=coach_tone)
         except ValueError:
             system_prompt = "You are SoL2LBot, an AI tutor for self-regulated learning."
         

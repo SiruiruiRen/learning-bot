@@ -90,6 +90,16 @@ def get_session_by_id(session_id: str) -> Optional[Dict[str, Any]]:
         logger.error(f"Error retrieving session {session_id}: {e}")
         return None
 
+def get_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieves a user by their ID."""
+    db = get_db()
+    try:
+        response = db.table("users").select("*").eq("id", user_id).single().execute()
+        return response.data
+    except Exception as e:
+        logger.error(f"Error retrieving user {user_id}: {e}")
+        return None
+
 
 def log_message(session_id: str, role: str, content: str, phase: Optional[str] = None, component: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """

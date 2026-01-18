@@ -380,7 +380,15 @@ export default function GuidedLearningObjective({
                     </div>
                   </div>
                 ) : message.type === 'evaluation' ? (
-                  <FeedbackDisplay content={message.content as string} />
+                  <FeedbackDisplay 
+                    content={message.content as string}
+                    evaluation={message.evaluation}
+                    userMessage={messages.find(m => m.sender === "user" && m.type === "response")?.content as string}
+                    phase={phase}
+                    component={component}
+                    sessionId={localStorage.getItem("session_id") || undefined}
+                    currentStyle={localStorage.getItem("solbot_coach_tone") || "warm"}
+                  />
                 ) : (
                   <MarkdownRenderer content={message.content as string} />
                 )}
