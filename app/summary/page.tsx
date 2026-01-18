@@ -411,8 +411,8 @@ export default function SummaryPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto mt-16"
         >
+          <div className="max-w-4xl mx-auto mt-16">
           <Card
             className="border shadow-xl mb-6"
             style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
