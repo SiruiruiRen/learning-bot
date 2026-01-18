@@ -93,16 +93,75 @@ export async function GET(request: NextRequest) {
       completed: phase.completed_successfully
     })) || [];
 
-    // Get user's learning plan from messages (Phase 4 MCII)
-    const { data: mciiMessages } = await supabase
+    // Get all user chat messages from different phases
+    const { data: allUserMessages } = await supabase
       .from('messages')
-      .select('content, created_at')
+      .select('content, phase, component, created_at')
       .eq('session_id', sessionId || '')
-      .eq('phase', 'phase4')
-      .eq('component', 'mcii')
       .eq('role', 'user')
-      .order('created_at', { ascending: true })
-      .limit(10);
+      .order('created_at', { ascending: true });
+
+    // Extract key information from different phases
+    const taskAnalysisMessages = allUserMessages?.filter(m => 
+      m.phase === 'phase2' && (m.component === 'learning_objectives' || m.component === 'chatbot')
+    ) || [];
+    
+    const mciiMessages = allUserMessages?.filter(m => 
+      m.phase === 'phase4' && m.component === 'mcii'
+    ) || [];
+    
+    const monitoringMessages = allUserMessages?.filter(m => 
+      m.phase === 'phase5' && (m.component === 'monitoring' || m.component === 'monitoring_adaptation')
+    ) || [];
+
+    // Combine all user content for AI analysis
+    const allUserContent = [
+      ...taskAnalysisMessages.map(m => `[Phase 2 - Task Analysis] ${m.content}`),
+      ...mciiMessages.map(m => `[Phase 4 - MCII Plan] ${m.content}`),
+      ...monitoringMessages.map(m => `[Phase 5 - Monitoring] ${m.content}`)
+    ].join('\n\n');
+
+    // Call backend to generate personalized insights using Claude
+    let insights = null;
+    if (allUserContent && allUserContent.length > 0) {
+      try {
+        const backendUrl = process.env.BACKEND_URL || 'https://solbot-backend.onrender.com';
+        const insightsResponse = await fetch(`${backendUrl}/api/summary-insights`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_content: allUserContent,
+            user_name: userData?.name || 'Learner',
+            phases_completed: phasesCompleted
+          })
+        });
+        
+        if (insightsResponse.ok) {
+          insights = await insightsResponse.json();
+        }
+      } catch (error) {
+        console.error('Error generating insights:', error);
+        // Continue without insights if API fails
+      }
+    }
+
+    // Extract keywords and key information manually if AI fails
+    const extractedInfo = {
+      taskAnalysis: {
+        learningTask: taskAnalysisMessages.find(m => m.content.includes('learning') || m.content.includes('course'))?.content || '',
+        resources: taskAnalysisMessages.find(m => m.content.includes('resource') || m.content.includes('material'))?.content || '',
+        strategy: taskAnalysisMessages.find(m => m.content.includes('use') || m.content.includes('strategy'))?.content || ''
+      },
+      mciiPlan: {
+        goal: mciiMessages[0]?.content || '',
+        obstacles: mciiMessages.find(m => m.content.toLowerCase().includes('obstacle') || m.content.toLowerCase().includes('challenge'))?.content || '',
+        intention: mciiMessages.find(m => m.content.toLowerCase().includes('if') && m.content.toLowerCase().includes('then'))?.content || ''
+      },
+      monitoring: {
+        indicators: monitoringMessages.find(m => m.content.toLowerCase().includes('indicator') || m.content.toLowerCase().includes('track'))?.content || '',
+        checkIns: monitoringMessages.find(m => m.content.toLowerCase().includes('check') || m.content.toLowerCase().includes('schedule'))?.content || ''
+      }
+    };
 
     return NextResponse.json({
       user: {
@@ -110,47 +169,110 @@ export async function GET(request: NextRequest) {
         email: userData?.email,
         profileData: userData?.profile_data
       },
-      summary: {
-        totalTimeSeconds: totalTime,
-        totalTimeMinutes: Math.round(totalTime / 60),
-        totalTimeHours: Math.round(totalTime / 3600 * 10) / 10,
-        phasesCompleted,
-        averageScore,
-        scoreImprovement,
-        firstScore,
-        lastScore,
-        totalAssessments: assessments?.length || 0,
-        totalRevisions: phaseData?.reduce((sum, p) => sum + (p.revision_count || 0), 0) || 0
+      insights: insights || {
+        keywords: extractKeywords(allUserContent),
+        recommendations: generateRecommendations(extractedInfo, assessments || []),
+        strengths: identifyStrengths(extractedInfo, assessments || []),
+        nextSteps: generateNextSteps(extractedInfo, phasesCompleted)
       },
-      phaseStats,
-      assessments: assessments?.map(a => ({
-        phase: a.phase,
-        component: a.component,
-        score: a.overall_score,
-        attempt: a.attempt_number,
-        evaluation: a.evaluation,
-        timestamp: a.created_at
-      })) || [],
-      quizScores: quizScores?.map(q => ({
-        phase: q.phase,
-        accuracy: q.accuracy_percentage,
-        totalQuestions: q.total_questions,
-        correctAnswers: q.correct_answers
-      })) || [],
-      videoStats: videoData?.map(v => ({
-        phase: v.phase,
-        videoName: v.video_name,
-        completion: v.completion_percentage,
-        timeWatched: v.watched_duration_seconds
-      })) || [],
-      chatStats: chatData?.map(c => ({
-        phase: c.phase,
-        component: c.component,
-        messages: c.total_messages,
-        score: c.assessment_score
-      })) || [],
-      learningPlan: mciiMessages || []
+      extractedInfo,
+      summary: {
+        phasesCompleted,
+        totalAssessments: assessments?.length || 0,
+      }
     });
+  } catch (error) {
+    console.error('Error fetching summary data:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch summary data' },
+      { status: 500 }
+    );
+  }
+}
+
+// Helper functions to extract insights from user content
+function extractKeywords(content: string): string[] {
+  if (!content || content.length === 0) return [];
+  
+  // Simple keyword extraction (can be enhanced with NLP)
+  const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'my', 'your', 'his', 'her', 'its', 'our', 'their']);
+  
+  const words = content.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 4 && !commonWords.has(w));
+  
+  // Get unique words and return top 10
+  const wordCounts = new Map<string, number>();
+  words.forEach(word => {
+    wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+  });
+  
+  return Array.from(wordCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([word]) => word.charAt(0).toUpperCase() + word.slice(1));
+}
+
+function generateRecommendations(extractedInfo: any, assessments: any[]): string[] {
+  const recommendations: string[] = [];
+  
+  // Based on task analysis
+  if (extractedInfo.taskAnalysis.learningTask && extractedInfo.taskAnalysis.learningTask.length > 0) {
+    recommendations.push(`Focus on: ${extractedInfo.taskAnalysis.learningTask.substring(0, 100)}...`);
+  }
+  
+  // Based on MCII plan
+  if (extractedInfo.mciiPlan.goal && extractedInfo.mciiPlan.goal.length > 0) {
+    recommendations.push(`Your goal: ${extractedInfo.mciiPlan.goal.substring(0, 100)}...`);
+  }
+  
+  if (extractedInfo.mciiPlan.intention && extractedInfo.mciiPlan.intention.length > 0) {
+    recommendations.push(`Implementation intention: ${extractedInfo.mciiPlan.intention.substring(0, 100)}...`);
+  }
+  
+  // Based on assessment scores
+  const lowScores = assessments.filter(a => a.overall_score && a.overall_score < 3);
+  if (lowScores.length > 0) {
+    recommendations.push('Consider revising areas where you received lower scores to strengthen your understanding.');
+  }
+  
+  return recommendations;
+}
+
+function identifyStrengths(extractedInfo: any, assessments: any[]): string[] {
+  const strengths: string[] = [];
+  
+  // High scores indicate strengths
+  const highScores = assessments.filter(a => a.overall_score && a.overall_score >= 4);
+  if (highScores.length > 0) {
+    strengths.push(`Strong performance in ${highScores.length} assessment${highScores.length > 1 ? 's' : ''}`);
+  }
+  
+  // Well-defined plans
+  if (extractedInfo.mciiPlan.goal && extractedInfo.mciiPlan.goal.length > 50) {
+    strengths.push('Clear and specific goal setting');
+  }
+  
+  if (extractedInfo.mciiPlan.intention && extractedInfo.mciiPlan.intention.length > 50) {
+    strengths.push('Well-structured implementation intentions');
+  }
+  
+  return strengths;
+}
+
+function generateNextSteps(extractedInfo: any, phasesCompleted: number): string[] {
+  const nextSteps: string[] = [];
+  
+  if (phasesCompleted < 5) {
+    nextSteps.push('Complete remaining phases to build a comprehensive learning system');
+  } else {
+    nextSteps.push('Apply your learning system to your actual course work');
+    nextSteps.push('Review and refine your monitoring strategies based on real-world results');
+    nextSteps.push('Continue using evidence-based learning strategies in your studies');
+  }
+  
+  return nextSteps;
   } catch (error) {
     console.error('Error fetching summary data:', error);
     return NextResponse.json(

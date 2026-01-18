@@ -113,21 +113,16 @@ export default function SummaryPage() {
   })
   const [userName, setUserName] = useState("")
   const [summaryData, setSummaryData] = useState({
-    totalTimeSeconds: 0,
-    totalTimeMinutes: 0,
-    totalTimeHours: 0,
     phasesCompleted: 0,
-    averageScore: null as number | null,
-    scoreImprovement: null as number | null,
-    firstScore: null as number | null,
-    lastScore: null as number | null,
     totalAssessments: 0,
-    totalRevisions: 0,
   })
-  const [phaseStats, setPhaseStats] = useState<any[]>([])
-  const [assessments, setAssessments] = useState<any[]>([])
-  const [quizScores, setQuizScores] = useState<any[]>([])
-  const [videoStats, setVideoStats] = useState<any[]>([])
+  const [insights, setInsights] = useState<{
+    keywords?: string[];
+    learningStrategies?: string[];
+    goals?: string[];
+    strengths?: string[];
+    recommendations?: string[];
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   const [feedback, setFeedback] = useState("")
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
@@ -185,24 +180,15 @@ export default function SummaryPage() {
               // Update summary data
               if (data.summary) {
                 setSummaryData({
-                  totalTimeSeconds: data.summary.totalTimeSeconds || 0,
-                  totalTimeMinutes: data.summary.totalTimeMinutes || 0,
-                  totalTimeHours: data.summary.totalTimeHours || 0,
                   phasesCompleted: data.summary.phasesCompleted || 0,
-                  averageScore: data.summary.averageScore,
-                  scoreImprovement: data.summary.scoreImprovement,
-                  firstScore: data.summary.firstScore,
-                  lastScore: data.summary.lastScore,
                   totalAssessments: data.summary.totalAssessments || 0,
-                  totalRevisions: data.summary.totalRevisions || 0,
                 })
               }
               
-              // Update phase stats and other data
-              if (data.phaseStats) setPhaseStats(data.phaseStats)
-              if (data.assessments) setAssessments(data.assessments)
-              if (data.quizScores) setQuizScores(data.quizScores)
-              if (data.videoStats) setVideoStats(data.videoStats)
+              // Update insights
+              if (data.insights) {
+                setInsights(data.insights)
+              }
             }
           } catch (error) {
             console.error("Error fetching summary data:", error)
@@ -426,75 +412,111 @@ export default function SummaryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {/* Personalized Summary Section */}
-              {summaryData.phasesCompleted > 0 && (
-                <div className="mb-8 p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
-                  <h4 className="text-xl font-bold mb-4" style={{ color: accent }}>
-                    Your Learning Journey
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm" style={{ color: mutedText }}>Phases Completed</p>
-                      <p className="text-2xl font-bold" style={{ color: foreground }}>
-                        {summaryData.phasesCompleted}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm" style={{ color: mutedText }}>Total Time</p>
-                      <p className="text-2xl font-bold" style={{ color: foreground }}>
-                        {summaryData.totalTimeHours > 0 
-                          ? `${summaryData.totalTimeHours}h`
-                          : `${summaryData.totalTimeMinutes}m`
-                        }
-                      </p>
-                    </div>
-                    {summaryData.averageScore !== null && (
-                      <div>
-                        <p className="text-sm" style={{ color: mutedText }}>Average Score</p>
-                        <p className="text-2xl font-bold" style={{ color: foreground }}>
-                          {Math.round(summaryData.averageScore)}%
-                        </p>
-                      </div>
-                    )}
-                    {summaryData.scoreImprovement !== null && summaryData.scoreImprovement > 0 && (
-                      <div>
-                        <p className="text-sm" style={{ color: mutedText }}>Score Improvement</p>
-                        <p className="text-2xl font-bold" style={{ color: accent }}>
-                          +{Math.round(summaryData.scoreImprovement)}%
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Phase-by-phase breakdown */}
-                  {phaseStats.length > 0 && (
-                    <div className="mt-6">
-                      <h5 className="font-semibold mb-3" style={{ color: foreground }}>Phase Performance</h5>
-                      <div className="space-y-2">
-                        {phaseStats.map((phase, idx) => (
-                          <div 
-                            key={idx} 
-                            className="p-3 rounded border flex justify-between items-center"
-                            style={{ backgroundColor: "hsl(var(--card))", borderColor: neutralBorder }}
+              {/* Personalized Insights Section */}
+              {insights && (
+                <div className="mb-8 space-y-6">
+                  {/* Key Learning Topics */}
+                  {insights.keywords && insights.keywords.length > 0 && (
+                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
+                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
+                        <Target className="h-5 w-5" />
+                        Key Learning Topics
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {insights.keywords.map((keyword, idx) => (
+                          <Badge 
+                            key={idx}
+                            className="px-3 py-1"
+                            style={{ 
+                              backgroundColor: "hsl(var(--primary) / 0.15)",
+                              color: foreground,
+                              borderColor: neutralBorder
+                            }}
                           >
-                            <div>
-                              <p className="font-medium" style={{ color: foreground }}>
-                                {phase.phase.replace('phase', 'Phase ')}
-                              </p>
-                              <p className="text-sm" style={{ color: mutedText }}>
-                                {Math.round(phase.timeSpent / 60)} min
-                                {phase.score !== null && ` • Score: ${Math.round(phase.score)}%`}
-                                {phase.quizScore !== null && ` • Quiz: ${Math.round(phase.quizScore)}%`}
-                              </p>
-                            </div>
-                            {phase.completed && (
-                              <CheckCircle className="h-5 w-5" style={{ color: accent }} />
-                            )}
-                          </div>
+                            {keyword}
+                          </Badge>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {/* Learning Strategies */}
+                  {insights.learningStrategies && insights.learningStrategies.length > 0 && (
+                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
+                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
+                        <Lightbulb className="h-5 w-5" />
+                        Your Learning Strategies
+                      </h4>
+                      <ul className="space-y-2">
+                        {insights.learningStrategies.map((strategy, idx) => (
+                          <li key={idx} className="flex items-start gap-2" style={{ color: foreground }}>
+                            <span style={{ color: accent }}>•</span>
+                            <span>{strategy}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Goals */}
+                  {insights.goals && insights.goals.length > 0 && (
+                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
+                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
+                        <Target className="h-5 w-5" />
+                        Your Learning Goals
+                      </h4>
+                      <ul className="space-y-2">
+                        {insights.goals.map((goal, idx) => (
+                          <li key={idx} className="flex items-start gap-2" style={{ color: foreground }}>
+                            <span style={{ color: accent }}>•</span>
+                            <span>{goal}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Strengths */}
+                  {insights.strengths && insights.strengths.length > 0 && (
+                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
+                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
+                        <Medal className="h-5 w-5" />
+                        Your Strengths
+                      </h4>
+                      <ul className="space-y-2">
+                        {insights.strengths.map((strength, idx) => (
+                          <li key={idx} className="flex items-start gap-2" style={{ color: foreground }}>
+                            <span style={{ color: accent }}>✓</span>
+                            <span>{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Recommendations */}
+                  {insights.recommendations && insights.recommendations.length > 0 && (
+                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
+                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
+                        <Zap className="h-5 w-5" />
+                        Personalized Recommendations
+                      </h4>
+                      <ul className="space-y-3">
+                        {insights.recommendations.map((rec, idx) => (
+                          <li key={idx} className="flex items-start gap-3 p-3 rounded" style={{ backgroundColor: "hsl(var(--card))" }}>
+                            <span className="font-bold" style={{ color: accent }}>{idx + 1}.</span>
+                            <span style={{ color: foreground }}>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!insights && summaryData.phasesCompleted > 0 && (
+                <div className="mb-8 p-6 rounded-lg border text-center" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
+                  <p style={{ color: mutedText }}>Loading your personalized insights...</p>
                 </div>
               )}
               

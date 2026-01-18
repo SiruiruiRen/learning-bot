@@ -34,6 +34,7 @@ try:
         from backend.utils.keep_warm import start_warmup_thread
         # If this succeeds, we're likely running from project root
         from backend.routes.chat import router as main_api_router
+        from backend.routes.summary import router as summary_router
         from backend.utils import db
         logger.info("Successfully imported modules from backend package")
     except ImportError as e:
@@ -41,6 +42,7 @@ try:
         # If that fails, try direct import (running from backend dir)
         from utils.keep_warm import start_warmup_thread
         from routes.chat import router as main_api_router
+        from routes.summary import router as summary_router
         from utils import db
         logger.info("Successfully imported modules directly")
 except Exception as e:
@@ -106,6 +108,7 @@ app.add_middleware(
 
 # Include the main API router
 app.include_router(main_api_router)
+app.include_router(summary_router)
 
 @app.get("/")
 async def root():
