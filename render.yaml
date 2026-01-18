@@ -16,10 +16,7 @@ services:
       - key: ENABLE_WARMUP
         value: false  # Pro 订阅不需要 warmup（不会休眠）
       - key: SERVICE_URL
-        fromService:
-          type: web
-          name: solbot-backend
-          property: url
+        value: https://solbot-backend.onrender.com  # Render 会自动生成此 URL
       - key: PING_INTERVAL
         value: 600
 
@@ -34,10 +31,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: BACKEND_URL
-        fromService:
-          type: web
-          name: solbot-backend
-          property: url
+        value: https://solbot-backend.onrender.com  # Render 会自动生成此 URL
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false  # 需要在 Render Dashboard 手动设置
       - key: SUPABASE_SERVICE_KEY
