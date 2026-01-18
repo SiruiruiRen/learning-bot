@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
       case 'phase_completed':
         await handlePhaseCompleted(session_id, userId, phase);
         break;
+      case 'feedback_style_view':
+        await handleFeedbackStyleView(session_id, userId, phase, component, metadata);
+        break;
     }
 
     return NextResponse.json(responseData);

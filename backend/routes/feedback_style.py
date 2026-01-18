@@ -37,11 +37,24 @@ async def get_alternative_feedback(request: AlternativeFeedbackRequest):
             system_prompt = get_prompt(prompt_name, style=request.alternative_style)
             
             # Add instruction to use the same evaluation results
+            import json
+            evaluation_str = json.dumps(request.evaluation_metadata, indent=2) if isinstance(request.evaluation_metadata, dict) else str(request.evaluation_metadata)
+            
             system_prompt += f"""
 
-# CRITICAL INSTRUCTION
-You have already evaluated this student's submission. The evaluation results are:
-{request.evaluation_metadata}
+# CRITICAL INSTRUCTION - EVALUATION CONSISTENCY
+You have already evaluated this student's submission. The evaluation results MUST remain EXACTLY the same:
+
+{evaluation_str}
+
+**MANDATORY REQUIREMENTS:**
+1. Use the EXACT same scores: Overall_Score: {request.evaluation_metadata.get('Overall_Score', request.evaluation_metadata.get('overall_score', 'N/A'))}
+2. Use the EXACT same categories: Lowest_Category: {request.evaluation_metadata.get('Lowest_Category', request.evaluation_metadata.get('lowest_category', 'N/A'))}
+3. Use the EXACT same criterion ratings (LOW/MEDIUM/HIGH) for each criterion
+4. Keep the same scaffolding level
+5. ONLY change the TONE, WORDING, and COMMUNICATION STYLE to match {request.alternative_style}
+6. The assessment scores and categories in your response MUST match the metadata above exactly
+7. Include the same metadata block at the end with identical scores
 
 Your task is to present the SAME evaluation results but in a {request.alternative_style} communication style.
 - Keep the same scores and categories
@@ -65,14 +78,46 @@ Your task is to present the SAME evaluation results but in a {request.alternativ
         
         # Extract evaluation metadata (should be the same)
         from ..routes.chat import _extract_evaluation_metadata, _clean_message_for_student
-        evaluation_metadata = _extract_evaluation_metadata(response_content)
+        extracted_metadata = _extract_evaluation_metadata(response_content)
         cleaned_content = _clean_message_for_student(response_content)
+        
+        # CRITICAL: Always use the original evaluation_metadata to ensure consistency
+        # Only use extracted if it matches the original scores
+        final_evaluation = request.evaluation_metadata
+        if extracted_metadata:
+            original_score = request.evaluation_metadata.get('Overall_Score') or request.evaluation_metadata.get('overall_score')
+            extracted_score = extracted_metadata.get('Overall_Score') or extracted_metadata.get('overall_score')
+            # Only use extracted if scores match (within tolerance)
+            if original_score and extracted_score and abs(float(original_score) - float(extracted_score)) < 0.1:
+                # Merge extracted metadata but preserve original scores
+                final_evaluation = {**request.evaluation_metadata, **extracted_metadata}
+                final_evaluation['Overall_Score'] = original_score
+                final_evaluation['overall_score'] = original_score
+        
+        # Log the alternative feedback generation for analytics
+        try:
+            session_details = db.get_session_by_id(request.session_id)
+            if session_details:
+                db.log_message(
+                    session_id=request.session_id,
+                    role="assistant",
+                    content=cleaned_content,
+                    phase=request.phase,
+                    component=request.component,
+                    metadata={
+                        "feedback_style": request.alternative_style,
+                        "original_evaluation": request.evaluation_metadata,
+                        "is_alternative_feedback": True
+                    }
+                )
+        except Exception as log_error:
+            logger.warning(f"Failed to log alternative feedback: {log_error}")
         
         return {
             "success": True,
             "data": {
                 "message": cleaned_content,
-                "evaluation": evaluation_metadata or request.evaluation_metadata,  # Use original if extraction fails
+                "evaluation": final_evaluation,  # Always use original evaluation to ensure consistency
                 "style": request.alternative_style
             }
         }
