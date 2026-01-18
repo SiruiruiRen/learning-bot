@@ -141,7 +141,7 @@ async function handleVideoInteraction(sessionId: string, userId: string, phase: 
     phase: phase,
     video_name: video_title || 'Unknown',
     event_type: eventType.replace('video_', ''), // Remove 'video_' prefix
-    current_time: current_time || 0,
+    playback_position: current_time || 0, // Use playback_position instead of current_time (PostgreSQL reserved keyword)
     total_watched_seconds: total_watched_seconds || 0,
     event_timestamp: metadata.timestamp || new Date().toISOString(),
     metadata: metadata

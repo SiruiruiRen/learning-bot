@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS video_interaction_events (
   phase TEXT NOT NULL,
   video_name TEXT NOT NULL,
   event_type TEXT NOT NULL CHECK (event_type IN ('play', 'pause', 'seek', 'rewind', 'fast_forward', 'progress_milestone', 'loaded', 'ended', 'error')),
-  current_time REAL, -- Current playback position in seconds
+  playback_position REAL, -- Current playback position in seconds (renamed from current_time to avoid PostgreSQL reserved keyword)
   total_watched_seconds REAL, -- Cumulative watched time
   event_timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   metadata JSONB, -- Additional event details
@@ -401,6 +401,7 @@ SELECT
   uva.fast_forward_count,
   uva.seek_count,
   COUNT(vie.id) as total_interaction_events,
+  AVG(vie.playback_position) as avg_playback_position,
   uva.first_play_at,
   uva.last_interaction_at,
   uva.completed_at,

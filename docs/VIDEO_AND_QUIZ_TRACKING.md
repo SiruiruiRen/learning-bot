@@ -27,7 +27,7 @@
 #### `video_interaction_events` 表
 记录每个视频交互事件的详细信息：
 - `event_type` - 事件类型（play, pause, seek, rewind, fast_forward, progress_milestone, loaded, ended, error）
-- `current_time` - 当前播放位置
+- `playback_position` - 当前播放位置（秒）（注意：使用 playback_position 而不是 current_time，因为 current_time 是 PostgreSQL 保留关键字）
 - `total_watched_seconds` - 累计观看时长
 - `event_timestamp` - 事件时间戳
 - `metadata` - 额外事件详情（JSONB）
@@ -120,7 +120,7 @@ ORDER BY phase, first_play_at;
 -- 查看视频的所有交互事件
 SELECT 
   event_type,
-  current_time,
+  playback_position,
   total_watched_seconds,
   event_timestamp
 FROM video_interaction_events
