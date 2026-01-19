@@ -143,7 +143,7 @@ export default function Phase5ChatContent() {
                   {showPostTask && (
                     <PostTaskAssessment
                       questions={comprehensivePostTaskQuestions.filter(q => 
-                        ['q8_monitoring', 'q9_adaptation', 'q10_integration', 'q11_strategy_combination', 'q12_metacognition'].includes(q.id)
+                        ['q8_monitoring_integration', 'q9_adaptation_transfer', 'q10_integration', 'q11_strategy_combination', 'q12_metacognition'].includes(q.id)
                       )}
                       onComplete={handlePostTaskComplete}
                       showSampleAnswers={false}

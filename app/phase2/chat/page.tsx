@@ -114,7 +114,7 @@ export default function Phase2ChatPage() {
                   {showPostTask && (
                     <PostTaskAssessment
                       questions={comprehensivePostTaskQuestions.filter(q => 
-                        ['q1_task_analysis', 'q2_resources'].includes(q.id)
+                        ['q1_task_analysis_transfer', 'q2_synthesis_cognitive_strategies'].includes(q.id)
                       )}
                       onComplete={handlePostTaskComplete}
                       showSampleAnswers={false}

@@ -5,22 +5,24 @@
 import type { PostTaskQuestion } from "@/components/post-task-assessment"
 
 // Comprehensive post-task questions covering all phases
+// These questions test TRANSFER LEARNING - applying SRL skills to new contexts
+// They are RELATED to chatbot content but NOT REPETITIVE
 export const comprehensivePostTaskQuestions: PostTaskQuestion[] = [
-  // Phase 1 & 2: Task Analysis & SRL
+  // Phase 2: Task Analysis Transfer & Synthesis
   {
-    id: 'q1_task_analysis',
+    id: 'q1_task_analysis_transfer',
     category: 'application',
-    question: "Think about a specific learning objective from one of your current courses. Describe: (1) the topic it addresses, (2) the level of understanding you will need to achieve (knowledge, comprehension, application, or analysis), and (3) why this level matters for how you'll study.",
-    hint: "Consider the verb in the learning objective (e.g., 'recite' suggests knowledge level, 'analyze' suggests analysis level).",
-    placeholder: "Example: The learning objective 'Explain how photosynthesis works' addresses the topic of...",
+    question: "Imagine you're starting a NEW course next semester that you know nothing about yet. Describe how you would analyze the learning objectives for that course BEFORE you see the syllabus. What questions would you ask yourself? What information would you need to gather? How would you determine what level of understanding you'll need?",
+    hint: "Think about how you would apply task analysis skills to an unfamiliar situation. What steps would you take?",
+    placeholder: "For a new course, I would start by... I would ask myself...",
     required: true
   },
   {
-    id: 'q2_resources',
-    category: 'application',
-    question: "List 3-4 specific resources available to you for your target course (e.g., textbook chapters, lecture slides, practice problems, online tutorials). For each resource, explain briefly how you would use it to support your learning.",
-    hint: "Think about both digital resources (course website, videos) and offline resources (textbook, notes).",
-    placeholder: "Resource 1: [Name] - I would use this to...",
+    id: 'q2_synthesis_cognitive_strategies',
+    category: 'synthesis',
+    question: "You've learned about cognitive levels (knowledge, comprehension, application, analysis) and learning strategies (self-testing, self-explanation, spacing). Explain how knowing the cognitive level of a learning objective would help you choose which learning strategies to use. Give a specific example.",
+    hint: "Different cognitive levels might require different strategies. For example, knowledge-level objectives might benefit more from self-testing, while analysis-level objectives might need self-explanation.",
+    placeholder: "If a learning objective requires [cognitive level], I would use [strategy] because...",
     required: true
   },
   
@@ -50,39 +52,39 @@ export const comprehensivePostTaskQuestions: PostTaskQuestion[] = [
     required: true
   },
   
-  // Phase 4: Goal Setting & MCII
+  // Phase 4: MCII Transfer & Reflection
   {
-    id: 'q6_goal_setting',
-    category: 'synthesis',
-    question: "Based on what you've learned about goal setting, describe one specific, near-term learning goal for your target course. Explain why it meets the criteria for a good goal (specific, achievable, relevant, time-bound).",
-    hint: "A good goal should be something you can accomplish in the next few weeks, not the entire semester.",
-    placeholder: "My goal is to... This is a good goal because...",
+    id: 'q6_mcii_transfer',
+    category: 'application',
+    question: "You created an MCII plan for a course-related learning goal. Now think about a DIFFERENT type of goal (e.g., fitness, hobby, personal development, social skill). How would you adapt the MCII process (mental contrasting + implementation intentions) for this different type of goal? What would stay the same? What might change?",
+    hint: "MCII principles can apply to many types of goals, but the obstacles and if-then plans might be different. Think about how you'd adapt the process.",
+    placeholder: "For a [different goal type], I would... The MCII process would be similar in... but different in...",
     required: true
   },
   {
-    id: 'q7_mcii',
-    category: 'synthesis',
-    question: "Think about a learning goal you want to achieve. Describe: (1) what it would feel like to achieve this goal (indulge), (2) one main obstacle that might prevent you from achieving it, and (3) an if-then plan (implementation intention) to overcome that obstacle.",
-    hint: "An if-then plan has the format: 'If [obstacle/situation], then I will [specific action].'",
-    placeholder: "If I achieve this goal, I would feel... The main obstacle is... If [obstacle], then I will...",
+    id: 'q7_mcii_reflection',
+    category: 'metacognition',
+    question: "Reflect on the MCII process you just completed. What was the most challenging part for you? Why do you think mental contrasting (visualizing success AND considering obstacles) might be more effective than just visualizing success? What did you learn about yourself through this process?",
+    hint: "This is about understanding WHY MCII works, not just how to do it. Think about the psychology behind mental contrasting.",
+    placeholder: "The most challenging part was... Mental contrasting might be more effective because... I learned that I...",
     required: true
   },
   
-  // Phase 5: Monitoring
+  // Phase 5: Monitoring Integration & Adaptation
   {
-    id: 'q8_monitoring',
-    category: 'metacognition',
-    question: "Describe a specific method you would use to monitor your progress toward a learning objective in your target course. Be sure to explain what evidence you will use to decide whether you are learning effectively.",
-    hint: "Monitoring means checking your understanding, not just checking your grades. Think about self-testing, explaining concepts, or comparing your work to model answers.",
-    placeholder: "I will monitor my progress by... The evidence I'll use is...",
+    id: 'q8_monitoring_integration',
+    category: 'synthesis',
+    question: "You've now completed task analysis (Phase 2), goal setting with MCII (Phase 4), and monitoring (Phase 5). Describe how these three phases work together as a cycle. Give a concrete example of how you might cycle through all three phases when working on a challenging project or exam preparation.",
+    hint: "SRL is not linear - you might go back and revise your task analysis, adjust your goals, or change your monitoring methods based on what you learn.",
+    placeholder: "These phases work together by... For example, when working on [project], I would first... then... and if...",
     required: true
   },
   {
-    id: 'q9_adaptation',
-    category: 'reflection',
-    question: "Think of a recent time when you realized you didn't understand something as well as you thought. What did you do, and what could you have done differently using the monitoring and adaptation strategies you've learned?",
-    hint: "This is a reflection question - there's no right or wrong answer. Be honest about your experience.",
-    placeholder: "A recent time was when... I did... I could have improved by...",
+    id: 'q9_adaptation_transfer',
+    category: 'application',
+    question: "Think about a time when your initial study plan didn't work as expected. Using what you've learned about monitoring and adaptation, describe: (1) What signals would have told you EARLIER that the plan wasn't working? (2) How would you have adapted your strategy? (3) What would you do differently next time to catch problems sooner?",
+    hint: "This tests whether you can apply monitoring principles to real situations, not just create a plan.",
+    placeholder: "A time when my plan didn't work was... Earlier signals would have been... I would adapt by...",
     required: true
   },
   
@@ -116,10 +118,11 @@ export const comprehensivePostTaskQuestions: PostTaskQuestion[] = [
 ]
 
 // Sample answers for control group (traditional sample answer condition)
+// These answers demonstrate understanding without chatbot practice
 export const sampleAnswers: { [questionId: string]: string } = {
-  q1_task_analysis: `The learning objective "Analyze the relationship between supply and demand in market economics" addresses the topic of economic market forces. This requires an analysis level of understanding because the verb "analyze" asks me to break down the relationship, compare different scenarios, and understand how these concepts interact. This matters because I'll need to use analysis strategies like creating comparison charts, working through different market scenarios, and explaining cause-and-effect relationships, rather than just memorizing definitions.`,
+  q1_task_analysis_transfer: `For a new course I know nothing about, I would start by researching the course name and department to understand the general subject area. I would ask myself: "What is this course typically about? What prerequisites does it assume? What skills or knowledge would I need?" I would look for course descriptions online, check if there are similar courses, and maybe ask students who've taken it. To determine the level of understanding needed, I would look for clues in the course description - words like "analyze," "create," or "evaluate" suggest higher cognitive levels, while "identify" or "define" suggest knowledge level. I would also consider the course level (introductory vs. advanced) and the department's typical expectations.`,
   
-  q2_resources: `1. Course textbook (Chapters 5-7) - I would use this to read the core concepts, then create self-test questions from the key points.\n2. Lecture slides - I would review these after class, then try to explain the main ideas in my own words (self-explanation).\n3. Practice problem sets - I would use these for self-testing, spacing them out over several days before the exam.\n4. Online video tutorials - I would watch these when I'm struggling with a concept, then pause to explain what I learned.`,
+  q2_synthesis_cognitive_strategies: `Knowing the cognitive level helps me choose strategies because different levels require different types of thinking. For example, if a learning objective requires knowledge level (like "define photosynthesis"), I would use self-testing with flashcards to memorize the definition. But if it requires analysis level (like "analyze the factors affecting photosynthesis"), I would use self-explanation to break down the concept into parts and understand relationships. Application-level objectives might benefit from both self-testing (to practice applying concepts) and self-explanation (to understand when and why to apply them). The cognitive level tells me whether I need to memorize, understand, apply, or analyze, which guides my strategy choice.`,
   
   q3_self_testing: `I will use self-testing by creating flashcards for key definitions and concepts from my biology course. After reading each chapter, I'll write questions on one side of the card and answers on the other. Then, I'll test myself on these cards 2-3 times per week, spacing out the practice. I'll focus on chapters 8-10 which cover cellular processes, and I'll start testing myself this week, then again in 3 days, then a week later before the exam.`,
   
@@ -127,13 +130,13 @@ export const sampleAnswers: { [questionId: string]: string } = {
   
   q5_self_explanation: `For the difficult concept of cellular respiration, I would use self-explanation by: (1) First reading the textbook section on cellular respiration to get a general understanding, (2) Closing the book and explaining the process in my own words - how glucose is broken down, where ATP is produced, and why this matters for the cell, (3) Opening the book again and comparing my explanation to the text, highlighting any gaps or misunderstandings, (4) Restudying the parts I missed, then trying to explain again. This helps me identify what I truly understand versus what I'm just familiar with.`,
   
-  q6_goal_setting: `My specific, near-term learning goal is: "By the end of next week, I will be able to explain the process of photosynthesis in my own words and correctly answer 8 out of 10 practice questions about it." This is a good goal because: (1) It's specific - I know exactly what I need to do, (2) It's achievable - one week is realistic, (3) It's relevant - this is important for my upcoming exam, and (4) It's time-bound - I have a clear deadline.`,
+  q6_mcii_transfer: `For a fitness goal like "run a 5K in under 25 minutes," I would adapt MCII like this: (1) Mental contrasting - I would visualize crossing the finish line feeling strong and accomplished, but also consider obstacles like lack of time, bad weather, or motivation dips. (2) Implementation intention - If I feel too tired to run after work, then I will change into running clothes immediately when I get home and commit to at least 10 minutes, knowing I can stop if I'm truly exhausted. What stays the same: The process of visualizing success, identifying obstacles, and creating if-then plans. What changes: The obstacles are different (time/weather vs. academic challenges), and the if-then plans address different situations (physical vs. cognitive). The core MCII structure works the same way.`,
   
-  q7_mcii: `Goal: Master the concept of statistical hypothesis testing for my data science course.\n\n(1) Indulge: If I achieve this goal, I would feel confident going into the exam, understand how to apply hypothesis testing to real data problems, and be able to help my classmates who are struggling with this topic.\n\n(2) Obstacle: The main obstacle is that I often get distracted by my phone when studying, which breaks my focus and makes it hard to understand complex concepts.\n\n(3) If-then plan: If I notice myself reaching for my phone while studying hypothesis testing, then I will put my phone in another room and set a timer for 25 minutes of focused study, after which I can take a 5-minute break.`,
+  q7_mcii_reflection: `The most challenging part was honestly considering obstacles - it's easier to just imagine success. But I think mental contrasting is more effective because: (1) It prepares you for reality - if you only visualize success, you're surprised when obstacles arise. (2) It creates stronger motivation - when you contrast success with obstacles, you feel more committed to overcoming them. (3) It helps you plan - by thinking about obstacles ahead of time, you can create if-then plans. I learned that I tend to avoid thinking about potential problems, but facing them head-on actually makes me feel more prepared and motivated.`,
   
-  q8_monitoring: `I will monitor my progress toward understanding hypothesis testing by: (1) After each study session, I'll try to explain the concept to myself without looking at my notes, (2) I'll create practice problems and attempt to solve them, comparing my answers to the solutions, (3) I'll rate my confidence on a scale of 1-5 for each key component (null hypothesis, p-values, significance levels). The evidence I'll use: If I can explain it clearly and solve practice problems correctly, I'm making progress. If I struggle or can't explain certain parts, I know I need to restudy those areas.`,
+  q8_monitoring_integration: `These three phases work together as a cycle: (1) Task analysis helps me understand what I need to learn and at what level, (2) MCII helps me set specific goals and plan for obstacles, (3) Monitoring tells me if my plan is working. For example, when preparing for a challenging exam: First, I'd analyze the learning objectives to understand what's required (task analysis). Then, I'd set a goal like "master chapters 5-7 by next Friday" and create an MCII plan for obstacles like procrastination (goal setting). As I study, I'd monitor by self-testing - if I'm not meeting my practice quiz targets, that's a signal. This might lead me back to task analysis - maybe I misunderstood what level of understanding was needed. Or back to goal setting - maybe my goal was too ambitious. The cycle continues as I adapt.`,
   
-  q9_adaptation: `A recent time was when I thought I understood the concept of derivatives in calculus, but when I tried to solve problems on my own, I realized I couldn't apply the rules correctly. What I did: I just kept rereading the textbook, hoping it would click. What I could have done differently: I should have used self-explanation to identify exactly where my understanding broke down, then self-tested on those specific gaps. I also should have monitored my understanding earlier by trying to explain the concept or solve problems, rather than waiting until I was stuck.`,
+  q9_adaptation_transfer: `A time when my plan didn't work was when I tried to study for a chemistry exam by just rereading chapters. Earlier signals would have been: (1) I couldn't explain concepts without looking at my notes, (2) I kept putting off practice problems, (3) I felt anxious but kept telling myself I was "studying." I would adapt by: Switching to active strategies - self-testing on key concepts, then using self-explanation when I got questions wrong. I would also break down the material into smaller chunks and set mini-goals. Next time, I would catch problems sooner by: (1) Testing my understanding after each chapter (not waiting until the end), (2) Paying attention to avoidance behaviors (like putting off practice problems), (3) Using objective measures (can I explain it? can I solve problems?) rather than just feelings.`,
   
   q10_integration: `For a challenging assignment on analyzing market trends, I would integrate the four stages: (1) Define the task - I'd identify the specific learning objectives, determine what level of understanding is needed (analysis level), and list available resources, (2) Set goals - I'd create specific, near-term goals like "By Tuesday, I'll understand how to interpret trend data," (3) Execute the plan - I'd use self-explanation to understand the concepts, then self-test on practice problems, spacing my practice over several days, (4) Monitor - I'd regularly check if I can explain the concepts and solve problems, adapting my strategy if something isn't working. This creates a cycle where I'm constantly refining my approach.`,
   

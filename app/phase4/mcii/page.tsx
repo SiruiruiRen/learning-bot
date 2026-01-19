@@ -114,7 +114,7 @@ export default function MCIIPage() {
                   {showPostTask && (
                     <PostTaskAssessment
                       questions={comprehensivePostTaskQuestions.filter(q => 
-                        ['q6_goal_setting', 'q7_mcii'].includes(q.id)
+                        ['q6_mcii_transfer', 'q7_mcii_reflection'].includes(q.id)
                       )}
                       onComplete={handlePostTaskComplete}
                       showSampleAnswers={false}
