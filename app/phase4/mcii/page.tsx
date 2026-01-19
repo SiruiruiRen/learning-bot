@@ -8,11 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ChevronLeft, ChevronRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedMCII from "@/components/guided-mcii"
+import InstructionGuide from "@/components/instruction-guide"
+import PostTaskAssessment from "@/components/post-task-assessment"
+import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
 
 export default function MCIIPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [isComplete, setIsComplete] = useState(false)
+  const [showInstruction, setShowInstruction] = useState(true)
+  const [chatComplete, setChatComplete] = useState(false)
+  const [showPostTask, setShowPostTask] = useState(false)
 
   const accent = "#d8b26f"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -44,6 +50,16 @@ export default function MCIIPage() {
       localStorage.setItem("solbot_phase4_completed_tasks", JSON.stringify(completedTasks));
     }
     setIsComplete(true);
+    setChatComplete(true);
+    setShowPostTask(true);
+  }
+  
+  const handlePostTaskComplete = (answers: { [questionId: string]: string }) => {
+    router.push("/phase5")
+  }
+  
+  const handleStartChat = () => {
+    setShowInstruction(false)
   }
 
   return (
@@ -65,13 +81,46 @@ export default function MCIIPage() {
             </CardHeader>
             <CardContent className="min-h-[620px] p-3 text-sm" style={{ color: mutedText }}>
               {userId ? (
-                <GuidedMCII
-                  userId={userId}
-                  phase="4"
-                  component="mcii"
-                  onComplete={handleComplete}
-                  height="100%"
-                />
+                <>
+                  {showInstruction && !chatComplete && (
+                    <div className="space-y-4">
+                      <InstructionGuide
+                        title={phaseInstructions.phase4.title}
+                        instructions={phaseInstructions.phase4.instructions}
+                        tips={phaseInstructions.phase4.tips}
+                        examples={phaseInstructions.phase4.examples}
+                        phase="phase4"
+                      />
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={handleStartChat}
+                          style={primaryButtonStyle}
+                        >
+                          Start MCII Exercise
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {!showInstruction && !showPostTask && (
+                    <GuidedMCII
+                      userId={userId}
+                      phase="4"
+                      component="mcii"
+                      onComplete={handleComplete}
+                      height="100%"
+                    />
+                  )}
+                  {showPostTask && (
+                    <PostTaskAssessment
+                      questions={comprehensivePostTaskQuestions.filter(q => 
+                        ['q6_goal_setting', 'q7_mcii'].includes(q.id)
+                      )}
+                      onComplete={handlePostTaskComplete}
+                      showSampleAnswers={false}
+                    />
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading session...</p>
@@ -92,14 +141,14 @@ export default function MCIIPage() {
             </Button>
           </div>
           
-          {isComplete && (
+          {chatComplete && !showPostTask && (
             <div className="flex justify-center mt-6">
               <Button
                 className="px-8 py-3 rounded-lg font-semibold"
                 style={primaryButtonStyle}
-                onClick={() => router.push('/phase5')}
+                onClick={() => setShowPostTask(true)}
               >
-                Continue to Phase 5 <ChevronRight className="h-4 w-4 ml-2" />
+                Continue to Post-Task Assessment <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           )}

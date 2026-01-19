@@ -8,10 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ChevronLeft, ChevronRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedLearningObjective from "@/components/guided-learning-objective"
+import InstructionGuide from "@/components/instruction-guide"
+import PostTaskAssessment from "@/components/post-task-assessment"
+import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
 
 export default function Phase2ChatPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
+  const [showInstruction, setShowInstruction] = useState(true)
+  const [chatComplete, setChatComplete] = useState(false)
+  const [showPostTask, setShowPostTask] = useState(false)
 
   const accent = "#d8b26f"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -38,7 +44,17 @@ export default function Phase2ChatPage() {
   }, [router])
 
   const handlePhaseComplete = () => {
+    setChatComplete(true)
+    setShowPostTask(true)
+  }
+  
+  const handlePostTaskComplete = (answers: { [questionId: string]: string }) => {
+    // Log completion and proceed to next phase
     router.push("/phase3")
+  }
+  
+  const handleStartChat = () => {
+    setShowInstruction(false)
   }
 
   return (
@@ -66,12 +82,45 @@ export default function Phase2ChatPage() {
             </CardHeader>
             <CardContent className="min-h-[700px] p-2">
               {userId ? (
-                <GuidedLearningObjective
-                  userId={userId}
-                  phase="2"
-                  onComplete={handlePhaseComplete}
-                  height="100%"
-                />
+                <>
+                  {showInstruction && !chatComplete && (
+                    <div className="space-y-4">
+                      <InstructionGuide
+                        title={phaseInstructions.phase2.title}
+                        instructions={phaseInstructions.phase2.instructions}
+                        tips={phaseInstructions.phase2.tips}
+                        examples={phaseInstructions.phase2.examples}
+                        phase="phase2"
+                      />
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={handleStartChat}
+                          style={primaryButtonStyle}
+                        >
+                          Start Chat with SoL2LBot
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {!showInstruction && !showPostTask && (
+                    <GuidedLearningObjective
+                      userId={userId}
+                      phase="2"
+                      onComplete={handlePhaseComplete}
+                      height="100%"
+                    />
+                  )}
+                  {showPostTask && (
+                    <PostTaskAssessment
+                      questions={comprehensivePostTaskQuestions.filter(q => 
+                        ['q1_task_analysis', 'q2_resources'].includes(q.id)
+                      )}
+                      onComplete={handlePostTaskComplete}
+                      showSampleAnswers={false}
+                    />
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading session...</p>
@@ -90,16 +139,18 @@ export default function Phase2ChatPage() {
               Back to Instructions
             </Button>
           </div>
-          <div className="flex justify-center mt-6">
-            <Button
-              className="font-semibold"
-              style={primaryButtonStyle}
-              onClick={handlePhaseComplete}
-            >
-              Next to Phase 3
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
+          {chatComplete && !showPostTask && (
+            <div className="flex justify-center mt-6">
+              <Button
+                className="font-semibold"
+                style={primaryButtonStyle}
+                onClick={() => setShowPostTask(true)}
+              >
+                Continue to Post-Task Assessment
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

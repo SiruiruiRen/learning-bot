@@ -31,6 +31,8 @@ import VideoPlayer from "@/components/video-player"
 import { VerticalNav } from "@/components/vertical-nav"
 import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
 import { phase2KnowledgeChecks } from "@/lib/knowledge-check-questions"
+import InstructionGuide from "@/components/instruction-guide"
+import { phaseInstructions } from "@/lib/post-task-questions"
 
 const accent = "#d8b26f"
 const neutralSurface = "hsl(var(--card) / 0.9)"
@@ -522,7 +524,20 @@ export default function Phase2Page() {
                 </div>
               )}
               {currentCardIndex === 1 && <LearningObjectiveAnalysis />}
-              {currentCardIndex === 2 && <PriorKnowledgeResourceAnalysis />}
+              {currentCardIndex === 2 && (
+                <div className="space-y-4">
+                  <PriorKnowledgeResourceAnalysis />
+                  <div className="mt-6">
+                    <InstructionGuide
+                      title={phaseInstructions.phase2.title}
+                      instructions={phaseInstructions.phase2.instructions}
+                      tips={phaseInstructions.phase2.tips}
+                      examples={phaseInstructions.phase2.examples}
+                      phase="phase2"
+                    />
+                  </div>
+                </div>
+              )}
               {currentCardIndex === 3 && (
                 <div>
                   <div className="text-muted-foreground mb-4">

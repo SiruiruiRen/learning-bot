@@ -8,11 +8,17 @@ import { LineChart, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoring from "@/components/guided-monitoring"
+import InstructionGuide from "@/components/instruction-guide"
+import PostTaskAssessment from "@/components/post-task-assessment"
+import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
 
 export default function Phase5ChatContent() {
   const router = useRouter()
   const [userId, setUserId] = useState<string>("")
   const [isComplete, setIsComplete] = useState(false)
+  const [showInstruction, setShowInstruction] = useState(true)
+  const [chatComplete, setChatComplete] = useState(false)
+  const [showPostTask, setShowPostTask] = useState(false)
   
   // Load user data on component mount
   useEffect(() => {
@@ -37,6 +43,16 @@ export default function Phase5ChatContent() {
 
   const handlePhaseComplete = (nextPhase?: string) => {
     setIsComplete(true);
+    setChatComplete(true);
+    setShowPostTask(true);
+  }
+  
+  const handlePostTaskComplete = (answers: { [questionId: string]: string }) => {
+    router.push("/summary")
+  }
+  
+  const handleStartChat = () => {
+    setShowInstruction(false)
   }
 
   const accent = "#d8b26f"
@@ -94,13 +110,46 @@ export default function Phase5ChatContent() {
 
             <CardContent className="min-h-[700px] p-2">
               {userId ? (
-                <GuidedMonitoring
-                  userId={userId}
-                  phase="phase5"
-                  component="progress_monitoring"
-                  onComplete={handlePhaseComplete}
-                  height="100%"
-                />
+                <>
+                  {showInstruction && !chatComplete && (
+                    <div className="space-y-4">
+                      <InstructionGuide
+                        title={phaseInstructions.phase5.title}
+                        instructions={phaseInstructions.phase5.instructions}
+                        tips={phaseInstructions.phase5.tips}
+                        examples={phaseInstructions.phase5.examples}
+                        phase="phase5"
+                      />
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={handleStartChat}
+                          style={primaryButtonStyle}
+                        >
+                          Start Monitoring Exercise
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {!showInstruction && !showPostTask && (
+                    <GuidedMonitoring
+                      userId={userId}
+                      phase="phase5"
+                      component="progress_monitoring"
+                      onComplete={handlePhaseComplete}
+                      height="100%"
+                    />
+                  )}
+                  {showPostTask && (
+                    <PostTaskAssessment
+                      questions={comprehensivePostTaskQuestions.filter(q => 
+                        ['q8_monitoring', 'q9_adaptation', 'q10_integration', 'q11_strategy_combination', 'q12_metacognition'].includes(q.id)
+                      )}
+                      onComplete={handlePostTaskComplete}
+                      showSampleAnswers={false}
+                    />
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading session...</p>
@@ -121,14 +170,14 @@ export default function Phase5ChatContent() {
           </div>
           
           {/* Centered Continue Button */}
-          {isComplete && (
+          {chatComplete && !showPostTask && (
             <div className="flex justify-center mt-6">
               <Button
                 className="px-8 py-3 rounded-lg font-semibold"
                 style={primaryButtonStyle}
-                onClick={() => router.push('/summary')}
+                onClick={() => setShowPostTask(true)}
               >
-                Complete Learning Journey <ChevronRight className="h-4 w-4 ml-2" />
+                Continue to Post-Task Assessment <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           )}
