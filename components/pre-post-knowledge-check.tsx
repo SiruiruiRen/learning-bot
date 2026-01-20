@@ -343,8 +343,13 @@ export default function PrePostKnowledgeCheck({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 p-4 rounded-lg border"
-            style={{ backgroundColor: "hsl(var(--muted) / 0.3)", borderColor: accent }}
+            style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              border: `1px solid ${accent}`,
+              backgroundColor: "hsl(var(--muted) / 0.3)"
+            }}
           >
             <p className="text-sm font-medium mb-2" style={{ color: foreground }}>
               🎉 Great job! You got all questions correct!
