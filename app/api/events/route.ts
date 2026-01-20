@@ -368,13 +368,15 @@ async function handleQuizEvent(sessionId: string, userId: string, phase: string,
     });
   } else if (eventType === 'quiz_started') {
     // Create or update quiz session summary
+    const testType = metadata.test_type || 'unknown' // 'pre' or 'post'
     await supabase.from('quiz_session_summary').upsert({
       session_id: sessionId,
       user_id: userId,
       phase: phase,
+      test_type: testType,
       quiz_start_time: new Date().toISOString(),
       completed: false
-    }, { onConflict: 'session_id,phase' });
+    }, { onConflict: 'session_id,phase,test_type' });
   } else if (eventType === 'quiz_completed') {
     // Update quiz session summary with final results
     const { total_questions, correct_answers, incorrect_answers, total_time_seconds } = metadata;

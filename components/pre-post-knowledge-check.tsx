@@ -48,7 +48,9 @@ export default function PrePostKnowledgeCheck({
       
       // Log test started
       if (currentQuestionIndex === 0) {
-        logQuizEvent(`${testType}_test_started`, {})
+        logQuizEvent('quiz_started', {
+          test_type: testType
+        })
       }
     }
   }, [currentQuestionIndex, testType])
@@ -127,18 +129,18 @@ export default function PrePostKnowledgeCheck({
       // All questions completed
       const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
       
-      if (testType === 'pre') {
-        logQuizEvent('pre_test_completed', {
-          total_questions: questions.length,
-          correct_count: questions.filter(q => questionResults[q.id]).length,
-          all_correct: allCorrect
-        })
-      } else {
-        logQuizEvent('post_test_completed', {
-          total_questions: questions.length,
-          correct_count: questions.filter(q => questionResults[q.id]).length
-        })
-      }
+      // Log quiz completion with correct event type
+      const correctCount = questions.filter(q => questionResults[q.id] === true).length
+      const incorrectCount = questions.length - correctCount
+      
+      logQuizEvent('quiz_completed', {
+        test_type: testType,
+        total_questions: questions.length,
+        correct_answers: correctCount,
+        incorrect_answers: incorrectCount,
+        all_correct: allCorrect,
+        total_time_seconds: Math.round((Date.now() - questionStartTime.current) / 1000)
+      })
       
       // Only call onComplete if not skipping video (skip video will be handled separately)
       if (!(testType === 'pre' && allCorrect && onSkipVideo)) {
