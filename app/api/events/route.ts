@@ -379,10 +379,11 @@ async function handleQuizEvent(sessionId: string, userId: string, phase: string,
     }, { onConflict: 'session_id,phase,test_type' });
   } else if (eventType === 'quiz_completed') {
     // Update quiz session summary with final results
-    const { total_questions, correct_answers, incorrect_answers, total_time_seconds } = metadata;
+    const { total_questions, correct_answers, incorrect_answers, total_time_seconds, test_type, all_correct } = metadata;
     const accuracy = total_questions > 0 ? (correct_answers / total_questions) * 100 : 0;
     
-    await supabase.from('quiz_session_summary').upsert({
+    // Include test_type in metadata if not in table schema
+    const summaryData: any = {
       session_id: sessionId,
       user_id: userId,
       phase: phase,
@@ -393,8 +394,16 @@ async function handleQuizEvent(sessionId: string, userId: string, phase: string,
       total_time_seconds: total_time_seconds,
       quiz_end_time: new Date().toISOString(),
       completed: true,
-      metadata: metadata
-    }, { onConflict: 'session_id,phase' });
+      metadata: {
+        ...metadata,
+        test_type: test_type || 'unknown',
+        all_correct: all_correct || false
+      }
+    };
+    
+    await supabase.from('quiz_session_summary').upsert(summaryData, { 
+      onConflict: 'session_id,phase' 
+    });
   }
 }
 
