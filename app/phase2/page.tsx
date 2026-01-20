@@ -454,7 +454,11 @@ export default function Phase2Page() {
           totalCards={cards.length}
           onPrev={prevCard}
           onNext={nextCard}
-          isNextDisabled={currentCardIndex === 3 && !quizCompleted}
+          isNextDisabled={
+            (currentCardIndex === 3 && !preTestCompleted) ||
+            (currentCardIndex === 4 && !videoWatched && !videoSkipped) ||
+            (currentCardIndex === 5 && !postTestCompleted)
+          }
         />
         
         <motion.div
