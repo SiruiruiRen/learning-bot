@@ -94,7 +94,11 @@ export default function PrePostKnowledgeCheck({
     
     const isCorrect = selectedAnswers[currentQuestion.id] === currentQuestion.correctAnswer
     setQuestionResults(prev => ({ ...prev, [currentQuestion.id]: isCorrect }))
-    setSubmittedQuestions(prev => new Set(prev).add(currentQuestion.id))
+    setSubmittedQuestions(prev => {
+      const newSet = new Set(prev)
+      newSet.add(currentQuestion.id)
+      return newSet
+    })
     
     const timeToAnswer = Math.round((Date.now() - questionStartTime.current) / 1000)
     const timeToFirstInteraction = firstInteractionTime.current 
@@ -271,9 +275,13 @@ export default function PrePostKnowledgeCheck({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={`mt-6 p-4 rounded-lg ${
-              isCorrect ? "bg-emerald-500/20 border border-emerald-500/30" : "bg-red-500/20 border border-red-500/30"
-            }`}
+            style={{
+              marginTop: '1.5rem',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: isCorrect ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)",
+              border: `1px solid ${isCorrect ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`
+            }}
           >
             <div className="flex items-start gap-3">
               {isCorrect ? (
