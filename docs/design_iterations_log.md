@@ -17,7 +17,7 @@ Track design changes based on user feedback for research documentation and futur
 ## Recent Iterations (Last 6 Major Changes)
 
 ### Iteration 17: Reliable Analytics Logging + Pre-Session Tracking
-**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**Date**: 2026-01-21 | **Commit**: `ce559a5` | **Status**: ✅ Complete
 **User Need**: “I can’t see any logs (video pause/rewind, intro events, clicks/next). Ensure tracking actually records to Supabase.”
 **Key Changes**:
 - Added anonymous pre-session tracking for page views/clicks/next so intro interactions are captured even before `session_id` exists.
