@@ -17,7 +17,7 @@ Track design changes based on user feedback for research documentation and futur
 ## Recent Iterations (Last 6 Major Changes)
 
 ### Iteration 16: Remove Redundant Intro Support + Floating Home Button
-**Date**: 2026-01-20 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**Date**: 2026-01-20 | **Commit**: `e7088f5` | **Status**: ✅ Complete
 **User Need**: “Remove the ‘AI-guided support’ section (it repeats ‘The SoLBot Advantage’) and remove the bottom-right purple home icon. Also polish the intro page content and clarity.”
 **Key Changes**:
 - Removed the redundant "AI-guided support" card on the intro page to avoid repeating the AI coaching value proposition.
