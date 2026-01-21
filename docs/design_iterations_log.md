@@ -16,6 +16,16 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 17: Reliable Analytics Logging + Pre-Session Tracking
+**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**User Need**: “I can’t see any logs (video pause/rewind, intro events, clicks/next). Ensure tracking actually records to Supabase.”
+**Key Changes**:
+- Added anonymous pre-session tracking for page views/clicks/next so intro interactions are captured even before `session_id` exists.
+- Made `/api/events` fail loudly on Supabase write errors (no more silent success when tables/columns/env are missing).
+- Fixed quiz session upsert conflict keys so pre/post results don’t overwrite each other (`session_id, phase, test_type`).
+**Files Modified**: `components/click-tracker.tsx`, `components/navigation-tracker.tsx`, `app/api/events/route.ts`, `docs/design_iterations_log.md`
+**Research Impact**: Increases validity of behavioral analytics by preventing silent data loss and ensuring onboarding-period interactions are captured for complete trajectories.
+
 ### Iteration 16: Remove Redundant Intro Support + Floating Home Button
 **Date**: 2026-01-20 | **Commit**: `e7088f5` | **Status**: ✅ Complete
 **User Need**: “Remove the ‘AI-guided support’ section (it repeats ‘The SoLBot Advantage’) and remove the bottom-right purple home icon. Also polish the intro page content and clarity.”
