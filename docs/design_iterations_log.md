@@ -17,7 +17,7 @@ Track design changes based on user feedback for research documentation and futur
 ## Recent Iterations (Last 6 Major Changes)
 
 ### Iteration 19: Restore Phase 3 Pre-Test + Place Before Instruction
-**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**Date**: 2026-01-21 | **Commit**: `56e7aab` | **Status**: ✅ Complete
 **User Need**: “I can still enter phase3 directly; phase3 pre-test disappeared. What should the pre-test questions be, and should it be before or after instruction?”
 **Key Changes**:
 - Re-enabled and rendered Phase 3 pre-test using the shared `PrePostKnowledgeCheck` questions (`phase3KnowledgeChecks.preTest`).
