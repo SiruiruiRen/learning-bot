@@ -79,7 +79,7 @@ export default function IntroPage() {
   const [userYear, setUserYear] = useState("")
   const [userMajor, setUserMajor] = useState("")
   const [challengingCourse, setChallengingCourse] = useState("")
-  const [coachTone, setCoachTone] = useState("balanced")
+  const [coachTone, setCoachTone] = useState("warm")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -204,7 +204,7 @@ export default function IntroPage() {
                   </CardTitle>
                 </div>
                 <p className="text-center text-base" style={{ color: mutedText }}>
-                  A 60-minute, evidence-based session to help you study more effectively.
+                  A 90-minute, evidence-based training to help you study more effectively.
                 </p>
               </CardHeader>
             </Card>
@@ -268,13 +268,9 @@ export default function IntroPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {phaseInfo.map((phase, index) => (
-                  <motion.div
+                  <div
                     key={phase.path}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: index * 0.04 }}
-                    onClick={() => router.push(phase.path)}
-                    className="flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition hover:shadow-md"
+                    className="w-full text-left flex items-start gap-3 rounded-xl border p-3"
                     style={{
                       backgroundColor: "hsl(var(--card))",
                       borderColor: neutralBorder,
@@ -291,36 +287,8 @@ export default function IntroPage() {
                       <h4 className="font-semibold text-base">{phase.title}</h4>
                       <p className="text-sm" style={{ color: mutedText }}>{phase.description}</p>
                     </div>
-                    <ArrowRight className="h-4 w-4 mt-1" style={{ color: mutedText }} />
-                  </motion.div>
+                  </div>
                 ))}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.15 }}
-          >
-            <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold">AI-guided support</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm" style={{ color: mutedText }}>
-                <p>
-                  SoLBot offers gentle nudges, examples, and revision prompts to keep you moving. You can always revisit responses and iterate until they feel right.
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-4 w-4" style={{ color: accent }} />
-                    <p>Adaptive feedback on goals, strategies, and monitoring plans.</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-4 w-4" style={{ color: accent }} />
-                    <p>Reflection prompts to capture lessons and next steps.</p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -442,7 +410,7 @@ export default function IntroPage() {
 
                     <Button
                       onClick={handleSubmit}
-                      disabled={isSubmitting || !userName || !userEmail || !challengingCourse}
+                      disabled={isSubmitting || !userName || !userEmail}
                       className="w-full font-semibold"
                       style={primaryButtonStyle}
                     >

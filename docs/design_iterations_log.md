@@ -16,6 +16,18 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 16: Remove Redundant Intro Support + Floating Home Button
+**Date**: 2026-01-20 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**User Need**: “Remove the ‘AI-guided support’ section (it repeats ‘The SoLBot Advantage’) and remove the bottom-right purple home icon. Also polish the intro page content and clarity.”
+**Key Changes**:
+- Removed the redundant "AI-guided support" card on the intro page to avoid repeating the AI coaching value proposition.
+- Removed the global floating home button so it no longer appears as a distracting purple home icon across pages.
+- Updated intro framing to “A 90-minute, evidence-based training…” to match the intervention time expectation.
+- Reduced pre-start confusion by making the phase list informational (no navigation before onboarding).
+- Fixed an onboarding form inconsistency where “Target Course” was marked optional but blocked submission; also defaulted coach tone to a valid option.
+**Files Modified**: `app/intro/page.tsx`, `app/client-layout.tsx`
+**Research Impact**: Reduces redundant messaging and visual distractions during onboarding, supporting lower cognitive load and a cleaner, more consistent participant experience for the intervention.
+
 ### Iteration 15: Light Mode Color Consistency & WCAG AA Compliance
 **Date**: 2025-01-XX | **Commit**: `6150686` | **Status**: ✅ Complete
 **User Need**: "The chatbot interface light mode still has inconsistent color patterns, such as some dark color elements. In phase 4, there are even white texts. In phase 5, the chat interface is too ugly (the grey frame is bad). Please redesign all the colors and make sure they are consistent and high quality in the light mode, and test all color contrast."
