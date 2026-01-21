@@ -17,7 +17,7 @@ Track design changes based on user feedback for research documentation and futur
 ## Recent Iterations (Last 6 Major Changes)
 
 ### Iteration 20: Require Videos (Disable Skip-Video Paths)
-**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**Date**: 2026-01-21 | **Commit**: `643b5f3` | **Status**: ✅ Complete
 **User Need**: “Don’t allow skipping videos—videos are important. Clarify the per-phase flow.”
 **Key Changes**:
 - Disabled skip-video paths in Phase 2 and Phase 3 so all participants watch the instructional videos.
