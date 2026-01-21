@@ -17,7 +17,7 @@ Track design changes based on user feedback for research documentation and futur
 ## Recent Iterations (Last 6 Major Changes)
 
 ### Iteration 18: Enforce Onboarding for Reliable Session Analytics
-**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**Date**: 2026-01-21 | **Commit**: `fb1e5d0` | **Status**: ✅ Complete
 **User Need**: “Console doesn’t show log data when I jump to a phase page without registering who I am.”
 **Key Changes**:
 - Added a session gate that redirects users to `/intro` when `session_id` is missing, preventing bypass of onboarding and ensuring video/quiz/click logs bind to a real session.
