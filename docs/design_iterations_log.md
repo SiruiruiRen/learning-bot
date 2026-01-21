@@ -16,6 +16,14 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 18: Enforce Onboarding for Reliable Session Analytics
+**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**User Need**: “Console doesn’t show log data when I jump to a phase page without registering who I am.”
+**Key Changes**:
+- Added a session gate that redirects users to `/intro` when `session_id` is missing, preventing bypass of onboarding and ensuring video/quiz/click logs bind to a real session.
+**Files Modified**: `app/client-layout.tsx`, `docs/design_iterations_log.md`
+**Research Impact**: Improves data integrity by ensuring all tracked interactions are associated with a valid session and user record.
+
 ### Iteration 17: Reliable Analytics Logging + Pre-Session Tracking
 **Date**: 2026-01-21 | **Commit**: `ce559a5` | **Status**: ✅ Complete
 **User Need**: “I can’t see any logs (video pause/rewind, intro events, clicks/next). Ensure tracking actually records to Supabase.”
