@@ -332,7 +332,9 @@ export default function PrePostKnowledgeCheck({
               }}
               className="flex items-center gap-2"
             >
-              {isLastQuestion ? (testType === 'pre' && allQuestionsCorrect ? 'Skip Video & Continue' : 'Complete') : 'Next Question'}
+              {isLastQuestion
+                ? (testType === 'pre' && allQuestionsCorrect && onSkipVideo ? 'Skip Video & Continue' : 'Complete')
+                : 'Next Question'}
               <ArrowRight className="h-4 w-4" />
             </Button>
           )}

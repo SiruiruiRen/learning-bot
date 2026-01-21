@@ -16,6 +16,15 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 20: Require Videos (Disable Skip-Video Paths)
+**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**User Need**: “Don’t allow skipping videos—videos are important. Clarify the per-phase flow.”
+**Key Changes**:
+- Disabled skip-video paths in Phase 2 and Phase 3 so all participants watch the instructional videos.
+- Fixed pre-test button text so it only offers “Skip Video” when the feature is explicitly enabled.
+**Files Modified**: `app/phase2/page.tsx`, `app/phase3/page.tsx`, `components/pre-post-knowledge-check.tsx`, `docs/design_iterations_log.md`
+**Research Impact**: Ensures consistent instructional exposure across participants, improving internal validity when comparing learning outcomes.
+
 ### Iteration 19: Restore Phase 3 Pre-Test + Place Before Instruction
 **Date**: 2026-01-21 | **Commit**: `56e7aab` | **Status**: ✅ Complete
 **User Need**: “I can still enter phase3 directly; phase3 pre-test disappeared. What should the pre-test questions be, and should it be before or after instruction?”

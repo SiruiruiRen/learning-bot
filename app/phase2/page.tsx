@@ -270,9 +270,13 @@ const KnowledgeCheckQuestion = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={`mt-6 p-4 rounded-lg ${
-              isCorrect ? "bg-emerald-500/20 border border-emerald-500/30" : "bg-red-500/20 border border-red-500/30"
-            }`}
+            style={{
+              marginTop: '1.5rem',
+              padding: '1rem',
+              borderRadius: '0.5rem',
+              backgroundColor: isCorrect ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)",
+              border: `1px solid ${isCorrect ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`
+            }}
           >
             <div className="flex items-start gap-3">
               {isCorrect ? (
@@ -366,7 +370,6 @@ export default function Phase2Page() {
   const [videoWatched, setVideoWatched] = useState(false)
   const [preTestCompleted, setPreTestCompleted] = useState(false)
   const [postTestCompleted, setPostTestCompleted] = useState(false)
-  const [videoSkipped, setVideoSkipped] = useState(false)
   const [preTestAnswers, setPreTestAnswers] = useState<{ [questionId: number]: string }>({})
 
   const cards = [
@@ -401,15 +404,6 @@ export default function Phase2Page() {
   const handlePreTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
     setPreTestAnswers(answers)
     setPreTestCompleted(true)
-    if (allCorrect) {
-      // Offer to skip video - user can choose
-    }
-  }
-  
-  const handleSkipVideo = () => {
-    setVideoSkipped(true)
-    setVideoWatched(true) // Mark as "watched" so they can proceed
-    nextCard() // Move to post-test
   }
   
   const handlePostTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
@@ -456,7 +450,7 @@ export default function Phase2Page() {
           onNext={nextCard}
           isNextDisabled={
             (currentCardIndex === 3 && !preTestCompleted) ||
-            (currentCardIndex === 4 && !videoWatched && !videoSkipped) ||
+            (currentCardIndex === 4 && !videoWatched) ||
             (currentCardIndex === 5 && !postTestCompleted)
           }
         />
@@ -465,7 +459,7 @@ export default function Phase2Page() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto mt-16"
+          style={{ maxWidth: "56rem", marginLeft: "auto", marginRight: "auto", marginTop: "4rem" }}
         >
           <Card
             className="backdrop-blur-md border shadow-xl mb-6"
@@ -548,19 +542,15 @@ export default function Phase2Page() {
                     <p className="mb-2">
                       <strong style={{ color: accent }}>Before watching the video:</strong> Let's check what you already know about self-regulated learning and task analysis.
                     </p>
-                    <p className="text-sm">
-                      If you get both questions correct, you can skip the video and go straight to the next section!
-                    </p>
                   </div>
                   <PrePostKnowledgeCheck
                     questions={phase2KnowledgeChecks.preTest}
                     testType="pre"
                     onComplete={handlePreTestComplete}
-                    onSkipVideo={handleSkipVideo}
                   />
                 </div>
               )}
-              {currentCardIndex === 4 && !videoSkipped && (
+              {currentCardIndex === 4 && (
                 <div className="mt-6 space-y-6">
                   <p className="text-center text-muted-foreground">
                     Learn how to analyze learning objectives and select effective learning strategies.
@@ -577,16 +567,6 @@ export default function Phase2Page() {
                   >
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
                     <p className="text-muted-foreground text-sm">You will proceed to an interactive chat with SoL2LBot.</p>
-                  </div>
-                </div>
-              )}
-              {currentCardIndex === 4 && videoSkipped && (
-                <div className="mt-6 space-y-6">
-                  <div className="p-4 rounded-lg border text-center" style={{ backgroundColor: "hsl(var(--muted) / 0.3)", borderColor: accent }}>
-                    <p className="font-semibold mb-2" style={{ color: accent }}>✅ Video Skipped</p>
-                    <p className="text-muted-foreground text-sm">
-                      Since you demonstrated strong understanding in the pre-test, you've skipped the video. Let's check your knowledge with a few more questions!
-                    </p>
                   </div>
                 </div>
               )}
@@ -628,7 +608,7 @@ export default function Phase2Page() {
                     onClick={nextCard}
                     disabled={
                       (currentCardIndex === 3 && !preTestCompleted) ||
-                      (currentCardIndex === 4 && !videoWatched && !videoSkipped) ||
+                      (currentCardIndex === 4 && !videoWatched) ||
                       (currentCardIndex === 5 && !postTestCompleted)
                     }
                   >

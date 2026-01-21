@@ -380,7 +380,6 @@ export default function Phase3Content() {
   const [videoCompleted, setVideoCompleted] = useState(false)
   const [preTestCompleted, setPreTestCompleted] = useState(false)
   const [postTestCompleted, setPostTestCompleted] = useState(false)
-  const [videoSkipped, setVideoSkipped] = useState(false)
   const [preTestAnswers, setPreTestAnswers] = useState<{ [questionId: number]: string }>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userName, setUserName] = useState("")
@@ -496,11 +495,6 @@ export default function Phase3Content() {
     setPreTestCompleted(true)
   }
   
-  const handleSkipVideo = () => {
-    setVideoSkipped(true)
-    setVideoCompleted(true) // Mark as completed so they can proceed
-  }
-  
   const handlePostTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
     setPostTestCompleted(true)
   }
@@ -553,7 +547,7 @@ export default function Phase3Content() {
         onNext={nextCard}
         isNextDisabled={
           (currentCardIndex === 1 && !preTestCompleted) ||
-          (currentCardIndex === 4 && !videoCompleted && !videoSkipped) ||
+          (currentCardIndex === 4 && !videoCompleted) ||
           (currentCardIndex === 5 && !postTestCompleted)
         }
       />
@@ -670,15 +664,11 @@ export default function Phase3Content() {
                     <p>
                       Answer based on what you know <strong>right now</strong> (no looking things up). This helps us measure your baseline.
                     </p>
-                    <p className="mt-2 text-sm">
-                      If you get all pre-test questions correct, you can <strong>skip the video</strong> later (you’ll still see the strategy guides).
-                    </p>
                   </div>
                   <PrePostKnowledgeCheck
                     questions={phase3KnowledgeChecks.preTest}
                     testType="pre"
                     onComplete={handlePreTestComplete}
-                    onSkipVideo={handleSkipVideo}
                   />
                 </div>
               )}
@@ -690,7 +680,7 @@ export default function Phase3Content() {
               {currentCardIndex === 3 && <SpacingEffectGuide />}
               
               {/* Video Card */}
-              {currentCardIndex === 4 && !videoSkipped && (
+              {currentCardIndex === 4 && (
                 <div className="space-y-4">
                   <p className="text-center text-muted-foreground">
                     Watch this video to learn about powerful, evidence-based study techniques.
@@ -717,18 +707,6 @@ export default function Phase3Content() {
                   >
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
                     <p className="text-muted-foreground text-sm">You will proceed to the next Knowledge Check.</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Video Skipped Message */}
-              {currentCardIndex === 4 && videoSkipped && (
-                <div className="mt-6 space-y-6">
-                  <div className="p-4 rounded-lg border text-center" style={{ backgroundColor: "hsl(var(--muted) / 0.3)", borderColor: accent }}>
-                    <p className="font-semibold mb-2" style={{ color: accent }}>✅ Video Skipped</p>
-                    <p className="text-muted-foreground text-sm">
-                      Since you demonstrated strong understanding in the pre-test, you've skipped the video. Next, you'll do a short knowledge check.
-                    </p>
                   </div>
                 </div>
               )}
