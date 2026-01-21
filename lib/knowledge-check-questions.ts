@@ -103,14 +103,14 @@ export const phase3KnowledgeChecks: KnowledgeCheckSet = {
     {
       id: 1,
       questionType: 'definition',
-      question: "Self-testing is a useful learning strategy for what reason? (Select all that apply)",
+      question: "What is the BEST reason self-testing improves learning?",
       options: [
         "It helps emphasize retrieval practice and bring back information you already know",
         "It helps students remember key information for a longer period of time",
         "It helps with future learning",
         "It helps with setting goals"
       ],
-      correctAnswer: "It helps emphasize retrieval practice and bring back information you already know", // For single-select, we'll use the first benefit
+      correctAnswer: "It helps emphasize retrieval practice and bring back information you already know",
       explanation: "Self-testing helps in multiple ways: (1) It emphasizes retrieval practice - actively recalling information strengthens memory, (2) It helps you remember information longer - retrieval practice creates stronger long-term memories, (3) It helps with future learning - identifying gaps helps you focus your studying. Self-testing is not primarily about goal-setting.",
       feedbackForWrongAnswers: {
         "It helps with setting goals": "Self-testing is about practicing retrieval and identifying knowledge gaps, not about setting goals. Goal-setting is a separate skill."

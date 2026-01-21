@@ -16,6 +16,17 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 19: Restore Phase 3 Pre-Test + Place Before Instruction
+**Date**: 2026-01-21 | **Commit**: `[pending]` | **Status**: ✅ Complete
+**User Need**: “I can still enter phase3 directly; phase3 pre-test disappeared. What should the pre-test questions be, and should it be before or after instruction?”
+**Key Changes**:
+- Re-enabled and rendered Phase 3 pre-test using the shared `PrePostKnowledgeCheck` questions (`phase3KnowledgeChecks.preTest`).
+- Moved the pre-test earlier in the Phase 3 flow (before strategy instruction cards) to preserve baseline measurement.
+- Made Phase 3 enforce onboarding by redirecting to `/intro` when `session_id` is missing.
+- Clarified a confusing pre-test stem that previously implied multi-select.
+**Files Modified**: `app/phase3/page.tsx`, `lib/knowledge-check-questions.ts`, `docs/design_iterations_log.md`
+**Research Impact**: Ensures baseline knowledge is measured before instruction, reducing contamination and improving interpretability of pre/post comparisons.
+
 ### Iteration 18: Enforce Onboarding for Reliable Session Analytics
 **Date**: 2026-01-21 | **Commit**: `fb1e5d0` | **Status**: ✅ Complete
 **User Need**: “Console doesn’t show log data when I jump to a phase page without registering who I am.”

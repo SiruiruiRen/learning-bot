@@ -391,9 +391,9 @@ export default function Phase3Content() {
   // Define the cards for easy reference
   const cards = [
     { id: "intro", title: "Introduction to Learning Strategies" },
+    { id: "pre-test", title: "Pre-Test: Check Your Knowledge" },
     { id: "self-explanation", title: "Deep Dive: Self-Explanation" },
     { id: "spacing-effect", title: "Deep Dive: Spacing Effect" },
-    { id: "pre-test", title: "Pre-Test: Check Your Knowledge" },
     { id: "video", title: "Watch: Key Learning Strategies" },
     { id: "post-test", title: "Knowledge Check: After Video" },
   ]
@@ -425,15 +425,12 @@ export default function Phase3Content() {
       if (storedSessionId) {
         setSessionId(storedSessionId);
       } else {
-        // If there's no session ID, the user hasn't gone through onboarding.
-        // For development, we'll allow access but log a warning.
-        console.warn("No session_id found. Proceeding for development.");
-        // router.push('/intro'); // This was causing the redirect
+        // No session_id means onboarding wasn't completed; enforce onboarding for study flow + analytics.
+        router.replace('/intro');
       }
     } catch (error) {
       console.error("Error accessing localStorage:", error)
-      // In case of error, we'll still allow access for development.
-      // router.push('/intro');
+      router.replace('/intro');
     }
   }, [router]);
 
@@ -502,7 +499,6 @@ export default function Phase3Content() {
   const handleSkipVideo = () => {
     setVideoSkipped(true)
     setVideoCompleted(true) // Mark as completed so they can proceed
-    nextCard() // Move to post-test
   }
   
   const handlePostTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
@@ -556,7 +552,7 @@ export default function Phase3Content() {
         onPrev={prevCard}
         onNext={nextCard}
         isNextDisabled={
-          (currentCardIndex === 3 && !preTestCompleted) ||
+          (currentCardIndex === 1 && !preTestCompleted) ||
           (currentCardIndex === 4 && !videoCompleted && !videoSkipped) ||
           (currentCardIndex === 5 && !postTestCompleted)
         }
@@ -666,14 +662,32 @@ export default function Phase3Content() {
                   </div>
                 </div>
               )}
+
+              {/* Pre-Test Card */}
+              {currentCardIndex === 1 && (
+                <div className="space-y-4">
+                  <div className="text-muted-foreground">
+                    <p>
+                      Answer based on what you know <strong>right now</strong> (no looking things up). This helps us measure your baseline.
+                    </p>
+                    <p className="mt-2 text-sm">
+                      If you get all pre-test questions correct, you can <strong>skip the video</strong> later (you’ll still see the strategy guides).
+                    </p>
+                  </div>
+                  <PrePostKnowledgeCheck
+                    questions={phase3KnowledgeChecks.preTest}
+                    testType="pre"
+                    onComplete={handlePreTestComplete}
+                    onSkipVideo={handleSkipVideo}
+                  />
+                </div>
+              )}
               
               {/* Self-Explanation Strategy Card */}
-              {currentCardIndex === 1 && <SelfExplanationTips />}
+              {currentCardIndex === 2 && <SelfExplanationTips />}
               
               {/* Spacing Effect Guide Card */}
-              {currentCardIndex === 2 && <SpacingEffectGuide />}
-
-              {/* Pre-Test Card - already handled above */}
+              {currentCardIndex === 3 && <SpacingEffectGuide />}
               
               {/* Video Card */}
               {currentCardIndex === 4 && !videoSkipped && (
@@ -713,7 +727,7 @@ export default function Phase3Content() {
                   <div className="p-4 rounded-lg border text-center" style={{ backgroundColor: "hsl(var(--muted) / 0.3)", borderColor: accent }}>
                     <p className="font-semibold mb-2" style={{ color: accent }}>✅ Video Skipped</p>
                     <p className="text-muted-foreground text-sm">
-                      Since you demonstrated strong understanding in the pre-test, you've skipped the video. Let's check your knowledge with a few more questions!
+                      Since you demonstrated strong understanding in the pre-test, you've skipped the video. Next, you'll do a short knowledge check.
                     </p>
                   </div>
                 </div>
