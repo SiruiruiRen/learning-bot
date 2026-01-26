@@ -17,7 +17,7 @@ Track design changes based on user feedback for research documentation and futur
 ## Recent Iterations (Last 6 Major Changes)
 
 ### Iteration 22: Switch to Single Prompt with Consistent Style
-**Date**: 2026-01-21 | **Commit**: `7c418bf` | **Status**: ✅ Complete
+**Date**: 2026-01-21 | **Commit**: `c6e1cf0` | **Status**: ✅ Complete
 **User Need**: "Chain prompt too slow. Use single prompt but design two prompt groups - one for warm (if student selects warm, entire system is warm) and one for direct (entire system feedback stays consistent)."
 **Key Changes**:
 - Removed chain prompting (evaluation + feedback steps) - too slow
