@@ -17,7 +17,7 @@ Track design changes based on user feedback for research documentation and futur
 ## Recent Iterations (Last 6 Major Changes)
 
 ### Iteration 21: Remove Pre-Tests, Use Original Intervention Questions
-**Date**: 2026-01-21 | **Commit**: `7e9ae74` | **Status**: ✅ Complete
+**Date**: 2026-01-21 | **Commit**: `2c9131c` | **Status**: ✅ Complete
 **User Need**: "Remove pre-tests - too many questions. Use phase-specific questions from original intervention with full feedback for each option. Flow: instruction → video → post-test (2 choice questions) → chatbot. Phase 1: video → open-ended quiz. Phase 2-5: instruction → video → 2-choice post-test → chatbot."
 **Key Changes**:
 - Removed all pre-tests from phases 2-5
