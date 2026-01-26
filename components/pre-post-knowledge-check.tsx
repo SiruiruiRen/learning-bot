@@ -28,6 +28,7 @@ export default function PrePostKnowledgeCheck({
   const [selectedAnswers, setSelectedAnswers] = useState<{ [questionId: number]: string | string[] }>({})
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set())
   const [questionResults, setQuestionResults] = useState<{ [questionId: number]: boolean }>({})
+  const [hasCompleted, setHasCompleted] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const pathname = usePathname()
   const questionStartTime = useRef<number>(Date.now())
@@ -177,6 +178,38 @@ export default function PrePostKnowledgeCheck({
       setCurrentQuestionIndex(prev => prev + 1)
     }
   }
+  
+  // Auto-complete when last question is submitted (after showing feedback)
+  useEffect(() => {
+    if (isLastQuestion && isSubmitted && questionResults[currentQuestion.id] !== undefined && !hasCompleted) {
+      // Small delay to show feedback before auto-completing
+      const timer = setTimeout(() => {
+        if (hasCompleted) return // Double check to avoid duplicate calls
+        
+        const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
+        const correctCount = questions.filter(q => questionResults[q.id] === true).length
+        const incorrectCount = questions.length - correctCount
+        
+        // Only log and complete if not already completed (avoid duplicate calls)
+        if (!(testType === 'pre' && allCorrect && onSkipVideo)) {
+          setHasCompleted(true)
+          
+          logQuizEvent('quiz_completed', {
+            test_type: testType,
+            total_questions: questions.length,
+            correct_answers: correctCount,
+            incorrect_answers: incorrectCount,
+            all_correct: allCorrect,
+            total_time_seconds: Math.round((Date.now() - questionStartTime.current) / 1000)
+          })
+          
+          onComplete(selectedAnswers, allCorrect)
+        }
+      }, 2000) // 2 second delay to show completion message
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isLastQuestion, isSubmitted, currentQuestion.id, questionResults, testType, allQuestionsCorrect, onSkipVideo, questions, selectedAnswers, onComplete, hasCompleted])
   
   const handleSkipVideoAndComplete = () => {
     const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
@@ -454,7 +487,7 @@ export default function PrePostKnowledgeCheck({
             ) : null}
           </div>
           
-          {isSubmitted && (
+          {isSubmitted && !isLastQuestion && (
             <Button
               onClick={handleNext}
               style={{
@@ -463,11 +496,26 @@ export default function PrePostKnowledgeCheck({
               }}
               className="flex items-center gap-2"
             >
-              {isLastQuestion
-                ? (testType === 'pre' && allQuestionsCorrect && onSkipVideo ? 'Skip Video & Continue' : 'Complete')
-                : 'Next Question'}
+              Next Question
               <ArrowRight className="h-4 w-4" />
             </Button>
+          )}
+          {isSubmitted && isLastQuestion && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                marginTop: '1rem',
+                padding: '1rem',
+                borderRadius: '0.5rem',
+                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                border: "1px solid rgba(16, 185, 129, 0.3)"
+              }}
+            >
+              <p className="text-sm font-medium" style={{ color: "hsl(142 71% 35%)" }}>
+                ✓ All questions completed!
+              </p>
+            </motion.div>
           )}
         </div>
         

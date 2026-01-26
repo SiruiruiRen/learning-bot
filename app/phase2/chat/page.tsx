@@ -15,7 +15,6 @@ import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from
 export default function Phase2ChatPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
-  const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
   const [showPostTask, setShowPostTask] = useState(false)
 
@@ -53,9 +52,6 @@ export default function Phase2ChatPage() {
     router.push("/phase3")
   }
   
-  const handleStartChat = () => {
-    setShowInstruction(false)
-  }
 
   return (
     <div
@@ -83,27 +79,7 @@ export default function Phase2ChatPage() {
             <CardContent className="min-h-[700px] p-2">
               {userId ? (
                 <>
-                  {showInstruction && !chatComplete && (
-                    <div className="space-y-4">
-                      <InstructionGuide
-                        title={phaseInstructions.phase2.title}
-                        instructions={phaseInstructions.phase2.instructions}
-                        tips={phaseInstructions.phase2.tips}
-                        examples={phaseInstructions.phase2.examples}
-                        phase="phase2"
-                      />
-                      <div className="flex justify-center mt-6">
-                        <Button
-                          onClick={handleStartChat}
-                          style={primaryButtonStyle}
-                        >
-                          Start Chat with SoL2LBot
-                          <ChevronRight className="h-4 w-4 ml-2" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {!showInstruction && !showPostTask && (
+                  {!showPostTask && (
                     <GuidedLearningObjective
                       userId={userId}
                       phase="2"
@@ -128,8 +104,8 @@ export default function Phase2ChatPage() {
               )}
             </CardContent>
           </Card>
-          <div className="flex justify-between mt-4">
-             <Button
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
               variant="outline"
               className="border"
               style={{ borderColor: neutralBorder, color: mutedText }}
@@ -138,6 +114,16 @@ export default function Phase2ChatPage() {
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Instructions
             </Button>
+            {chatComplete && (
+              <Button
+                className="font-semibold"
+                style={primaryButtonStyle}
+                onClick={() => router.push('/phase3')}
+              >
+                Go to Phase 3
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            )}
           </div>
           {chatComplete && !showPostTask && (
             <div className="flex justify-center mt-6">
