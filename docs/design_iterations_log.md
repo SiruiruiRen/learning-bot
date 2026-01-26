@@ -16,6 +16,20 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 21: Remove Pre-Tests, Use Original Intervention Questions
+**Date**: 2026-01-21 | **Commit**: `7e9ae74` | **Status**: ✅ Complete
+**User Need**: "Remove pre-tests - too many questions. Use phase-specific questions from original intervention with full feedback for each option. Flow: instruction → video → post-test (2 choice questions) → chatbot. Phase 1: video → open-ended quiz. Phase 2-5: instruction → video → 2-choice post-test → chatbot."
+**Key Changes**:
+- Removed all pre-tests from phases 2-5
+- Updated flow to: instruction → video → post-test → chatbot
+- Replaced questions with original intervention questions (Q206, Q207, Q193, Q194, MCII def, II quality, Q211, Q305)
+- Added full feedback for each wrong answer option from original intervention
+- Updated PrePostKnowledgeCheck component to support select-all questions (Phase 3 Q193 uses checkboxes)
+- Phase 1: video → open-ended quiz (SRL 4 stages)
+- Phase 2-5: instruction → video → 2-choice post-test → chatbot
+**Files Modified**: `lib/knowledge-check-questions.ts`, `components/pre-post-knowledge-check.tsx`, `app/phase2/page.tsx`, `app/phase3/page.tsx`, `app/phase4/page.tsx`, `app/phase5/page.tsx`, `docs/design_iterations_log.md`
+**Research Impact**: Reduces cognitive load by removing redundant pre-tests, uses validated questions from original intervention with comprehensive feedback, ensures consistent instructional exposure across all participants.
+
 ### Iteration 20: Require Videos (Disable Skip-Video Paths)
 **Date**: 2026-01-21 | **Commit**: `643b5f3` | **Status**: ✅ Complete
 **User Need**: “Don’t allow skipping videos—videos are important. Clarify the per-phase flow.”
