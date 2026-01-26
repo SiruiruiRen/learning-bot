@@ -246,12 +246,12 @@ Scaffolding: {evaluation_metadata.get('Scaffolding', evaluation_metadata.get('sc
 
 def get_prompt(prompt_name: str, style: str = "warm") -> str:
     """
-    Get a prompt by name with specified communication style (legacy method).
-    For new chain prompting, use get_evaluation_prompt() and get_feedback_prompt() instead.
+    Get a prompt by name with specified communication style.
+    The entire system uses consistent style based on user's onboarding choice (warm or direct).
     
     Args:
         prompt_name: Name of the prompt (e.g., "phase2_learning_objectives")
-        style: Communication style ("warm" or "direct")
+        style: Communication style ("warm" or "direct") - must match user's onboarding choice
     
     Returns:
         The prompt string with appropriate style guidelines

@@ -31,17 +31,23 @@ async def get_alternative_feedback(request: AlternativeFeedbackRequest):
             for msg in chat_history if msg["role"] in ["user", "assistant"]
         ] if chat_history else []
         
-        # Use chain prompting: Generate feedback based on evaluation results
+        # Use single prompt with alternative style
+        # Note: This endpoint allows viewing alternative style, but the main system uses consistent style
         try:
             prompt_name = f"phase{request.phase}_{request.component}"
-            from prompt_engineering.scripts.final_prompts import get_feedback_prompt
             
-            # Use feedback prompt with evaluation metadata (chain prompting step 2)
-            system_prompt = get_feedback_prompt(
-                prompt_name, 
-                style=request.alternative_style, 
-                evaluation_metadata=request.evaluation_metadata
-            )
+            # Use single prompt with alternative style
+            system_prompt = get_prompt(prompt_name, style=request.alternative_style)
+            
+            # Add evaluation metadata to user message to ensure scores are preserved
+            import json
+            eval_str = json.dumps(request.evaluation_metadata, indent=2)
+            enhanced_user_message = f"""Student submission: {request.user_message}
+
+# EVALUATION RESULTS (MUST USE THESE EXACT SCORES):
+{eval_str}
+
+Generate feedback in {request.alternative_style} style. Use the EXACT evaluation scores above - only change the tone and wording."""
         except ValueError:
             # Fallback if prompt not found
             import json
@@ -54,12 +60,12 @@ async def get_alternative_feedback(request: AlternativeFeedbackRequest):
 Generate feedback in {request.alternative_style} style using the EXACT evaluation results above.
 Only change the tone and wording, keep all scores identical."""
         
-        # Generate alternative feedback
+        # Generate alternative feedback using single prompt
         llm_response = await call_claude(
             system_prompt=system_prompt,
-            user_message=request.user_message,
+            user_message=enhanced_user_message if 'enhanced_user_message' in locals() else request.user_message,
             chat_history=formatted_history,
-            temperature=0.3,  # Lower temperature for more consistent results
+            temperature=0.5,  # Same temperature as main chat for consistency
             max_tokens=800
         )
         
