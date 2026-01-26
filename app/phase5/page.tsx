@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import VideoPlayer from "@/components/video-player"
 import ModuleBar from "@/components/module-bar"
 import { VerticalNav } from "@/components/vertical-nav"
+import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
+import { phase5KnowledgeChecks } from "@/lib/knowledge-check-questions"
 
 // --- Helper function to log events ---
 const logEvent = (sessionId: string, eventType: string, metadata: any) => {
@@ -27,218 +29,10 @@ const logEvent = (sessionId: string, eventType: string, metadata: any) => {
   }).catch(error => console.error(`Failed to log event ${eventType}:`, error));
 };
 
-const KnowledgeCheckQuestion = ({ 
-  question, 
-  questionIndex, 
-  totalQuestions, 
-  onNextQuestion,
-  sessionId,
-}: { 
-  question: any, 
-  questionIndex: number, 
-  totalQuestions: number, 
-  onNextQuestion: () => void,
-  sessionId: string | null,
-}) => {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const explanation = isCorrect ? question.explanation : (question.explanations && selectedOption ? question.explanations[selectedOption] : question.explanation);
-
-  const accent = "#d8b26f"
-  const surface = "hsl(var(--card) / 0.9)"
-  const border = "hsl(var(--border) / 0.75)"
-  const pill = "hsl(var(--muted) / 0.4)"
-  const mutedText = "hsl(var(--muted-foreground))"
-
-  const handleSubmit = () => {
-    if (!selectedOption) return;
-    const correct = selectedOption === question.correctAnswer;
-    setSubmitted(true);
-    setIsCorrect(correct);
-    if (correct && questionIndex === totalQuestions - 1) {
-      onNextQuestion();
-    }
-    if (sessionId) {
-      logEvent(sessionId, 'quiz_submission', {
-        question_title: question.title,
-        selected_answer: selectedOption,
-        is_correct: correct,
-        attempt_number: 1
-      });
-    }
-  };
-
-  const handleTryAgain = () => {
-    setSelectedOption(null);
-    setSubmitted(false);
-    setIsCorrect(false);
-  };
-
-  return (
-    <Card className="backdrop-blur-md" style={{ backgroundColor: surface, borderColor: border }}>
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ backgroundColor: pill }}>
-              <HelpCircle className="h-5 w-5" style={{ color: accent }} />
-            </div>
-            <h3 className="text-lg font-bold text-foreground">Knowledge Check {questionIndex + 1}</h3>
-          </div>
-          <span className="text-sm opacity-80" style={{ color: mutedText }}>
-            Question {questionIndex + 1} of {totalQuestions}
-          </span>
-        </div>
-
-        <p className="text-foreground opacity-90 mb-6" style={{ color: mutedText }}>{question.question}</p>
-
-        <RadioGroup
-          value={selectedOption || ""}
-          onValueChange={setSelectedOption}
-          className="space-y-3"
-          disabled={submitted}
-        >
-          {question.options.map((option: string, index: number) => (
-            <div
-              key={index}
-              className={`flex items-start space-x-2 rounded-lg border p-3 transition-colors ${
-                submitted && option === question.correctAnswer
-                  ? "border-emerald-500/50 bg-emerald-500/10"
-                  : submitted && option === selectedOption
-                    ? "border-red-500/50 bg-red-500/10"
-                    : "hover:bg-[hsl(var(--muted)_/_0.25)]"
-              }`}
-              style={{
-                borderColor: submitted ? undefined : border,
-                backgroundColor: submitted ? undefined : "hsl(var(--card) / 0.78)",
-              }}
-            >
-              <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
-              <div className="flex-1">
-                <Label
-                  htmlFor={`option-${index}`}
-                  className={`text-sm font-medium ${
-                    submitted && option === question.correctAnswer
-                      ? "text-emerald-500"
-                      : submitted && option === selectedOption
-                        ? "text-red-500"
-                        : "text-foreground opacity-80"
-                  }`}
-                  style={!submitted ? { color: mutedText } : undefined}
-                >
-                  {option}
-                </Label>
-              </div>
-              {submitted && option === question.correctAnswer && (
-                <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-              )}
-              {submitted && option === selectedOption && option !== question.correctAnswer && (
-                <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-              )}
-            </div>
-          ))}
-        </RadioGroup>
-
-        {submitted && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`mt-6 p-4 rounded-lg ${
-              isCorrect ? "bg-emerald-500/20 border border-emerald-500/30" : "bg-red-500/20 border border-red-500/30"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              {isCorrect ? (
-                <CheckCircle className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-              )}
-              <div>
-                <h4 className={`font-bold ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
-                  {isCorrect ? "Correct!" : "Not quite right"}
-                </h4>
-                <p className="text-muted-foreground mt-1">{explanation}</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        <div className="mt-6 flex justify-between items-center">
-          <div>
-            {!submitted ? (
-              <Button
-                onClick={handleSubmit}
-                disabled={!selectedOption}
-                className="shadow-md disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
-              >
-                Submit Answer
-              </Button>
-            ) : !isCorrect ? (
-              <Button
-                onClick={handleTryAgain}
-                variant="outline"
-                className="hover:bg-[hsl(var(--muted)_/_0.25)]"
-                style={{ borderColor: border, color: mutedText }}
-              >
-                Try Again
-              </Button>
-            ) : null}
-          </div>
-          
-          {submitted && isCorrect && (
-            questionIndex < totalQuestions - 1 ? (
-              <Button
-                onClick={onNextQuestion}
-                className="flex items-center gap-2 shadow-md"
-                style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
-              >
-                Next Question <ArrowRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <div className="text-emerald-400 font-medium flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Quiz Completed!
-              </div>
-            )
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const KnowledgeCheckQuiz = ({ onComplete, knowledgeChecks, sessionId }: { onComplete: () => void, knowledgeChecks: any[], sessionId: string | null }) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < knowledgeChecks.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      onComplete();
-    }
-  };
-
-  const currentQuestion = knowledgeChecks[currentQuestionIndex];
-
-  return (
-    <KnowledgeCheckQuestion
-      key={`question-${currentQuestionIndex}`}
-      question={currentQuestion}
-      questionIndex={currentQuestionIndex}
-      totalQuestions={knowledgeChecks.length}
-      onNextQuestion={handleNextQuestion}
-      sessionId={sessionId}
-    />
-  );
-};
-
 export default function Phase5Content() {
   const router = useRouter()
   const [videoCompleted, setVideoCompleted] = useState(false)
-  const [quizCompleted, setQuizCompleted] = useState(false)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [postTestCompleted, setPostTestCompleted] = useState(false)
   const [userName, setUserName] = useState("")
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -246,8 +40,8 @@ export default function Phase5Content() {
   // Define the cards for easy reference
   const cards = [
     { id: "intro", title: "Introduction to Monitoring" },
-    { id: "knowledge-check", title: "Knowledge Check" },
     { id: "video", title: "Monitoring Your Learning Video" },
+    { id: "post-test", title: "Knowledge Check: After Video" },
   ]
 
   // Function to navigate to the next card
@@ -286,46 +80,15 @@ export default function Phase5Content() {
     }
   }, [router]);
 
-  // Knowledge check questions
-  const knowledgeChecks = [
-    {
-      id: 1,
-      title: "Effective Learning Monitoring",
-      question: "What does monitoring your learning effectively mean?",
-      options: [
-        "Adapt your learning to accommodate what you don't know",
-        "Watching other students perform their learning task and following them",
-        "Rereading textbook passages on all of the important topics",
-        "Reread missed questions and their answer choices until you memorize the correct answer",
-      ],
-      correctAnswer: "Adapt your learning to accommodate what you don't know",
-      explanation: "Effective monitoring is about self-assessment and adapting your strategies based on what you find is not working for you. It's an active process of checking your understanding and changing your approach accordingly.",
-    },
-    {
-      id: 2,
-      title: "Best Monitoring Strategy",
-      question: "Which student monitors their learning the best?",
-      options: [
-        "Anish monitors what his friends are doing and tries to copy their learning strategies",
-        "Bria rereads the textbook until the information is well memorized and understood",
-        "Carrie continues to test herself with flashcards repetitively",
-        "After Denise completes one self-test, she asks herself if she is retaining the information with this strategy.",
-      ],
-      correctAnswer: "After Denise completes one self-test, she asks herself if she is retaining the information with this strategy.",
-      explanation: "Denise monitors her learning by asking herself if the self-testing she is completing is helping her learn the information or not. If it isn't she can choose a new strategy, but if it is, she can continue utilizing the same strategy.",
-      explanations: {
-        "Anish monitors what his friends are doing and tries to copy their learning strategies": "Anish should be monitoring himself rather than his friends as strategies that work for them might not work for him.",
-        "Bria rereads the textbook until the information is well memorized and understood": "As we know, rereading the textbook is incredibly ineffective, but this strategy also does not help with monitoring your learning.",
-        "Carrie continues to test herself with flashcards repetitively": "Using flashcards for memorization can be a helpful tool but with no sort of \"check-in\" involved, Carrie won't be able to see if flashcards is helping her study the most effectively, and adapt her ways if not."
-      }
-    },
-  ]
-
   const handleCompleteVideo = () => {
     setVideoCompleted(true)
     if (sessionId) {
       logEvent(sessionId, 'video_watch_completed', { video_title: "Monitoring Your Learning" });
     }
+  }
+
+  const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
+    setPostTestCompleted(true)
   }
 
   const handleComplete = () => {
@@ -371,7 +134,7 @@ export default function Phase5Content() {
           totalCards={cards.length}
           onPrev={prevCard}
           onNext={nextCard}
-          isNextDisabled={(currentCardIndex === 1 && !quizCompleted) || (currentCardIndex === 2 && !videoCompleted)}
+          isNextDisabled={(currentCardIndex === 1 && !videoCompleted) || (currentCardIndex === 2 && !postTestCompleted)}
         />
         
         <motion.div
@@ -436,18 +199,8 @@ export default function Phase5Content() {
                 </div>
               )}
               
-              {/* Knowledge Check Card */}
-              {currentCardIndex === 1 && (
-                <div>
-                  <div className="text-muted-foreground mb-4">
-                    <p>Let's check the knowledge you already have about this topic. Please read and respond to the following question(s):</p>
-                  </div>
-                  <KnowledgeCheckQuiz onComplete={() => setQuizCompleted(true)} knowledgeChecks={knowledgeChecks} sessionId={sessionId} />
-                </div>
-              )}
-
               {/* Video Card */}
-              {currentCardIndex === 2 && (
+              {currentCardIndex === 1 && (
                 <div className="space-y-4 text-center">
                   <p className="text-muted-foreground">
                     Learn effective strategies for monitoring your learning progress and adapting when needed.
@@ -461,8 +214,24 @@ export default function Phase5Content() {
                   />
                   <div className="mt-4 p-3 rounded-lg border text-center" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will proceed to an interactive chat with SoL2LBot.</p>
+                    <p className="text-muted-foreground text-sm">You will complete a knowledge check, then proceed to an interactive chat with SoL2LBot.</p>
                   </div>
+                </div>
+              )}
+
+              {/* Post-Test Card */}
+              {currentCardIndex === 2 && (
+                <div>
+                  <div className="text-muted-foreground mb-4">
+                    <p>
+                      <strong style={{ color: accent }}>After the video:</strong> Let's check your understanding of monitoring your learning.
+                    </p>
+                  </div>
+                  <PrePostKnowledgeCheck
+                    questions={phase5KnowledgeChecks.postTest}
+                    testType="post"
+                    onComplete={handlePostTestComplete}
+                  />
                 </div>
               )}
               
@@ -483,7 +252,7 @@ export default function Phase5Content() {
                     className="shadow-md"
                     style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
                     onClick={nextCard}
-                    disabled={currentCardIndex === 1 && !quizCompleted}
+                    disabled={(currentCardIndex === 1 && !videoCompleted) || (currentCardIndex === 2 && !postTestCompleted)}
                   >
                     {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>

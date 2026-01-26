@@ -378,9 +378,7 @@ export default function Phase3Content() {
   const router = useRouter()
   const [viewingVideo, setViewingVideo] = useState(false)
   const [videoCompleted, setVideoCompleted] = useState(false)
-  const [preTestCompleted, setPreTestCompleted] = useState(false)
   const [postTestCompleted, setPostTestCompleted] = useState(false)
-  const [preTestAnswers, setPreTestAnswers] = useState<{ [questionId: number]: string }>({})
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userName, setUserName] = useState("")
   const [step, setStep] = useState(1)
@@ -390,7 +388,6 @@ export default function Phase3Content() {
   // Define the cards for easy reference
   const cards = [
     { id: "intro", title: "Introduction to Learning Strategies" },
-    { id: "pre-test", title: "Pre-Test: Check Your Knowledge" },
     { id: "self-explanation", title: "Deep Dive: Self-Explanation" },
     { id: "spacing-effect", title: "Deep Dive: Spacing Effect" },
     { id: "video", title: "Watch: Key Learning Strategies" },
@@ -490,12 +487,7 @@ export default function Phase3Content() {
     icon: <BookMarked className="h-10 w-10 text-purple-400" />,
   }
 
-  const handlePreTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
-    setPreTestAnswers(answers)
-    setPreTestCompleted(true)
-  }
-  
-  const handlePostTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
+  const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
     setPostTestCompleted(true)
   }
 
@@ -546,9 +538,8 @@ export default function Phase3Content() {
         onPrev={prevCard}
         onNext={nextCard}
         isNextDisabled={
-          (currentCardIndex === 1 && !preTestCompleted) ||
-          (currentCardIndex === 4 && !videoCompleted) ||
-          (currentCardIndex === 5 && !postTestCompleted)
+          (currentCardIndex === 3 && !videoCompleted) ||
+          (currentCardIndex === 4 && !postTestCompleted)
         }
       />
 
@@ -658,20 +649,6 @@ export default function Phase3Content() {
               )}
 
               {/* Pre-Test Card */}
-              {currentCardIndex === 1 && (
-                <div className="space-y-4">
-                  <div className="text-muted-foreground">
-                    <p>
-                      Answer based on what you know <strong>right now</strong> (no looking things up). This helps us measure your baseline.
-                    </p>
-                  </div>
-                  <PrePostKnowledgeCheck
-                    questions={phase3KnowledgeChecks.preTest}
-                    testType="pre"
-                    onComplete={handlePreTestComplete}
-                  />
-                </div>
-              )}
               
               {/* Self-Explanation Strategy Card */}
               {currentCardIndex === 2 && <SelfExplanationTips />}
@@ -680,7 +657,7 @@ export default function Phase3Content() {
               {currentCardIndex === 3 && <SpacingEffectGuide />}
               
               {/* Video Card */}
-              {currentCardIndex === 4 && (
+              {currentCardIndex === 3 && (
                 <div className="space-y-4">
                   <p className="text-center text-muted-foreground">
                     Watch this video to learn about powerful, evidence-based study techniques.
@@ -712,7 +689,7 @@ export default function Phase3Content() {
               )}
               
               {/* Post-Test Card */}
-              {currentCardIndex === 5 && (
+              {currentCardIndex === 4 && (
                 <div>
                   <div className="text-muted-foreground mb-4">
                     <p>
@@ -750,8 +727,8 @@ export default function Phase3Content() {
                   onClick={nextCard}
                   disabled={
                     (currentCardIndex === 3 && !preTestCompleted) ||
-                    (currentCardIndex === 4 && !videoCompleted && !videoSkipped) ||
-                    (currentCardIndex === 5 && !postTestCompleted)
+                    (currentCardIndex === 3 && !videoCompleted) ||
+                    (currentCardIndex === 4 && !postTestCompleted)
                   }
                 >
                   {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />

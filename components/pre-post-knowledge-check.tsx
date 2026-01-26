@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle, HelpCircle, ArrowRight, BookOpen } from "lucide-react"
 import { usePathname } from "next/navigation"
@@ -13,8 +14,8 @@ import type { KnowledgeCheckQuestion } from "@/lib/knowledge-check-questions"
 interface PrePostKnowledgeCheckProps {
   questions: KnowledgeCheckQuestion[]
   testType: 'pre' | 'post'
-  onComplete: (answers: { [questionId: number]: string }, allCorrect: boolean) => void
-  onSkipVideo?: () => void // For pre-test: if 2/2 correct, can skip video
+  onComplete: (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => void
+  onSkipVideo?: () => void // For pre-test: if 2/2 correct, can skip video (deprecated - videos are now required)
 }
 
 export default function PrePostKnowledgeCheck({
@@ -24,7 +25,7 @@ export default function PrePostKnowledgeCheck({
   onSkipVideo
 }: PrePostKnowledgeCheckProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [questionId: number]: string }>({})
+  const [selectedAnswers, setSelectedAnswers] = useState<{ [questionId: number]: string | string[] }>({})
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<number>>(new Set())
   const [questionResults, setQuestionResults] = useState<{ [questionId: number]: boolean }>({})
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -38,7 +39,14 @@ export default function PrePostKnowledgeCheck({
   
   const currentQuestion = questions[currentQuestionIndex]
   const isLastQuestion = currentQuestionIndex === questions.length - 1
-  const allQuestionsAnswered = questions.every(q => selectedAnswers[q.id])
+  const isSelectAll = currentQuestion.isSelectAll || false
+  const allQuestionsAnswered = questions.every(q => {
+    const answer = selectedAnswers[q.id]
+    if (q.isSelectAll) {
+      return Array.isArray(answer) && answer.length > 0
+    }
+    return answer !== undefined && answer !== ""
+  })
   const allQuestionsCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
   
   useEffect(() => {
@@ -90,9 +98,23 @@ export default function PrePostKnowledgeCheck({
   }
   
   const handleSubmit = async () => {
-    if (!selectedAnswers[currentQuestion.id]) return
+    const answer = selectedAnswers[currentQuestion.id]
+    if (!answer || (isSelectAll && (!Array.isArray(answer) || answer.length === 0))) return
     
-    const isCorrect = selectedAnswers[currentQuestion.id] === currentQuestion.correctAnswer
+    // Check correctness: for select all, all correct answers must be selected and no incorrect ones
+    let isCorrect: boolean
+    if (isSelectAll) {
+      const correctAnswers = Array.isArray(currentQuestion.correctAnswer) 
+        ? currentQuestion.correctAnswer 
+        : [currentQuestion.correctAnswer]
+      const selectedArray = Array.isArray(answer) ? answer : [answer]
+      // Must have all correct answers and no extra incorrect ones
+      isCorrect = correctAnswers.every(ca => selectedArray.includes(ca)) && 
+                  selectedArray.every(sa => correctAnswers.includes(sa))
+    } else {
+      isCorrect = answer === currentQuestion.correctAnswer
+    }
+    
     setQuestionResults(prev => ({ ...prev, [currentQuestion.id]: isCorrect }))
     setSubmittedQuestions(prev => {
       const newSet = new Set(prev)
@@ -110,6 +132,7 @@ export default function PrePostKnowledgeCheck({
       question_text: currentQuestion.question,
       question_type: currentQuestion.questionType,
       test_type: testType,
+      is_select_all: isSelectAll,
       selected_answer: selectedAnswers[currentQuestion.id],
       correct_answer: currentQuestion.correctAnswer,
       is_correct: isCorrect,
@@ -171,7 +194,9 @@ export default function PrePostKnowledgeCheck({
   const isSubmitted = submittedQuestions.has(currentQuestion.id)
   const isCorrect = questionResults[currentQuestion.id] === true
   const selectedAnswer = selectedAnswers[currentQuestion.id]
-  const wrongAnswerFeedback = currentQuestion.feedbackForWrongAnswers?.[selectedAnswer || '']
+  const selectedAnswerArray = isSelectAll && Array.isArray(selectedAnswer) ? selectedAnswer : []
+  const selectedAnswerString = !isSelectAll && typeof selectedAnswer === 'string' ? selectedAnswer : ''
+  const wrongAnswerFeedback = currentQuestion.feedbackForWrongAnswers?.[selectedAnswerString || '']
   
   const accent = "#d8b26f"
   const neutralSurface = "hsl(var(--card) / 0.9)"
@@ -206,19 +231,17 @@ export default function PrePostKnowledgeCheck({
 
         <p className="mb-6" style={{ color: foreground, lineHeight: '1.6' }}>{currentQuestion.question}</p>
 
-        <RadioGroup
-          value={selectedAnswer || ""}
-          onValueChange={(value) => {
-            setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: value }))
-          }}
-          className="space-y-3"
-          disabled={isSubmitted}
-        >
-          {currentQuestion.options.map((option, index) => {
-            const isSelected = option === selectedAnswer
-            const isCorrectOption = option === currentQuestion.correctAnswer
-            const showCorrect = isSubmitted && isCorrectOption
-            const showWrong = isSubmitted && isSelected && !isCorrectOption
+        {isSelectAll ? (
+          // Select All (Checkbox) mode
+          <div className="space-y-3">
+            {currentQuestion.options.map((option, index) => {
+              const isSelected = Array.isArray(selectedAnswer) && selectedAnswer.includes(option)
+              const correctAnswers = Array.isArray(currentQuestion.correctAnswer) 
+                ? currentQuestion.correctAnswer 
+                : [currentQuestion.correctAnswer]
+              const isCorrectOption = correctAnswers.includes(option)
+              const showCorrect = isSubmitted && isCorrectOption
+              const showWrong = isSubmitted && isSelected && !isCorrectOption
             
             return (
               <div
@@ -243,32 +266,140 @@ export default function PrePostKnowledgeCheck({
                       : "transparent"
                 }}
               >
-                <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
-                <div className="flex-1">
-                  <Label
-                    htmlFor={`option-${index}`}
-                    className={`text-sm font-medium cursor-pointer ${
-                      showCorrect
-                        ? "text-emerald-700 dark:text-emerald-400"
-                        : showWrong
-                          ? "text-red-700 dark:text-red-400"
-                          : "text-foreground"
-                    }`}
-                    style={{ color: showCorrect ? "hsl(142 71% 35%)" : showWrong ? "hsl(0 84% 50%)" : foreground }}
-                  >
-                    {option}
-                  </Label>
-                </div>
-                {showCorrect && (
-                  <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-                )}
-                {showWrong && (
-                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                {isSelectAll ? (
+                  <>
+                    <Checkbox
+                      id={`option-${index}`}
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        const current = Array.isArray(selectedAnswer) ? selectedAnswer : []
+                        if (checked) {
+                          setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: [...current, option] }))
+                        } else {
+                          setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: current.filter(a => a !== option) }))
+                        }
+                      }}
+                      disabled={isSubmitted}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label
+                        htmlFor={`option-${index}`}
+                        className={`text-sm font-medium cursor-pointer ${
+                          showCorrect
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : showWrong
+                              ? "text-red-700 dark:text-red-400"
+                              : "text-foreground"
+                        }`}
+                        style={{ color: showCorrect ? "hsl(142 71% 35%)" : showWrong ? "hsl(0 84% 50%)" : foreground }}
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                    {showCorrect && (
+                      <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                    )}
+                    {showWrong && (
+                      <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
+                    <div className="flex-1">
+                      <Label
+                        htmlFor={`option-${index}`}
+                        className={`text-sm font-medium cursor-pointer ${
+                          showCorrect
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : showWrong
+                              ? "text-red-700 dark:text-red-400"
+                              : "text-foreground"
+                        }`}
+                        style={{ color: showCorrect ? "hsl(142 71% 35%)" : showWrong ? "hsl(0 84% 50%)" : foreground }}
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                    {showCorrect && (
+                      <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                    )}
+                    {showWrong && (
+                      <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    )}
+                  </>
                 )}
               </div>
             )
           })}
-        </RadioGroup>
+        </div>
+        ) : (
+          // Single Select (Radio) mode
+          <RadioGroup
+            value={selectedAnswerString || ""}
+            onValueChange={(value) => {
+              setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: value }))
+            }}
+            className="space-y-3"
+            disabled={isSubmitted}
+          >
+            {currentQuestion.options.map((option, index) => {
+              const isSelected = option === selectedAnswerString
+              const isCorrectOption = option === currentQuestion.correctAnswer
+              const showCorrect = isSubmitted && isCorrectOption
+              const showWrong = isSubmitted && isSelected && !isCorrectOption
+              
+              return (
+                <div
+                  key={index}
+                  className={`flex items-start space-x-2 rounded-lg border p-3 transition-colors ${
+                    showCorrect
+                      ? "border-emerald-500/50 bg-emerald-500/10"
+                      : showWrong
+                        ? "border-red-500/50 bg-red-500/10"
+                        : "border-slate-300 hover:border-indigo-500/50 hover:bg-indigo-500/5"
+                  }`}
+                  style={{
+                    borderColor: showCorrect 
+                      ? "hsl(142 71% 45% / 0.5)" 
+                      : showWrong 
+                        ? "hsl(0 84% 60% / 0.5)"
+                        : neutralBorder,
+                    backgroundColor: showCorrect
+                      ? "hsl(142 71% 45% / 0.1)"
+                      : showWrong
+                        ? "hsl(0 84% 60% / 0.1)"
+                        : "transparent"
+                  }}
+                >
+                  <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={`option-${index}`}
+                      className={`text-sm font-medium cursor-pointer ${
+                        showCorrect
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : showWrong
+                            ? "text-red-700 dark:text-red-400"
+                            : "text-foreground"
+                      }`}
+                      style={{ color: showCorrect ? "hsl(142 71% 35%)" : showWrong ? "hsl(0 84% 50%)" : foreground }}
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                  {showCorrect && (
+                    <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                  )}
+                  {showWrong && (
+                    <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                  )}
+                </div>
+              )
+            })}
+          </RadioGroup>
+        )}
 
         {isSubmitted && (
           <motion.div
@@ -311,11 +442,11 @@ export default function PrePostKnowledgeCheck({
             {!isSubmitted ? (
               <Button
                 onClick={handleSubmit}
-                disabled={!selectedAnswer}
+                disabled={!selectedAnswer || (isSelectAll && (!Array.isArray(selectedAnswer) || selectedAnswer.length === 0))}
                 style={{
                   background: `linear-gradient(135deg, ${accent}, #e6c98c)`,
                   color: "#1f1408",
-                  opacity: selectedAnswer ? 1 : 0.5
+                  opacity: (selectedAnswer && (!isSelectAll || (Array.isArray(selectedAnswer) && selectedAnswer.length > 0))) ? 1 : 0.5
                 }}
               >
                 Submit Answer

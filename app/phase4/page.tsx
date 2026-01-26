@@ -8,14 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ArrowRight, CheckCircle, Map, Video, Edit, Bot, ChevronRight as ChevronRightIcon } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import VideoPlayer from "@/components/video-player"
+import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
+import { phase4KnowledgeChecks } from "@/lib/knowledge-check-questions"
 
 export default function Phase4IntroPage() {
   const router = useRouter()
   const [userName, setUserName] = useState("")
   const [videoCompleted, setVideoCompleted] = useState(false);
+  const [postTestCompleted, setPostTestCompleted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [mc_answer, setMcAnswer] = useState("");
-  const [ii_answer, setIiAnswer] = useState("");
 
   useEffect(() => {
     try {
@@ -42,7 +43,19 @@ export default function Phase4IntroPage() {
     setVideoCompleted(true);
   };
 
+  const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
+    setPostTestCompleted(true);
+  };
+
   const handleNext = () => {
+    if (currentStep === 1 && !videoCompleted) {
+      // Can't proceed from video step until video is watched
+      return;
+    }
+    if (currentStep === 2 && !postTestCompleted) {
+      // Can't proceed from post-test step until completed
+      return;
+    }
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -169,7 +182,9 @@ export default function Phase4IntroPage() {
                     Set effective goals and plan for challenges using the MCII technique.
                   </p>
                 </div>
-                
+              )}
+
+              {currentStep === 1 && (
                 <div className="space-y-4">
                   <p className="text-center text-muted-foreground">
                     Learn the MCII framework (Mental Contrasting with Implementation Intentions) to build an effective study plan.
@@ -188,22 +203,55 @@ export default function Phase4IntroPage() {
                     }}
                   >
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will proceed to complete the MCII (Mental Contrasting with Implementation Intentions) exercise to build your strategic plan.</p>
+                    <p className="text-muted-foreground text-sm">You will complete a knowledge check, then proceed to the MCII exercise.</p>
                   </div>
                 </div>
+              )}
+
+              {currentStep === 2 && (
+                <div>
+                  <div className="text-muted-foreground mb-4">
+                    <p>
+                      <strong style={{ color: accent }}>After the video:</strong> Let's check your understanding of MCII (Mental Contrasting with Implementation Intentions).
+                    </p>
+                  </div>
+                  <PrePostKnowledgeCheck
+                    questions={phase4KnowledgeChecks.postTest}
+                    testType="post"
+                    onComplete={handlePostTestComplete}
+                  />
+                </div>
+              )}
 
                 <div className="flex justify-end mt-8">
-                  <Button 
-                    className="font-semibold px-8 py-3 rounded-lg text-lg"
-                    style={{
-                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                      color: "#1f1408",
-                    }}
-                    onClick={handleComplete}
-                  >
-                    Continue to Tasks <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                  {currentStep === 1 && (
+                    <Button 
+                      className="font-semibold px-8 py-3 rounded-lg text-lg"
+                      style={{
+                        background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                        boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                        color: "#1f1408",
+                      }}
+                      onClick={handleNext}
+                      disabled={!videoCompleted}
+                    >
+                      Continue to Knowledge Check <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                  {currentStep === 2 && (
+                    <Button 
+                      className="font-semibold px-8 py-3 rounded-lg text-lg"
+                      style={{
+                        background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                        boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                        color: "#1f1408",
+                      }}
+                      onClick={handleComplete}
+                      disabled={!postTestCompleted}
+                    >
+                      Continue to Tasks <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

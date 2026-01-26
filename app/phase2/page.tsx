@@ -368,15 +368,12 @@ export default function Phase2Page() {
   const [userName, setUserName] = useState("")
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [videoWatched, setVideoWatched] = useState(false)
-  const [preTestCompleted, setPreTestCompleted] = useState(false)
   const [postTestCompleted, setPostTestCompleted] = useState(false)
-  const [preTestAnswers, setPreTestAnswers] = useState<{ [questionId: number]: string }>({})
 
   const cards = [
     { id: "intro", title: "Understand Your Task" },
     { id: "objectives", title: "Cognitive Levels of Understanding" },
     { id: "resources", title: "Why Prior Knowledge & Resources Matter" },
-    { id: "pre-test", title: "Pre-Test: Check Your Knowledge" },
     { id: "video", title: "Watch: Introduction to Learning Task Analysis" },
     { id: "post-test", title: "Knowledge Check: After Video" },
   ]
@@ -400,13 +397,8 @@ export default function Phase2Page() {
   const handleVideoComplete = () => {
     setVideoWatched(true)
   }
-
-  const handlePreTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
-    setPreTestAnswers(answers)
-    setPreTestCompleted(true)
-  }
   
-  const handlePostTestComplete = (answers: { [questionId: number]: string }, allCorrect: boolean) => {
+  const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
     setPostTestCompleted(true)
   }
 
@@ -449,9 +441,8 @@ export default function Phase2Page() {
           onPrev={prevCard}
           onNext={nextCard}
           isNextDisabled={
-            (currentCardIndex === 3 && !preTestCompleted) ||
-            (currentCardIndex === 4 && !videoWatched) ||
-            (currentCardIndex === 5 && !postTestCompleted)
+            (currentCardIndex === 3 && !videoWatched) ||
+            (currentCardIndex === 4 && !postTestCompleted)
           }
         />
         
@@ -537,20 +528,6 @@ export default function Phase2Page() {
                 </div>
               )}
               {currentCardIndex === 3 && (
-                <div>
-                  <div className="text-muted-foreground mb-4">
-                    <p className="mb-2">
-                      <strong style={{ color: accent }}>Before watching the video:</strong> Let's check what you already know about self-regulated learning and task analysis.
-                    </p>
-                  </div>
-                  <PrePostKnowledgeCheck
-                    questions={phase2KnowledgeChecks.preTest}
-                    testType="pre"
-                    onComplete={handlePreTestComplete}
-                  />
-                </div>
-              )}
-              {currentCardIndex === 4 && (
                 <div className="mt-6 space-y-6">
                   <p className="text-center text-muted-foreground">
                     Learn how to analyze learning objectives and select effective learning strategies.
@@ -570,11 +547,11 @@ export default function Phase2Page() {
                   </div>
                 </div>
               )}
-              {currentCardIndex === 5 && (
+              {currentCardIndex === 4 && (
                 <div>
                   <div className="text-muted-foreground mb-4">
                     <p>
-                      <strong style={{ color: accent }}>After the video:</strong> Let's check your understanding of the four-stage model of self-regulated learning.
+                      <strong style={{ color: accent }}>After the video:</strong> Let's check your understanding of learning objectives and task analysis.
                     </p>
                   </div>
                   <PrePostKnowledgeCheck
@@ -607,9 +584,8 @@ export default function Phase2Page() {
             }}
                     onClick={nextCard}
                     disabled={
-                      (currentCardIndex === 3 && !preTestCompleted) ||
-                      (currentCardIndex === 4 && !videoWatched) ||
-                      (currentCardIndex === 5 && !postTestCompleted)
+                      (currentCardIndex === 3 && !videoWatched) ||
+                      (currentCardIndex === 4 && !postTestCompleted)
                     }
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
