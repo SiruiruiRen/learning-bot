@@ -16,6 +16,21 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 22: Switch to Single Prompt with Consistent Style
+**Date**: 2026-01-21 | **Commit**: `7c418bf` | **Status**: ✅ Complete
+**User Need**: "Chain prompt too slow. Use single prompt but design two prompt groups - one for warm (if student selects warm, entire system is warm) and one for direct (entire system feedback stays consistent)."
+**Key Changes**:
+- Removed chain prompting (evaluation + feedback steps) - too slow
+- Switched to single prompt approach with style consistency
+- System maintains consistent style based on user's onboarding choice (warm or direct)
+- If user selects warm during onboarding, ALL feedback throughout entire system is warm
+- If user selects direct during onboarding, ALL feedback throughout entire system is direct
+- Updated chat.py to use get_prompt() with coach_tone parameter (single API call)
+- Updated feedback_style.py to also use single prompt (for alternative view if needed)
+- Phase 1 confirmed: no pre-test, only video → open-ended quiz
+**Files Modified**: `backend/routes/chat.py`, `backend/routes/feedback_style.py`, `prompt_engineering/scripts/final_prompts.py`, `docs/design_iterations_log.md`
+**Research Impact**: Faster response times improve user experience. Consistent style throughout system ensures experimental control - users experience either warm or direct style consistently, not mixed styles.
+
 ### Iteration 21: Remove Pre-Tests, Use Original Intervention Questions
 **Date**: 2026-01-21 | **Commit**: `2c9131c` | **Status**: ✅ Complete
 **User Need**: "Remove pre-tests - too many questions. Use phase-specific questions from original intervention with full feedback for each option. Flow: instruction → video → post-test (2 choice questions) → chatbot. Phase 1: video → open-ended quiz. Phase 2-5: instruction → video → 2-choice post-test → chatbot."
