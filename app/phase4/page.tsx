@@ -85,14 +85,14 @@ export default function Phase4IntroPage() {
 
       <ModuleBar currentPhase={4} />
 
-        <div
-          className="fixed top-0 left-0 right-0 z-20 backdrop-blur-md border-b py-3 px-4"
-          style={{ backgroundColor: headerSurface, borderColor: neutralBorder }}
-        >
+      <div
+        className="fixed top-0 left-0 right-0 z-20 backdrop-blur-md border-b py-3 px-4"
+        style={{ backgroundColor: headerSurface, borderColor: neutralBorder }}
+      >
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
-              <Target className="h-6 w-6 mr-2" style={{ color: accent }} />
-              <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text">
+            <Target className="h-6 w-6 mr-2" style={{ color: accent }} />
+            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text">
               Phase 4: Strategic Learning Plan
             </h2>
           </div>
@@ -228,49 +228,48 @@ export default function Phase4IntroPage() {
                 </div>
               )}
 
-                <div className="flex justify-end mt-8">
-                  {currentStep === 0 && (
-                    <Button 
-                      className="font-semibold px-8 py-3 rounded-lg text-lg"
-                      style={{
-                        background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                        boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                        color: "#1f1408",
-                      }}
-                      onClick={handleNext}
-                    >
-                      Continue to Video <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
-                  {currentStep === 1 && (
-                    <Button 
-                      className="font-semibold px-8 py-3 rounded-lg text-lg"
-                      style={{
-                        background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                        boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                        color: "#1f1408",
-                      }}
-                      onClick={handleNext}
-                      disabled={!videoCompleted}
-                    >
-                      Continue to Knowledge Check <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
-                  {currentStep === 2 && (
-                    <Button 
-                      className="font-semibold px-8 py-3 rounded-lg text-lg"
-                      style={{
-                        background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                        boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                        color: "#1f1408",
-                      }}
-                      onClick={handleComplete}
-                      disabled={!postTestCompleted}
-                    >
-                      Continue to Tasks <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
-                </div>
+              <div className="flex justify-end mt-8">
+                {currentStep === 0 && (
+                  <Button 
+                    className="font-semibold px-8 py-3 rounded-lg text-lg"
+                    style={{
+                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                      color: "#1f1408",
+                    }}
+                    onClick={handleNext}
+                  >
+                    Continue to Video <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
+                {currentStep === 1 && (
+                  <Button 
+                    className="font-semibold px-8 py-3 rounded-lg text-lg"
+                    style={{
+                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                      color: "#1f1408",
+                    }}
+                    onClick={handleNext}
+                    disabled={!videoCompleted}
+                  >
+                    Continue to Knowledge Check <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
+                {currentStep === 2 && (
+                  <Button 
+                    className="font-semibold px-8 py-3 rounded-lg text-lg"
+                    style={{
+                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                      color: "#1f1408",
+                    }}
+                    onClick={handleComplete}
+                    disabled={!postTestCompleted}
+                  >
+                    Continue to Tasks <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
