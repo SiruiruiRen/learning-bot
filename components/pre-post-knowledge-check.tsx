@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -79,9 +79,15 @@ export default function PrePostKnowledgeCheck({
     return questions.length > 0 && questions.every(q => questionResults[q.id] === true)
   }, [questions, questionResults])
   
-  // Define logQuizEvent function that doesn't depend on sessionId state
-  // It will get sessionId from localStorage or parameter
-  const logQuizEvent = async (eventType: string, metadata: any, sessionIdParam?: string | null) => {
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem("session_id")
+    if (storedSessionId) {
+      setSessionId(storedSessionId)
+    }
+  }, [])
+  
+  // Define logQuizEvent using useCallback to ensure it's stable
+  const logQuizEvent = useCallback(async (eventType: string, metadata: any, sessionIdParam?: string | null) => {
     const currentSessionId = sessionIdParam || sessionId || localStorage.getItem("session_id")
     if (!currentSessionId) return
     
@@ -103,21 +109,16 @@ export default function PrePostKnowledgeCheck({
     } catch (error) {
       console.error(`Failed to log ${eventType}:`, error)
     }
-  }
+  }, [sessionId, phase, testType])
 
   useEffect(() => {
-    const storedSessionId = localStorage.getItem("session_id")
-    if (storedSessionId) {
-      setSessionId(storedSessionId)
-      
-      // Log test started after sessionId is set
-      if (currentQuestionIndex === 0 && questions.length > 0) {
-        logQuizEvent('quiz_started', {
-          test_type: testType
-        }, storedSessionId)
-      }
+    // Log test started after sessionId is set
+    if (sessionId && currentQuestionIndex === 0 && questions.length > 0) {
+      logQuizEvent('quiz_started', {
+        test_type: testType
+      }, sessionId)
     }
-  }, [currentQuestionIndex, testType, questions.length])
+  }, [sessionId, currentQuestionIndex, testType, questions.length, logQuizEvent])
   
   useEffect(() => {
     // Ensure we're using a valid index
@@ -133,10 +134,12 @@ export default function PrePostKnowledgeCheck({
   }, [currentQuestionIndex, questions.length])
   
   useEffect(() => {
-    if (currentQuestion && selectedAnswers[currentQuestion.id] && !firstInteractionTime.current) {
+    if (!currentQuestion) return
+    const questionId = currentQuestion.id
+    if (selectedAnswers[questionId] && !firstInteractionTime.current) {
       firstInteractionTime.current = Date.now()
     }
-  }, [selectedAnswers, currentQuestion?.id])
+  }, [selectedAnswers, currentQuestion])
   
   const handleSubmit = async () => {
     const answer = selectedAnswers[currentQuestion.id]
@@ -222,7 +225,8 @@ export default function PrePostKnowledgeCheck({
   // Auto-complete when last question is submitted (after showing feedback)
   useEffect(() => {
     if (!currentQuestion) return
-    if (isLastQuestion && isSubmitted && questionResults[currentQuestion.id] !== undefined && !hasCompleted) {
+    const questionId = currentQuestion.id
+    if (isLastQuestion && isSubmitted && questionResults[questionId] !== undefined && !hasCompleted) {
       // Small delay to show feedback before auto-completing
       const timer = setTimeout(() => {
         if (hasCompleted) return // Double check to avoid duplicate calls
@@ -250,7 +254,7 @@ export default function PrePostKnowledgeCheck({
       
       return () => clearTimeout(timer)
     }
-  }, [isLastQuestion, isSubmitted, currentQuestion?.id, questionResults, testType, allQuestionsCorrect, onSkipVideo, questions, selectedAnswers, onComplete, hasCompleted])
+  }, [isLastQuestion, isSubmitted, currentQuestion, questionResults, testType, allQuestionsCorrect, onSkipVideo, questions, selectedAnswers, onComplete, hasCompleted, logQuizEvent, sessionId])
   
   const handleSkipVideoAndComplete = () => {
     const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
