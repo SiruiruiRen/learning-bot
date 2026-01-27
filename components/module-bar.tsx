@@ -486,8 +486,8 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                           {phase.icon}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
-                        <p>{phase.label}</p>
+                      <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs text-white">
+                        <p className="text-white">{phase.label}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
