@@ -38,8 +38,28 @@ export default function PrePostKnowledgeCheck({
   const phaseMatch = pathname.match(/\/phase(\d+)/)
   const phase = phaseMatch ? `phase${phaseMatch[1]}` : "unknown"
   
-  const currentQuestion = questions[currentQuestionIndex]
-  const isLastQuestion = currentQuestionIndex === questions.length - 1
+  // Safety check: ensure questions array exists and is not empty
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-muted-foreground">No questions available. Please refresh the page.</p>
+      </div>
+    )
+  }
+  
+  // Safety check: ensure currentQuestionIndex is valid
+  const safeIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1))
+  const currentQuestion = questions[safeIndex]
+  
+  if (!currentQuestion) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-muted-foreground">Question not found. Please refresh the page.</p>
+      </div>
+    )
+  }
+  
+  const isLastQuestion = safeIndex === questions.length - 1
   const isSelectAll = currentQuestion.isSelectAll || false
   const allQuestionsAnswered = questions.every(q => {
     const answer = selectedAnswers[q.id]
@@ -65,9 +85,15 @@ export default function PrePostKnowledgeCheck({
   }, [currentQuestionIndex, testType])
   
   useEffect(() => {
-    questionStartTime.current = Date.now()
-    firstInteractionTime.current = null
-  }, [currentQuestionIndex])
+    // Ensure we're using the safe index
+    if (questions.length > 0 && safeIndex !== currentQuestionIndex) {
+      setCurrentQuestionIndex(safeIndex)
+    }
+    if (questions.length > 0) {
+      questionStartTime.current = Date.now()
+      firstInteractionTime.current = null
+    }
+  }, [currentQuestionIndex, safeIndex, questions.length])
   
   useEffect(() => {
     if (selectedAnswers[currentQuestion.id] && !firstInteractionTime.current) {
@@ -181,6 +207,7 @@ export default function PrePostKnowledgeCheck({
   
   // Auto-complete when last question is submitted (after showing feedback)
   useEffect(() => {
+    if (!currentQuestion) return
     if (isLastQuestion && isSubmitted && questionResults[currentQuestion.id] !== undefined && !hasCompleted) {
       // Small delay to show feedback before auto-completing
       const timer = setTimeout(() => {
@@ -209,7 +236,7 @@ export default function PrePostKnowledgeCheck({
       
       return () => clearTimeout(timer)
     }
-  }, [isLastQuestion, isSubmitted, currentQuestion.id, questionResults, testType, allQuestionsCorrect, onSkipVideo, questions, selectedAnswers, onComplete, hasCompleted])
+  }, [isLastQuestion, isSubmitted, currentQuestion?.id, questionResults, testType, allQuestionsCorrect, onSkipVideo, questions, selectedAnswers, onComplete, hasCompleted])
   
   const handleSkipVideoAndComplete = () => {
     const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
