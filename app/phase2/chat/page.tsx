@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ChevronLeft, ChevronRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedLearningObjective from "@/components/guided-learning-objective"
-import InstructionGuide from "@/components/instruction-guide"
+import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import PostTaskAssessment from "@/components/post-task-assessment"
 import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
 
@@ -115,14 +115,11 @@ export default function Phase2ChatPage() {
               Back to Instructions
             </Button>
             {chatComplete && (
-              <Button
-                className="font-semibold"
+              <PhaseNavigationButton
+                nextPhase={3}
+                onNavigate={() => router.push('/phase3')}
                 style={primaryButtonStyle}
-                onClick={() => router.push('/phase3')}
-              >
-                Go to Phase 3
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
+              />
             )}
           </div>
           {chatComplete && !showPostTask && (

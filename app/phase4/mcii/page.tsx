@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ChevronLeft, ChevronRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedMCII from "@/components/guided-mcii"
-import InstructionGuide from "@/components/instruction-guide"
+import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import PostTaskAssessment from "@/components/post-task-assessment"
 import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
 
@@ -129,7 +129,7 @@ export default function MCIIPage() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-between mt-4">
+          <div className="flex flex-col gap-3 mt-4">
             <Button
               variant="outline"
               className="border"
@@ -139,6 +139,13 @@ export default function MCIIPage() {
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Tasks
             </Button>
+            {chatComplete && (
+              <PhaseNavigationButton
+                nextPhase={5}
+                onNavigate={() => router.push('/phase5')}
+                style={primaryButtonStyle}
+              />
+            )}
           </div>
           
           {chatComplete && !showPostTask && (
