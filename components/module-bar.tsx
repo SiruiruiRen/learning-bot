@@ -148,10 +148,10 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
       icon: <Medal className="h-5 w-5" />,
       color: "phase6" as ModuleColor,
       phases: [6],
-      phaseNames: ["Learning Journey Summary"],
+      phaseNames: ["Summary & Post Assessment"],
       phaseIcons: [<Medal className="h-5 w-5" />],
       phaseDescriptions: [
-        "Review your complete learning system and prepare for implementation",
+        "Complete final assessment and review your learning journey",
       ],
       description: "Summarize",
     },
@@ -460,7 +460,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
               { id: 3, label: "Phase 3: Effective Learning Strategies", icon: <BookMarked className="h-4 w-4" />, color: colorMap.phase3, action: () => router.push("/phase3") },
               { id: 4, label: "Phase 4: Achieve Your Goals", icon: <ListTodo className="h-4 w-4" />, color: colorMap.phase4, action: () => router.push("/phase4") },
               { id: 5, label: "Phase 5: Monitor Your Learning", icon: <TrendingUp className="h-4 w-4" />, color: colorMap.phase5, action: navigateToPhase5 },
-              { id: 6, label: "Phase 6: Learning Journey Summary", icon: <Medal className="h-4 w-4" />, color: colorMap.phase6, action: () => router.push("/summary") },
+              { id: 6, label: "Phase 6: Summary & Post Assessment", icon: <Medal className="h-4 w-4" />, color: colorMap.phase6, action: () => router.push("/phase6") },
             ].map((phase) => {
               const isActive = displayPhase === phase.id;
               const isCompleted = completedPhases.includes(phase.id);

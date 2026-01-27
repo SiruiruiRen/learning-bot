@@ -85,9 +85,10 @@ export default function Phase6Page() {
 
     setIsSubmitted(true)
 
-    // Log submission
+    // Log submission and save answer
     if (sessionId) {
       try {
+        // Log event
         await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -103,6 +104,23 @@ export default function Phase6Page() {
             }
           })
         })
+        
+        // Also save the answer as user data for research purposes
+        if (userId) {
+          await fetch(`/api/user-data/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              data_type: 'final_exam_preparation_plan',
+              value: answer,
+              metadata: {
+                course_name: courseName,
+                phase: 'phase6',
+                timestamp: new Date().toISOString()
+              }
+            })
+          }).catch(err => console.error("Failed to save answer:", err))
+        }
       } catch (error) {
         console.error("Failed to log submission:", error)
       }
