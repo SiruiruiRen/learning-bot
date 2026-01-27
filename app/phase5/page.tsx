@@ -94,6 +94,11 @@ export default function Phase5Content() {
   const handleComplete = () => {
     router.push("/phase5/chat")
   }
+  
+  const handlePostTestCompleteAndContinue = () => {
+    // After post-test, go to chatbot
+    router.push("/phase5/chat")
+  }
 
   const accent = "#d8b26f"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"

@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoring from "@/components/guided-monitoring"
 import InstructionGuide from "@/components/instruction-guide"
-import PostTaskAssessment from "@/components/post-task-assessment"
-import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
+import { phaseInstructions } from "@/lib/post-task-questions"
 
 export default function Phase5ChatContent() {
   const router = useRouter()
@@ -18,7 +17,6 @@ export default function Phase5ChatContent() {
   const [isComplete, setIsComplete] = useState(false)
   const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
-  const [showPostTask, setShowPostTask] = useState(false)
   
   // Load user data on component mount
   useEffect(() => {
@@ -41,14 +39,9 @@ export default function Phase5ChatContent() {
     }
   }, [router])
 
-  const handlePhaseComplete = (nextPhase?: string) => {
+  const handlePhaseComplete = () => {
     setIsComplete(true);
     setChatComplete(true);
-    setShowPostTask(true);
-  }
-  
-  const handlePostTaskComplete = (answers: { [questionId: string]: string }) => {
-    router.push("/summary")
   }
   
   const handleStartChat = () => {
@@ -131,22 +124,13 @@ export default function Phase5ChatContent() {
                       </div>
                     </div>
                   )}
-                  {!showInstruction && !showPostTask && (
+                  {!showInstruction && (
                     <GuidedMonitoring
                       userId={userId}
                       phase="phase5"
                       component="progress_monitoring"
                       onComplete={() => {}} // Don't auto-complete - use button instead
                       height="calc(100% - 80px)"
-                    />
-                  )}
-                  {showPostTask && (
-                    <PostTaskAssessment
-                      questions={comprehensivePostTaskQuestions.filter(q => 
-                        ['q8_monitoring_integration', 'q9_adaptation_transfer', 'q10_integration', 'q11_strategy_combination', 'q12_metacognition'].includes(q.id)
-                      )}
-                      onComplete={handlePostTaskComplete}
-                      showSampleAnswers={false}
                     />
                   )}
                 </>
@@ -167,16 +151,13 @@ export default function Phase5ChatContent() {
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Instructions
             </Button>
-            {!showPostTask && (
+            {chatComplete && (
               <Button
                 className="font-semibold"
                 style={primaryButtonStyle}
-                onClick={() => {
-                  setChatComplete(true);
-                  setShowPostTask(true);
-                }}
+                onClick={() => router.push('/phase6')}
               >
-                Complete & Continue to Assessment
+                Continue to Phase 6
                 <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             )}
