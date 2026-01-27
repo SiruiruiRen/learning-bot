@@ -15,7 +15,6 @@ export default function Phase4IntroPage() {
   const router = useRouter()
   const [userName, setUserName] = useState("")
   const [videoCompleted, setVideoCompleted] = useState(false);
-  const [postTestCompleted, setPostTestCompleted] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
@@ -43,10 +42,6 @@ export default function Phase4IntroPage() {
     setVideoCompleted(true);
   };
 
-  const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
-    setPostTestCompleted(true);
-  };
-
   const handleNext = () => {
     if (currentStep === 0) {
       // Move from instruction to video
@@ -55,13 +50,7 @@ export default function Phase4IntroPage() {
       // Can't proceed from video step until video is watched
       return;
     } else if (currentStep === 1 && videoCompleted) {
-      // Move from video to post-test
-      setCurrentStep(2);
-    } else if (currentStep === 2 && !postTestCompleted) {
-      // Can't proceed from post-test step until completed
-      return;
-    } else if (currentStep === 2 && postTestCompleted) {
-      // Move to tasks
+      // Move directly to tasks (skipping post-test as requested)
       handleComplete();
     }
   };
@@ -208,23 +197,8 @@ export default function Phase4IntroPage() {
                     }}
                   >
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will complete a knowledge check, then proceed to the MCII exercise.</p>
+                    <p className="text-muted-foreground text-sm">You will proceed directly to the MCII exercise.</p>
                   </div>
-                </div>
-              )}
-
-              {currentStep === 2 && (
-                <div>
-                  <div className="text-muted-foreground mb-4">
-                    <p>
-                      <strong style={{ color: accent }}>After the video:</strong> Let's check your understanding of MCII (Mental Contrasting with Implementation Intentions).
-                    </p>
-                  </div>
-                  <PrePostKnowledgeCheck
-                    questions={phase4KnowledgeChecks.postTest}
-                    testType="post"
-                    onComplete={handlePostTestComplete}
-                  />
                 </div>
               )}
 
@@ -252,20 +226,6 @@ export default function Phase4IntroPage() {
                     }}
                     onClick={handleNext}
                     disabled={!videoCompleted}
-                  >
-                    Continue to Knowledge Check <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
-                {currentStep === 2 && (
-                  <Button 
-                    className="font-semibold px-8 py-3 rounded-lg text-lg"
-                    style={{
-                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                      color: "#1f1408",
-                    }}
-                    onClick={handleComplete}
-                    disabled={!postTestCompleted}
                   >
                     Continue to Tasks <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>

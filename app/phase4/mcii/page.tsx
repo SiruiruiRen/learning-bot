@@ -10,8 +10,7 @@ import ModuleBar from "@/components/module-bar"
 import GuidedMCII from "@/components/guided-mcii"
 import InstructionGuide from "@/components/instruction-guide"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
-import PostTaskAssessment from "@/components/post-task-assessment"
-import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
+import { phaseInstructions } from "@/lib/post-task-questions"
 
 export default function MCIIPage() {
   const router = useRouter()
@@ -19,7 +18,6 @@ export default function MCIIPage() {
   const [isComplete, setIsComplete] = useState(false)
   const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
-  const [showPostTask, setShowPostTask] = useState(false)
 
   const accent = "#d8b26f"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -98,22 +96,13 @@ export default function MCIIPage() {
                       </div>
                     </div>
                   )}
-                  {!showInstruction && !showPostTask && (
+                  {!showInstruction && (
                     <GuidedMCII
                       userId={userId}
                       phase="4"
                       component="mcii"
                       onComplete={handleComplete}
                       height="100%"
-                    />
-                  )}
-                  {showPostTask && (
-                    <PostTaskAssessment
-                      questions={comprehensivePostTaskQuestions.filter(q => 
-                        ['q6_mcii_transfer', 'q7_mcii_reflection'].includes(q.id)
-                      )}
-                      onComplete={handlePostTaskComplete}
-                      showSampleAnswers={false}
                     />
                   )}
                 </>
@@ -143,18 +132,6 @@ export default function MCIIPage() {
               />
             )}
           </div>
-          
-          {chatComplete && !showPostTask && (
-            <div className="flex justify-center mt-6">
-              <Button
-                className="px-8 py-3 rounded-lg font-semibold"
-                style={primaryButtonStyle}
-                onClick={() => setShowPostTask(true)}
-              >
-                Continue to Post-Task Assessment <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          )}
         </motion.div>
       </div>
     </div>
