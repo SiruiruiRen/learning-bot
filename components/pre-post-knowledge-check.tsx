@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,9 +13,9 @@ import type { KnowledgeCheckQuestion } from "@/lib/knowledge-check-questions"
 
 interface PrePostKnowledgeCheckProps {
   questions: KnowledgeCheckQuestion[]
-  testType: 'pre' | 'post'
+  testType: 'post' // Only post-tests now
   onComplete: (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => void
-  onSkipVideo?: () => void // For pre-test: if 2/2 correct, can skip video (deprecated - videos are now required)
+  onSkipVideo?: () => void // Kept for interface compatibility but not used
 }
 
 export default function PrePostKnowledgeCheck({
@@ -46,8 +46,16 @@ export default function PrePostKnowledgeCheck({
       </div>
     )
   }
+
+  // Initialize sessionId
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem("session_id")
+    if (storedSessionId) {
+      setSessionId(storedSessionId)
+    }
+  }, [])
   
-  // Compute safe values directly without useMemo to avoid initialization order issues
+  // Compute safe values - do this INSIDE the render to avoid initialization issues
   const safeIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1))
   const currentQuestion = questions[safeIndex]
   
@@ -59,7 +67,7 @@ export default function PrePostKnowledgeCheck({
     )
   }
   
-  // All derived values computed directly
+  // All derived values computed directly without useMemo to avoid initialization order issues
   const isLastQuestion = safeIndex === questions.length - 1
   const isSelectAll = currentQuestion.isSelectAll || false
   const allQuestionsAnswered = questions.every(q => {
@@ -71,14 +79,7 @@ export default function PrePostKnowledgeCheck({
   })
   const allQuestionsCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
   
-  useEffect(() => {
-    const storedSessionId = localStorage.getItem("session_id")
-    if (storedSessionId) {
-      setSessionId(storedSessionId)
-    }
-  }, [])
-  
-  // Define logQuizEvent using useCallback to ensure it's stable
+  // Define logQuizEvent using useCallback
   const logQuizEvent = useCallback(async (eventType: string, metadata: any, sessionIdParam?: string | null) => {
     const currentSessionId = sessionIdParam || sessionId || localStorage.getItem("session_id")
     if (!currentSessionId) return
@@ -103,28 +104,36 @@ export default function PrePostKnowledgeCheck({
     }
   }, [sessionId, phase, testType])
 
+  // Log quiz start
   useEffect(() => {
-    // Log test started after sessionId is set
     if (sessionId && currentQuestionIndex === 0 && questions.length > 0) {
-      logQuizEvent('quiz_started', {
-        test_type: testType
-      }, sessionId)
+      // Only log start once
+      // We rely on sessionId being set, which happens after mount
+      // and we only log if it's the first question
+      const hasStarted = sessionStorage.getItem(`quiz_started_${phase}_${testType}`)
+      if (!hasStarted) {
+        logQuizEvent('quiz_started', {
+          test_type: testType
+        }, sessionId)
+        sessionStorage.setItem(`quiz_started_${phase}_${testType}`, 'true')
+      }
     }
-  }, [sessionId, currentQuestionIndex, testType, questions.length, logQuizEvent])
+  }, [sessionId, phase, testType, questions.length, logQuizEvent])
   
+  // Reset timer when question changes
   useEffect(() => {
-    // Ensure we're using a valid index
     if (questions.length > 0) {
       const validIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1))
       if (validIndex !== currentQuestionIndex) {
         setCurrentQuestionIndex(validIndex)
-        return // Don't update time if we're correcting the index
+        return
       }
       questionStartTime.current = Date.now()
       firstInteractionTime.current = null
     }
   }, [currentQuestionIndex, questions.length])
   
+  // Track first interaction
   useEffect(() => {
     if (!currentQuestion) return
     const questionId = currentQuestion.id
@@ -143,14 +152,13 @@ export default function PrePostKnowledgeCheck({
       answer: answer
     })
     
-    // Check correctness: for select all, all correct answers must be selected and no incorrect ones
+    // Check correctness
     let isCorrect: boolean
     if (isSelectAll) {
       const correctAnswers = Array.isArray(currentQuestion.correctAnswer) 
         ? currentQuestion.correctAnswer 
         : [currentQuestion.correctAnswer]
       const selectedArray = Array.isArray(answer) ? answer : [answer]
-      // Must have all correct answers and no extra incorrect ones
       isCorrect = correctAnswers.every(ca => selectedArray.includes(ca)) && 
                   selectedArray.every(sa => correctAnswers.includes(sa))
     } else {
@@ -183,24 +191,11 @@ export default function PrePostKnowledgeCheck({
     }, sessionId)
     
     console.log(`${isCorrect ? '✅' : '❌'} Answer is ${isCorrect ? 'correct' : 'incorrect'}. Logged to database.`)
-    
-    // If this is pre-test and 2/2 correct, offer to skip video
-    if (testType === 'pre' && isLastQuestion && allQuestionsCorrect && isCorrect) {
-      // Wait a moment to show feedback, then check if all correct
-      setTimeout(() => {
-        if (questions.every(q => questionResults[q.id] === true)) {
-          // All questions correct - can skip video
-        }
-      }, 1000)
-    }
   }
   
   const handleNext = () => {
     if (isLastQuestion) {
-      // All questions completed
       const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
-      
-      // Log quiz completion with correct event type
       const correctCount = questions.filter(q => questionResults[q.id] === true).length
       const incorrectCount = questions.length - correctCount
       
@@ -213,61 +208,41 @@ export default function PrePostKnowledgeCheck({
         total_time_seconds: Math.round((Date.now() - questionStartTime.current) / 1000)
       }, sessionId)
       
-      // Only call onComplete if not skipping video (skip video will be handled separately)
-      if (!(testType === 'pre' && allCorrect && onSkipVideo)) {
-        onComplete(selectedAnswers, allCorrect)
-      }
+      onComplete(selectedAnswers, allCorrect)
     } else {
       setCurrentQuestionIndex(prev => prev + 1)
     }
   }
   
-  // Auto-complete when last question is submitted (after showing feedback)
+  // Auto-complete when last question is submitted
   useEffect(() => {
     if (!currentQuestion) return
     const questionId = currentQuestion.id
-    if (isLastQuestion && isSubmitted && questionResults[questionId] !== undefined && !hasCompleted) {
-      // Small delay to show feedback before auto-completing
+    if (isLastQuestion && submittedQuestions.has(questionId) && questionResults[questionId] !== undefined && !hasCompleted) {
       const timer = setTimeout(() => {
-        if (hasCompleted) return // Double check to avoid duplicate calls
+        if (hasCompleted) return
         
         const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
         const correctCount = questions.filter(q => questionResults[q.id] === true).length
         const incorrectCount = questions.length - correctCount
         
-        // Only log and complete if not already completed (avoid duplicate calls)
-        if (!(testType === 'pre' && allCorrect && onSkipVideo)) {
-          setHasCompleted(true)
-          
-          logQuizEvent('quiz_completed', {
-            test_type: testType,
-            total_questions: questions.length,
-            correct_answers: correctCount,
-            incorrect_answers: incorrectCount,
-            all_correct: allCorrect,
-            total_time_seconds: Math.round((Date.now() - questionStartTime.current) / 1000)
-          })
-          
-          onComplete(selectedAnswers, allCorrect)
-        }
-      }, 2000) // 2 second delay to show completion message
+        setHasCompleted(true)
+        
+        logQuizEvent('quiz_completed', {
+          test_type: testType,
+          total_questions: questions.length,
+          correct_answers: correctCount,
+          incorrect_answers: incorrectCount,
+          all_correct: allCorrect,
+          total_time_seconds: Math.round((Date.now() - questionStartTime.current) / 1000)
+        }, sessionId)
+        
+        onComplete(selectedAnswers, allCorrect)
+      }, 2000)
       
       return () => clearTimeout(timer)
     }
-  }, [isLastQuestion, isSubmitted, currentQuestion, questionResults, testType, allQuestionsCorrect, onSkipVideo, questions, selectedAnswers, onComplete, hasCompleted, logQuizEvent, sessionId])
-  
-  const handleSkipVideoAndComplete = () => {
-    const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
-    if (onSkipVideo) {
-      onSkipVideo()
-    }
-    onComplete(selectedAnswers, allCorrect)
-  }
-  
-  const handleWatchVideoAnyway = () => {
-    const allCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
-    onComplete(selectedAnswers, allCorrect)
-  }
+  }, [isLastQuestion, submittedQuestions, currentQuestion, questionResults, testType, questions, selectedAnswers, onComplete, hasCompleted, logQuizEvent, sessionId])
   
   const isSubmitted = submittedQuestions.has(currentQuestion.id)
   const isCorrect = questionResults[currentQuestion.id] === true
@@ -288,11 +263,11 @@ export default function PrePostKnowledgeCheck({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "hsl(var(--muted) / 0.4)" }}>
-              {testType === 'pre' ? <BookOpen className="h-5 w-5" style={{ color: accent }} /> : <HelpCircle className="h-5 w-5" style={{ color: accent }} />}
+              <HelpCircle className="h-5 w-5" style={{ color: accent }} />
             </div>
             <div>
               <h3 className="text-lg font-bold" style={{ color: foreground }}>
-                {testType === 'pre' ? 'Pre-Test' : 'Knowledge Check'} {currentQuestionIndex + 1}
+                Knowledge Check {currentQuestionIndex + 1}
               </h3>
               <p className="text-sm" style={{ color: mutedText }}>
                 Question {currentQuestionIndex + 1} of {questions.length}
@@ -310,7 +285,6 @@ export default function PrePostKnowledgeCheck({
         <p className="mb-6" style={{ color: foreground, lineHeight: '1.6' }}>{currentQuestion.question}</p>
 
         {isSelectAll ? (
-          // Select All (Checkbox) mode
           <div className="space-y-3">
             {currentQuestion.options.map((option, index) => {
               const isSelected = Array.isArray(selectedAnswer) && selectedAnswer.includes(option)
@@ -320,100 +294,65 @@ export default function PrePostKnowledgeCheck({
               const isCorrectOption = correctAnswers.includes(option)
               const showCorrect = isSubmitted && isCorrectOption
               const showWrong = isSubmitted && isSelected && !isCorrectOption
-            
-            return (
-              <div
-                key={index}
-                className={`flex items-start space-x-2 rounded-lg border p-3 transition-colors ${
-                  showCorrect
-                    ? "border-emerald-500/50 bg-emerald-500/10"
-                    : showWrong
-                      ? "border-red-500/50 bg-red-500/10"
-                      : "border-slate-300 hover:border-indigo-500/50 hover:bg-indigo-500/5"
-                }`}
-                style={{
-                  borderColor: showCorrect 
-                    ? "hsl(142 71% 45% / 0.5)" 
-                    : showWrong 
-                      ? "hsl(0 84% 60% / 0.5)"
-                      : neutralBorder,
-                  backgroundColor: showCorrect
-                    ? "hsl(142 71% 45% / 0.1)"
-                    : showWrong
-                      ? "hsl(0 84% 60% / 0.1)"
-                      : "transparent"
-                }}
-              >
-                {isSelectAll ? (
-                  <>
-                    <Checkbox
-                      id={`option-${index}`}
-                      checked={isSelected}
-                      onCheckedChange={(checked) => {
-                        const current = Array.isArray(selectedAnswer) ? selectedAnswer : []
-                        if (checked) {
-                          setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: [...current, option] }))
-                        } else {
-                          setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: current.filter(a => a !== option) }))
-                        }
-                      }}
-                      disabled={isSubmitted}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <Label
-                        htmlFor={`option-${index}`}
-                        className={`text-sm font-medium cursor-pointer ${
-                          showCorrect
-                            ? "text-emerald-700 dark:text-emerald-400"
-                            : showWrong
-                              ? "text-red-700 dark:text-red-400"
-                              : "text-foreground"
-                        }`}
-                        style={{ color: showCorrect ? "hsl(142 71% 35%)" : showWrong ? "hsl(0 84% 50%)" : foreground }}
-                      >
-                        {option}
-                      </Label>
-                    </div>
-                    {showCorrect && (
-                      <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-                    )}
-                    {showWrong && (
-                      <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
-                    <div className="flex-1">
-                      <Label
-                        htmlFor={`option-${index}`}
-                        className={`text-sm font-medium cursor-pointer ${
-                          showCorrect
-                            ? "text-emerald-700 dark:text-emerald-400"
-                            : showWrong
-                              ? "text-red-700 dark:text-red-400"
-                              : "text-foreground"
-                        }`}
-                        style={{ color: showCorrect ? "hsl(142 71% 35%)" : showWrong ? "hsl(0 84% 50%)" : foreground }}
-                      >
-                        {option}
-                      </Label>
-                    </div>
-                    {showCorrect && (
-                      <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-                    )}
-                    {showWrong && (
-                      <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                    )}
-                  </>
-                )}
-              </div>
-            )
-          })}
-        </div>
+              
+              return (
+                <div
+                  key={index}
+                  className={`flex items-start space-x-2 rounded-lg border p-3 transition-colors ${
+                    showCorrect
+                      ? "border-emerald-500/50 bg-emerald-500/10"
+                      : showWrong
+                        ? "border-red-500/50 bg-red-500/10"
+                        : "hover:bg-[hsl(var(--muted)_/_0.25)]"
+                  }`}
+                  style={{
+                    borderColor: isSubmitted ? undefined : neutralBorder,
+                    backgroundColor: isSubmitted ? undefined : "hsl(var(--card) / 0.78)",
+                  }}
+                >
+                  <Checkbox
+                    id={`option-${index}`}
+                    checked={isSelected}
+                    disabled={isSubmitted}
+                    onCheckedChange={(checked) => {
+                      if (isSubmitted) return
+                      const current = Array.isArray(selectedAnswers[currentQuestion.id]) 
+                        ? selectedAnswers[currentQuestion.id] as string[]
+                        : []
+                      if (checked) {
+                        setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: [...current, option] }))
+                      } else {
+                        setSelectedAnswers(prev => ({ ...prev, [currentQuestion.id]: current.filter(a => a !== option) }))
+                      }
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={`option-${index}`}
+                      className={`text-sm font-medium ${
+                        showCorrect
+                          ? "text-emerald-500"
+                          : showWrong
+                            ? "text-red-500"
+                            : "opacity-80"
+                      }`}
+                      style={!isSubmitted ? { color: foreground } : undefined}
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                  {showCorrect && (
+                    <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                  )}
+                  {showWrong && (
+                    <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                  )}
+                </div>
+              )
+            })}
+          </div>
         ) : (
-          // Single Select (Radio) mode
           <RadioGroup
             value={selectedAnswerString || ""}
             onValueChange={(value) => {
@@ -436,33 +375,25 @@ export default function PrePostKnowledgeCheck({
                       ? "border-emerald-500/50 bg-emerald-500/10"
                       : showWrong
                         ? "border-red-500/50 bg-red-500/10"
-                        : "border-slate-300 hover:border-indigo-500/50 hover:bg-indigo-500/5"
+                        : "hover:bg-[hsl(var(--muted)_/_0.25)]"
                   }`}
                   style={{
-                    borderColor: showCorrect 
-                      ? "hsl(142 71% 45% / 0.5)" 
-                      : showWrong 
-                        ? "hsl(0 84% 60% / 0.5)"
-                        : neutralBorder,
-                    backgroundColor: showCorrect
-                      ? "hsl(142 71% 45% / 0.1)"
-                      : showWrong
-                        ? "hsl(0 84% 60% / 0.1)"
-                        : "transparent"
+                    borderColor: isSubmitted ? undefined : neutralBorder,
+                    backgroundColor: isSubmitted ? undefined : "hsl(var(--card) / 0.78)",
                   }}
                 >
                   <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
                   <div className="flex-1">
                     <Label
                       htmlFor={`option-${index}`}
-                      className={`text-sm font-medium cursor-pointer ${
+                      className={`text-sm font-medium ${
                         showCorrect
-                          ? "text-emerald-700 dark:text-emerald-400"
+                          ? "text-emerald-500"
                           : showWrong
-                            ? "text-red-700 dark:text-red-400"
-                            : "text-foreground"
+                            ? "text-red-500"
+                            : "opacity-80"
                       }`}
-                      style={{ color: showCorrect ? "hsl(142 71% 35%)" : showWrong ? "hsl(0 84% 50%)" : foreground }}
+                      style={!isSubmitted ? { color: foreground } : undefined}
                     >
                       {option}
                     </Label>
@@ -498,20 +429,34 @@ export default function PrePostKnowledgeCheck({
               ) : (
                 <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
               )}
-              <div className="flex-1">
-                <h4 className={`font-bold mb-2 ${isCorrect ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
+              <div>
+                <h4 className={`font-bold ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
                   {isCorrect ? "Correct!" : "Not quite right"}
                 </h4>
-                {wrongAnswerFeedback && (
-                  <p className="text-sm mb-2" style={{ color: foreground, opacity: 0.9 }}>
-                    <strong>Why this answer isn't quite right:</strong> {wrongAnswerFeedback}
-                  </p>
-                )}
-                <p className="text-sm" style={{ color: foreground, opacity: 0.9 }}>
-                  {currentQuestion.explanation}
+                <p className="text-muted-foreground mt-1">
+                  {isCorrect ? currentQuestion.explanation : (wrongAnswerFeedback || currentQuestion.explanation)}
                 </p>
               </div>
             </div>
+          </motion.div>
+        )}
+
+        {isSubmitted && isLastQuestion && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="mt-4 p-4 rounded-lg text-center"
+            style={{
+              backgroundColor: "hsl(var(--muted) / 0.3)",
+              border: `1px solid ${neutralBorder}`
+            }}
+          >
+            <CheckCircle className="h-6 w-6 mx-auto mb-2" style={{ color: accent }} />
+            <p className="font-semibold" style={{ color: accent }}>✓ All questions completed!</p>
+            <p className="text-sm" style={{ color: mutedText }}>
+              {allQuestionsCorrect ? "Perfect score! Great work!" : "Review feedback above to improve your understanding."}
+            </p>
           </motion.div>
         )}
 
@@ -520,89 +465,32 @@ export default function PrePostKnowledgeCheck({
             {!isSubmitted ? (
               <Button
                 onClick={handleSubmit}
-                disabled={!selectedAnswer || (isSelectAll && (!Array.isArray(selectedAnswer) || selectedAnswer.length === 0))}
+                disabled={!selectedAnswer || (isSelectAll && selectedAnswerArray.length === 0)}
+                className="font-medium"
                 style={{
-                  background: `linear-gradient(135deg, ${accent}, #e6c98c)`,
+                  background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
                   color: "#1f1408",
-                  opacity: (selectedAnswer && (!isSelectAll || (Array.isArray(selectedAnswer) && selectedAnswer.length > 0))) ? 1 : 0.5
+                  opacity: (!selectedAnswer || (isSelectAll && selectedAnswerArray.length === 0)) ? 0.5 : 1
                 }}
               >
-                Submit Answer
+                Submit Answer <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            ) : null}
+            ) : (
+              !isLastQuestion && (
+                <Button
+                  onClick={handleNext}
+                  className="font-medium"
+                  style={{
+                    background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                    color: "#1f1408"
+                  }}
+                >
+                  Next Question <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              )
+            )}
           </div>
-          
-          {isSubmitted && !isLastQuestion && (
-            <Button
-              onClick={handleNext}
-              style={{
-                background: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-                color: "#1f1408"
-              }}
-              className="flex items-center gap-2"
-            >
-              Next Question
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          )}
-          {isSubmitted && isLastQuestion && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                marginTop: '1rem',
-                padding: '1rem',
-                borderRadius: '0.5rem',
-                backgroundColor: "rgba(16, 185, 129, 0.1)",
-                border: "1px solid rgba(16, 185, 129, 0.3)"
-              }}
-            >
-              <p className="text-sm font-medium" style={{ color: "hsl(142 71% 35%)" }}>
-                ✓ All questions completed!
-              </p>
-            </motion.div>
-          )}
         </div>
-        
-        {/* Show skip video option for pre-test if all questions correct */}
-        {testType === 'pre' && isLastQuestion && isSubmitted && allQuestionsCorrect && onSkipVideo && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              marginTop: '1rem',
-              padding: '1rem',
-              borderRadius: '0.5rem',
-              border: `1px solid ${accent}`,
-              backgroundColor: "hsl(var(--muted) / 0.3)"
-            }}
-          >
-            <p className="text-sm font-medium mb-2" style={{ color: foreground }}>
-              🎉 Great job! You got all questions correct!
-            </p>
-            <p className="text-sm mb-3" style={{ color: mutedText }}>
-              Since you already understand these concepts, you can skip the video and go straight to the next section, or watch it anyway for a review.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSkipVideoAndComplete}
-                variant="outline"
-                style={{ borderColor: accent, color: accent }}
-              >
-                Skip Video
-              </Button>
-              <Button
-                onClick={handleWatchVideoAnyway}
-                style={{
-                  background: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-                  color: "#1f1408"
-                }}
-              >
-                Watch Video Anyway
-              </Button>
-            </div>
-          </motion.div>
-        )}
       </CardContent>
     </Card>
   )
