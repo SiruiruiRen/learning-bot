@@ -70,46 +70,18 @@ export default function PrePostKnowledgeCheck({
   })
   const allQuestionsCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
   
-  useEffect(() => {
-    const storedSessionId = localStorage.getItem("session_id")
-    if (storedSessionId) {
-      setSessionId(storedSessionId)
-      
-      // Log test started
-      if (currentQuestionIndex === 0) {
-        logQuizEvent('quiz_started', {
-          test_type: testType
-        })
-      }
-    }
-  }, [currentQuestionIndex, testType])
-  
-  useEffect(() => {
-    // Ensure we're using the safe index
-    if (questions.length > 0 && safeIndex !== currentQuestionIndex) {
-      setCurrentQuestionIndex(safeIndex)
-    }
-    if (questions.length > 0) {
-      questionStartTime.current = Date.now()
-      firstInteractionTime.current = null
-    }
-  }, [currentQuestionIndex, safeIndex, questions.length])
-  
-  useEffect(() => {
-    if (selectedAnswers[currentQuestion.id] && !firstInteractionTime.current) {
-      firstInteractionTime.current = Date.now()
-    }
-  }, [selectedAnswers, currentQuestion.id])
-  
-  const logQuizEvent = async (eventType: string, metadata: any) => {
-    if (!sessionId) return
+  // Define logQuizEvent function that doesn't depend on sessionId state
+  // It will get sessionId from localStorage or parameter
+  const logQuizEvent = async (eventType: string, metadata: any, sessionIdParam?: string | null) => {
+    const currentSessionId = sessionIdParam || sessionId || localStorage.getItem("session_id")
+    if (!currentSessionId) return
     
     try {
       await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session_id: sessionId,
+          session_id: currentSessionId,
           event_type: eventType,
           phase: phase,
           component: 'knowledge_check',
@@ -123,6 +95,39 @@ export default function PrePostKnowledgeCheck({
       console.error(`Failed to log ${eventType}:`, error)
     }
   }
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem("session_id")
+    if (storedSessionId) {
+      setSessionId(storedSessionId)
+      
+      // Log test started after sessionId is set
+      if (currentQuestionIndex === 0 && questions.length > 0) {
+        logQuizEvent('quiz_started', {
+          test_type: testType
+        }, storedSessionId)
+      }
+    }
+  }, [currentQuestionIndex, testType, questions.length])
+  
+  useEffect(() => {
+    // Ensure we're using a valid index
+    if (questions.length > 0) {
+      const validIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1))
+      if (validIndex !== currentQuestionIndex) {
+        setCurrentQuestionIndex(validIndex)
+        return // Don't update time if we're correcting the index
+      }
+      questionStartTime.current = Date.now()
+      firstInteractionTime.current = null
+    }
+  }, [currentQuestionIndex, questions.length])
+  
+  useEffect(() => {
+    if (currentQuestion && selectedAnswers[currentQuestion.id] && !firstInteractionTime.current) {
+      firstInteractionTime.current = Date.now()
+    }
+  }, [selectedAnswers, currentQuestion?.id])
   
   const handleSubmit = async () => {
     const answer = selectedAnswers[currentQuestion.id]
@@ -165,7 +170,7 @@ export default function PrePostKnowledgeCheck({
       is_correct: isCorrect,
       time_to_answer_seconds: timeToAnswer,
       time_to_first_interaction_seconds: timeToFirstInteraction
-    })
+    }, sessionId)
     
     // If this is pre-test and 2/2 correct, offer to skip video
     if (testType === 'pre' && isLastQuestion && allQuestionsCorrect && isCorrect) {
@@ -194,7 +199,7 @@ export default function PrePostKnowledgeCheck({
         incorrect_answers: incorrectCount,
         all_correct: allCorrect,
         total_time_seconds: Math.round((Date.now() - questionStartTime.current) / 1000)
-      })
+      }, sessionId)
       
       // Only call onComplete if not skipping video (skip video will be handled separately)
       if (!(testType === 'pre' && allCorrect && onSkipVideo)) {
