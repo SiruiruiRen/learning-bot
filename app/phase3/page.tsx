@@ -58,6 +58,91 @@ const cleanScoresFromMessage = (message: string): string => {
 };
 
 // Add this component after any existing imports but before the main component
+const SelfTestingGuide = () => {
+  const accent = "#d8b26f"
+  const surface = "hsl(var(--card) / 0.9)"
+  const border = "hsl(var(--border) / 0.75)"
+  const pill = "hsl(var(--muted) / 0.4)"
+  const mutedText = "hsl(var(--muted-foreground))"
+  return (
+    <div className="space-y-6">
+      <div
+        className="p-4 rounded-lg mb-6"
+        style={{ backgroundColor: surface, border: `1px solid ${border}` }}
+      >
+        <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
+          <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pill }}>
+            <span style={{ color: accent }}>📝</span>
+          </div>
+          What is Self-Testing (Retrieval Practice)?
+        </h3>
+        <p className="text-foreground opacity-90 mb-4" style={{ color: mutedText }}>
+          Self-testing (also called retrieval practice) is a powerful learning strategy where you actively recall information from memory without looking at your notes or materials. Research shows this is far more effective than simply rereading or reviewing.
+        </p>
+        
+        <h4 className="text-base font-semibold mb-2" style={{ color: accent }}>Three Ways Self-Testing Helps You Learn:</h4>
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 font-bold" style={{ color: accent }}>1.</div>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong style={{ color: accent }}>It helps you remember information longer.</strong> Actively retrieving information strengthens memory connections, making it easier to recall later.
+            </p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 font-bold" style={{ color: accent }}>2.</div>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong style={{ color: accent }}>It helps you find gaps in your knowledge.</strong> When you can't recall something, you've identified what you need to study more.
+            </p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 font-bold" style={{ color: accent }}>3.</div>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong style={{ color: accent }}>It improves your future studying.</strong> The act of retrieval itself creates new connections in your brain, making future learning easier.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div
+        className="p-4 rounded-lg border"
+        style={{ backgroundColor: surface, border: `1px solid ${border}` }}
+      >
+        <h4 className="text-base font-semibold mb-2" style={{ color: accent }}>Why Self-Testing Works Better Than Rereading:</h4>
+        <div className="space-y-2 mb-3">
+          <div className="flex items-start gap-2">
+            <span className="text-red-500">❌</span>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong>Rereading</strong> creates an illusion of mastery - you feel familiar with the material, but this familiarity fades quickly. It's better for short-term cramming but ineffective for long-term learning.
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-green-500">✅</span>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong>Self-testing</strong> feels harder initially, but actively retrieving information creates stronger, longer-lasting memories. The struggle you feel during testing actually strengthens your memory.
+            </p>
+          </div>
+        </div>
+        <p className="text-foreground opacity-90 text-sm italic" style={{ color: mutedText }}>
+          <strong>Key insight:</strong> For best results, after self-testing, go back and study what you missed or couldn't remember. This combination of retrieval practice followed by targeted review is highly effective.
+        </p>
+      </div>
+      
+      <div
+        className="p-4 rounded-lg border"
+        style={{ backgroundColor: surface, border: `1px solid ${border}` }}
+      >
+        <h4 className="text-base font-semibold mb-2" style={{ color: accent }}>Example:</h4>
+        <p className="text-foreground opacity-90 mb-2" style={{ color: mutedText }}>
+          After reading about cellular respiration, close your book and write down everything you remember about how ATP is produced. Try to recall the key steps: glycolysis, Krebs cycle, electron transport chain. Then check your notes to see what you missed or got wrong.
+        </p>
+        <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+          This active recall is much more effective than simply rereading the chapter, even though it feels more difficult.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const SelfExplanationTips = () => {
   const accent = "#d8b26f"
   const surface = "hsl(var(--card) / 0.9)"
@@ -411,6 +496,7 @@ export default function Phase3Content() {
   // Define the cards for easy reference
   const cards = [
     { id: "intro", title: "Introduction to Learning Strategies" },
+    { id: "self-testing", title: "Deep Dive: Self-Testing (Retrieval Practice)" },
     { id: "self-explanation", title: "Deep Dive: Self-Explanation" },
     { id: "spacing-effect", title: "Deep Dive: Spacing Effect" },
     { id: "video", title: "Watch: Key Learning Strategies" },
@@ -561,8 +647,8 @@ export default function Phase3Content() {
         onPrev={prevCard}
         onNext={nextCard}
         isNextDisabled={
-          (currentCardIndex === 3 && !videoCompleted) ||
-          (currentCardIndex === 4 && !postTestCompleted)
+          (currentCardIndex === 4 && !videoCompleted) ||
+          (currentCardIndex === 5 && !postTestCompleted)
         }
       />
 
@@ -671,14 +757,17 @@ export default function Phase3Content() {
                 </div>
               )}
 
+              {/* Self-Testing Strategy Card */}
+              {currentCardIndex === 1 && <SelfTestingGuide />}
+              
               {/* Self-Explanation Strategy Card */}
-              {currentCardIndex === 1 && <SelfExplanationTips />}
+              {currentCardIndex === 2 && <SelfExplanationTips />}
               
               {/* Spacing Effect Guide Card */}
-              {currentCardIndex === 2 && <SpacingEffectGuide />}
+              {currentCardIndex === 3 && <SpacingEffectGuide />}
               
               {/* Video Card */}
-              {currentCardIndex === 3 && (
+              {currentCardIndex === 4 && (
                 <div className="space-y-4">
                   <p className="text-center text-muted-foreground">
                     Watch this video to learn about powerful, evidence-based study techniques.
@@ -710,7 +799,7 @@ export default function Phase3Content() {
               )}
               
               {/* Post-Test Card */}
-              {currentCardIndex === 4 && (
+              {currentCardIndex === 5 && (
                 <div>
                   <div className="text-muted-foreground mb-4">
                     <p>
@@ -747,8 +836,8 @@ export default function Phase3Content() {
                   }}
                   onClick={nextCard}
                   disabled={
-                    (currentCardIndex === 3 && !videoCompleted) ||
-                    (currentCardIndex === 4 && !postTestCompleted)
+                    (currentCardIndex === 4 && !videoCompleted) ||
+                    (currentCardIndex === 5 && !postTestCompleted)
                   }
                 >
                   {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
