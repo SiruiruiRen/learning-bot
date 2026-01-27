@@ -245,6 +245,11 @@ export default function GuidedMCII({
       setFeedbackReceived(true);
       setLastFailedRequest(null); // Clear on success
 
+      // Enable continue button
+      if (onComplete) {
+        onComplete();
+      }
+
       // Log AI response
       try {
         await fetch('/api/events', {

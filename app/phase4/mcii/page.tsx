@@ -52,11 +52,6 @@ export default function MCIIPage() {
     }
     setIsComplete(true);
     setChatComplete(true);
-    setShowPostTask(true);
-  }
-  
-  const handlePostTaskComplete = (answers: { [questionId: string]: string }) => {
-    router.push("/phase5")
   }
   
   const handleStartChat = () => {

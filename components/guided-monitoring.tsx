@@ -167,6 +167,11 @@ export default function GuidedMonitoring({
 
       const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation" };
       setMessages(prev => [...prev, botFeedback]);
+
+      // Enable continue button
+      if (onComplete) {
+        onComplete();
+      }
       
       // Set interaction state to chatting after feedback is received
       setInteractionState("chatting");

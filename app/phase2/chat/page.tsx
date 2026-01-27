@@ -9,14 +9,13 @@ import { Target, ChevronLeft, ChevronRight } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedLearningObjective from "@/components/guided-learning-objective"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
-import PostTaskAssessment from "@/components/post-task-assessment"
-import { phaseInstructions, comprehensivePostTaskQuestions, sampleAnswers } from "@/lib/post-task-questions"
+import { phaseInstructions } from "@/lib/post-task-questions"
 
 export default function Phase2ChatPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [chatComplete, setChatComplete] = useState(false)
-  const [showPostTask, setShowPostTask] = useState(false)
+  // const [showPostTask, setShowPostTask] = useState(false) - Removed
 
   const accent = "#d8b26f"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -44,12 +43,6 @@ export default function Phase2ChatPage() {
 
   const handlePhaseComplete = () => {
     setChatComplete(true)
-    setShowPostTask(true)
-  }
-  
-  const handlePostTaskComplete = (answers: { [questionId: string]: string }) => {
-    // Log completion and proceed to next phase
-    router.push("/phase3")
   }
   
 
@@ -79,23 +72,12 @@ export default function Phase2ChatPage() {
             <CardContent className="min-h-[700px] p-2">
               {userId ? (
                 <>
-                  {!showPostTask && (
-                    <GuidedLearningObjective
-                      userId={userId}
-                      phase="2"
-                      onComplete={handlePhaseComplete}
-                      height="100%"
-                    />
-                  )}
-                  {showPostTask && (
-                    <PostTaskAssessment
-                      questions={comprehensivePostTaskQuestions.filter(q => 
-                        ['q1_task_analysis_transfer', 'q2_synthesis_cognitive_strategies'].includes(q.id)
-                      )}
-                      onComplete={handlePostTaskComplete}
-                      showSampleAnswers={false}
-                    />
-                  )}
+                  <GuidedLearningObjective
+                    userId={userId}
+                    phase="2"
+                    onComplete={handlePhaseComplete}
+                    height="100%"
+                  />
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full">
@@ -122,18 +104,6 @@ export default function Phase2ChatPage() {
               />
             )}
           </div>
-          {chatComplete && !showPostTask && (
-            <div className="flex justify-center mt-6">
-              <Button
-                className="font-semibold"
-                style={primaryButtonStyle}
-                onClick={() => setShowPostTask(true)}
-              >
-                Continue to Post-Task Assessment
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          )}
         </motion.div>
       </div>
     </div>
