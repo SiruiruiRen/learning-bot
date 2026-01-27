@@ -136,8 +136,8 @@ export default function Phase5ChatContent() {
                       userId={userId}
                       phase="phase5"
                       component="progress_monitoring"
-                      onComplete={handlePhaseComplete}
-                      height="100%"
+                      onComplete={() => {}} // Don't auto-complete - use button instead
+                      height="calc(100% - 80px)"
                     />
                   )}
                   {showPostTask && (
@@ -158,8 +158,8 @@ export default function Phase5ChatContent() {
             </CardContent>
           </Card>
           
-          <div className="flex justify-between mt-4">
-             <Button
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
               variant="outline"
               style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
               onClick={() => router.push('/phase5')}
@@ -167,20 +167,20 @@ export default function Phase5ChatContent() {
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Instructions
             </Button>
-          </div>
-          
-          {/* Centered Continue Button */}
-          {chatComplete && !showPostTask && (
-            <div className="flex justify-center mt-6">
+            {!showPostTask && (
               <Button
-                className="px-8 py-3 rounded-lg font-semibold"
+                className="font-semibold"
                 style={primaryButtonStyle}
-                onClick={() => setShowPostTask(true)}
+                onClick={() => {
+                  setChatComplete(true);
+                  setShowPostTask(true);
+                }}
               >
-                Continue to Post-Task Assessment <ChevronRight className="h-4 w-4 ml-2" />
+                Complete & Continue to Assessment
+                <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
       </div>
     </div>

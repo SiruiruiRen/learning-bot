@@ -16,7 +16,7 @@ export default function Phase4IntroPage() {
   const [userName, setUserName] = useState("")
   const [videoCompleted, setVideoCompleted] = useState(false);
   const [postTestCompleted, setPostTestCompleted] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
     try {
@@ -48,17 +48,20 @@ export default function Phase4IntroPage() {
   };
 
   const handleNext = () => {
-    if (currentStep === 1 && !videoCompleted) {
+    if (currentStep === 0) {
+      // Move from instruction to video
+      setCurrentStep(1);
+    } else if (currentStep === 1 && !videoCompleted) {
       // Can't proceed from video step until video is watched
       return;
-    }
-    if (currentStep === 2 && !postTestCompleted) {
+    } else if (currentStep === 1 && videoCompleted) {
+      // Move from video to post-test
+      setCurrentStep(2);
+    } else if (currentStep === 2 && !postTestCompleted) {
       // Can't proceed from post-test step until completed
       return;
-    }
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    } else {
+    } else if (currentStep === 2 && postTestCompleted) {
+      // Move to tasks
       handleComplete();
     }
   };
@@ -114,73 +117,75 @@ export default function Phase4IntroPage() {
             </CardHeader>
 
             <CardContent>
-              <div className="space-y-6">
-                <div className="text-muted-foreground space-y-4">
-                  <div
-                    className="p-4 rounded-lg border mb-6 text-left"
-                    style={{
-                      backgroundColor: neutralSurface,
-                      borderColor: neutralBorder,
-                    }}
-                  >
-                    <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
-                      <Map className="h-5 w-5" />
-                      Phase 4 Workflow
-                    </h3>
-                    <div className="flex items-center justify-center space-x-4 text-foreground">
-                      <div className="flex flex-col items-center text-center">
-                        <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                          <Video className="h-6 w-6" style={{ color: accent }} />
+              {currentStep === 0 && (
+                <div className="space-y-6">
+                  <div className="text-muted-foreground space-y-4">
+                    <div
+                      className="p-4 rounded-lg border mb-6 text-left"
+                      style={{
+                        backgroundColor: neutralSurface,
+                        borderColor: neutralBorder,
+                      }}
+                    >
+                      <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
+                        <Map className="h-5 w-5" />
+                        Phase 4 Workflow
+                      </h3>
+                      <div className="flex items-center justify-center space-x-4 text-foreground">
+                        <div className="flex flex-col items-center text-center">
+                          <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
+                            <Video className="h-6 w-6" style={{ color: accent }} />
+                          </div>
+                          <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
                         </div>
-                        <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
-                      </div>
-                      <ChevronRightIcon className="h-5 w-5 text-slate-600" />
-                      <div className="flex flex-col items-center text-center">
-                        <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                          <Edit className="h-6 w-6" style={{ color: accent }} />
+                        <ChevronRightIcon className="h-5 w-5 text-slate-600" />
+                        <div className="flex flex-col items-center text-center">
+                          <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
+                            <Edit className="h-6 w-6" style={{ color: accent }} />
+                          </div>
+                          <span className="text-xs font-medium" style={{ color: accent }}>Build Plan</span>
                         </div>
-                        <span className="text-xs font-medium" style={{ color: accent }}>Build Plan</span>
-                      </div>
-                      <ChevronRightIcon className="h-5 w-5 text-slate-600" />
-                      <div className="flex flex-col items-center text-center">
-                        <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                          <Bot className="h-6 w-6" style={{ color: accent }} />
+                        <ChevronRightIcon className="h-5 w-5 text-slate-600" />
+                        <div className="flex flex-col items-center text-center">
+                          <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
+                            <Bot className="h-6 w-6" style={{ color: accent }} />
+                          </div>
+                          <span className="text-xs font-medium" style={{ color: accent }}>AI Coaching</span>
                         </div>
-                        <span className="text-xs font-medium" style={{ color: accent }}>AI Coaching</span>
                       </div>
                     </div>
-                  </div>
-                  <p className="text-center text-muted-foreground">
-                    Welcome {userName}! In this phase, we'll turn your learning intentions into a concrete strategic plan.
-                  </p>
+                    <p className="text-center text-muted-foreground">
+                      Welcome {userName}! In this phase, we'll turn your learning intentions into a concrete strategic plan.
+                    </p>
 
-                  <div
-                    className="p-4 rounded-lg border"
-                    style={{
-                      backgroundColor: neutralSurface,
-                      borderColor: neutralBorder,
-                    }}
-                  >
-                    <h3 className="text-lg font-medium mb-3" style={{ color: accent }}>📋 What's in This Phase:</h3>
-                    <div className="grid grid-cols-1 gap-3 text-sm">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-0.5" style={{ color: accent }}>🎥</div>
-                        <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>Video:</span> Learn the MCII technique (Mental Contrasting with Implementation Intentions)</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-0.5" style={{ color: accent }}>📝</div>
-                        <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>3 Strategic Tasks:</span> Long-term goals, SMART objectives, and contingency plans</p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="mt-0.5" style={{ color: accent }}>🤖</div>
-                        <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>AI Coaching:</span> Personalized feedback to refine each task</p>
+                    <div
+                      className="p-4 rounded-lg border"
+                      style={{
+                        backgroundColor: neutralSurface,
+                        borderColor: neutralBorder,
+                      }}
+                    >
+                      <h3 className="text-lg font-medium mb-3" style={{ color: accent }}>📋 What's in This Phase:</h3>
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5" style={{ color: accent }}>🎥</div>
+                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>Video:</span> Learn the MCII technique (Mental Contrasting with Implementation Intentions)</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5" style={{ color: accent }}>📝</div>
+                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>3 Strategic Tasks:</span> Long-term goals, SMART objectives, and contingency plans</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5" style={{ color: accent }}>🤖</div>
+                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>AI Coaching:</span> Personalized feedback to refine each task</p>
+                        </div>
                       </div>
                     </div>
+                    
+                    <p className="text-center text-muted-foreground">
+                      Set effective goals and plan for challenges using the MCII technique.
+                    </p>
                   </div>
-                  
-                  <p className="text-center text-muted-foreground">
-                    Set effective goals and plan for challenges using the MCII technique.
-                  </p>
                 </div>
               )}
 
@@ -224,6 +229,19 @@ export default function Phase4IntroPage() {
               )}
 
                 <div className="flex justify-end mt-8">
+                  {currentStep === 0 && (
+                    <Button 
+                      className="font-semibold px-8 py-3 rounded-lg text-lg"
+                      style={{
+                        background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                        boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                        color: "#1f1408",
+                      }}
+                      onClick={handleNext}
+                    >
+                      Continue to Video <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
                   {currentStep === 1 && (
                     <Button 
                       className="font-semibold px-8 py-3 rounded-lg text-lg"

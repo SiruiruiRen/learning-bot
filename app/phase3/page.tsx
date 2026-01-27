@@ -65,32 +65,55 @@ const SelfExplanationTips = () => {
   const pill = "hsl(var(--muted) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
   return (
-    <div
-      className="p-4 rounded-lg mb-6"
-      style={{ backgroundColor: surface, border: `1px solid ${border}` }}
-    >
-      <h3 className="text-lg font-medium mb-2 flex items-center gap-2" style={{ color: accent }}>
-        <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pill }}>
-          <span style={{ color: accent }}>💭</span>
+    <div className="space-y-6">
+      <div
+        className="p-4 rounded-lg mb-6"
+        style={{ backgroundColor: surface, border: `1px solid ${border}` }}
+      >
+        <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
+          <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pill }}>
+            <span style={{ color: accent }}>💭</span>
+          </div>
+          What is Self-Explanation?
+        </h3>
+        <p className="text-foreground opacity-90 mb-4" style={{ color: mutedText }}>
+          Self-explanation is a powerful learning technique where you explain concepts to yourself in your own words. This active process helps you identify gaps in your understanding and connect new information to what you already know.
+        </p>
+        
+        <h4 className="text-base font-semibold mb-2" style={{ color: accent }}>How to Use Self-Explanation:</h4>
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 font-bold" style={{ color: accent }}>1.</div>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong style={{ color: accent }}>Read through new material</strong> to get a general understanding of the concept.
+            </p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 font-bold" style={{ color: accent }}>2.</div>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong style={{ color: accent }}>Close the source material</strong> and explain the concept in your own words, as if teaching it to someone else.
+            </p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 font-bold" style={{ color: accent }}>3.</div>
+            <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+              <strong style={{ color: accent }}>Check your explanation</strong> against the source material to identify gaps, misunderstandings, or areas where your explanation was incomplete.
+            </p>
+          </div>
         </div>
-        Self-Explanation Strategy Guide
-      </h3>
-      <p className="text-foreground opacity-80 mb-2" style={{ color: mutedText }}>
-        Self-explanation is a powerful learning technique where you explain concepts to yourself in your own words.
-      </p>
-      <div className="space-y-1">
-        <div className="flex items-start gap-2">
-          <div className="mt-0.5" style={{ color: accent }}>1️⃣</div>
-          <p className="text-foreground opacity-80" style={{ color: mutedText }}>Read through new material to get a general understanding</p>
-        </div>
-        <div className="flex items-start gap-2">
-          <div className="mt-0.5" style={{ color: accent }}>2️⃣</div>
-          <p className="text-foreground opacity-80" style={{ color: mutedText }}>Close the source material and explain the concept in your own words</p>
-        </div>
-        <div className="flex items-start gap-2">
-          <div className="mt-0.5" style={{ color: accent }}>3️⃣</div>
-          <p className="text-foreground opacity-80" style={{ color: mutedText }}>Check your explanation against the source to identify gaps</p>
-        </div>
+      </div>
+      
+      <div
+        className="p-4 rounded-lg border"
+        style={{ backgroundColor: surface, border: `1px solid ${border}` }}
+      >
+        <h4 className="text-base font-semibold mb-2" style={{ color: accent }}>Example:</h4>
+        <p className="text-foreground opacity-90 mb-2" style={{ color: mutedText }}>
+          After reading about photosynthesis, pause and explain to yourself: "So plants use sunlight to convert CO2 and water into glucose, and this happens in the chloroplasts because that's where the chlorophyll captures light energy..."
+        </p>
+        <p className="text-foreground opacity-90" style={{ color: mutedText }}>
+          Then check your explanation against the textbook. If you missed important details (like the role of ATP or the light-dependent vs. light-independent reactions), you've identified a gap in your understanding that needs more study.
+        </p>
       </div>
     </div>
   );
@@ -648,13 +671,11 @@ export default function Phase3Content() {
                 </div>
               )}
 
-              {/* Pre-Test Card */}
-              
               {/* Self-Explanation Strategy Card */}
-              {currentCardIndex === 2 && <SelfExplanationTips />}
+              {currentCardIndex === 1 && <SelfExplanationTips />}
               
               {/* Spacing Effect Guide Card */}
-              {currentCardIndex === 3 && <SpacingEffectGuide />}
+              {currentCardIndex === 2 && <SpacingEffectGuide />}
               
               {/* Video Card */}
               {currentCardIndex === 3 && (
@@ -726,7 +747,6 @@ export default function Phase3Content() {
                   }}
                   onClick={nextCard}
                   disabled={
-                    (currentCardIndex === 3 && !preTestCompleted) ||
                     (currentCardIndex === 3 && !videoCompleted) ||
                     (currentCardIndex === 4 && !postTestCompleted)
                   }

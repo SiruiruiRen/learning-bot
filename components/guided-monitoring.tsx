@@ -81,12 +81,8 @@ export default function GuidedMonitoring({
     if (chatContainer) { chatContainer.scrollTop = chatContainer.scrollHeight; }
   }, [messages, isLoading]);
 
-  // Automatically call onComplete when entering chatting state (task is complete)
-  useEffect(() => {
-    if (interactionState === 'chatting' && onComplete) {
-      onComplete();
-    }
-  }, [interactionState, onComplete]);
+  // Don't auto-complete when entering chatting state - let user continue interacting
+  // onComplete should be called explicitly by user action (e.g., a "Complete" button)
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -171,6 +167,9 @@ export default function GuidedMonitoring({
 
       const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation" };
       setMessages(prev => [...prev, botFeedback]);
+      
+      // Set interaction state to chatting after feedback is received
+      setInteractionState("chatting");
 
       // Log AI response
       try {
