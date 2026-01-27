@@ -163,6 +163,13 @@ export default function NavigationTracker() {
               console.error("Failed to log anonymous next button:", response.status, errorText)
             }
           } else {
+            console.log('🔘 Next button clicked:', {
+              buttonText: buttonText,
+              from: currentPhase,
+              to: nextPhase,
+              timeOnPage: timeOnPage + 's'
+            })
+
             const response = await fetch("/api/events", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -175,6 +182,8 @@ export default function NavigationTracker() {
             if (!response.ok) {
               const errorText = await response.text()
               console.error("Failed to log next button click:", response.status, errorText)
+            } else {
+              console.log('✅ Next button logged to database')
             }
           }
         } catch (error) {

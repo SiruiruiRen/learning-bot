@@ -128,6 +128,8 @@ export default function SolBotChat({
   const handleSend = async () => {
     if (!input.trim() || !sessionId) return
 
+    console.log('💬 User message sent:', input.slice(0, 50) + (input.length > 50 ? '...' : ''))
+
     const userMessage = { role: "user", content: input }
     setMessages(prev => [...prev, userMessage])
     setInput("")
@@ -189,6 +191,11 @@ export default function SolBotChat({
       if (onNewMessage) {
         onNewMessage(assistantMessage)
       }
+
+      console.log('🤖 AI response received:', {
+        contentLength: assistantMessage.content.length,
+        hasEvaluation: !!assistantMessage.evaluation
+      })
 
       // Log chat message to analytics
       try {

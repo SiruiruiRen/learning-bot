@@ -135,11 +135,13 @@ export default function VideoPlayer({
     // Start tracking on first play
     if (!hasStartedTracking) {
       setHasStartedTracking(true);
+      console.log('▶️ Video started:', videoTitle)
       logAnalyticsEvent('video_watch_started', {
         play_count: newPlayCount,
         current_time: video.currentTime
       });
     } else {
+      console.log('▶️ Video resumed:', videoTitle, 'at', Math.round(video.currentTime) + 's')
       logAnalyticsEvent('video_play', {
         play_count: newPlayCount,
         current_time: video.currentTime
@@ -168,6 +170,8 @@ export default function VideoPlayer({
       watchStartTime.current = null;
     }
 
+    console.log('⏸️ Video paused:', videoTitle, 'at', Math.round(video.currentTime) + 's')
+    
     logAnalyticsEvent('video_pause', {
       pause_count: newPauseCount,
       current_time: video.currentTime,
@@ -231,6 +235,15 @@ export default function VideoPlayer({
       const sessionWatchTime = (Date.now() - watchStartTime.current) / 1000;
       totalWatchedTime.current += sessionWatchTime;
     }
+
+    console.log('✅ Video completed:', {
+      video: videoTitle,
+      totalWatched: Math.round(totalWatchedTime.current) + 's',
+      duration: Math.round(video.duration) + 's',
+      playCount: playCount,
+      pauseCount: pauseCount,
+      efficiency: Math.round((totalWatchedTime.current / video.duration) * 100) + '%'
+    })
 
     // Log completion with detailed analytics
     logAnalyticsEvent('video_watch_completed', {

@@ -137,6 +137,12 @@ export default function PrePostKnowledgeCheck({
     const answer = selectedAnswers[currentQuestion.id]
     if (!answer || (isSelectAll && (!Array.isArray(answer) || answer.length === 0))) return
     
+    console.log('📝 Quiz answer submitted:', {
+      questionId: currentQuestion.id,
+      questionType: currentQuestion.questionType,
+      answer: answer
+    })
+    
     // Check correctness: for select all, all correct answers must be selected and no incorrect ones
     let isCorrect: boolean
     if (isSelectAll) {
@@ -175,6 +181,8 @@ export default function PrePostKnowledgeCheck({
       time_to_answer_seconds: timeToAnswer,
       time_to_first_interaction_seconds: timeToFirstInteraction
     }, sessionId)
+    
+    console.log(`${isCorrect ? '✅' : '❌'} Answer is ${isCorrect ? 'correct' : 'incorrect'}. Logged to database.`)
     
     // If this is pre-test and 2/2 correct, offer to skip video
     if (testType === 'pre' && isLastQuestion && allQuestionsCorrect && isCorrect) {

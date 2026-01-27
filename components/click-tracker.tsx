@@ -72,6 +72,13 @@ export default function ClickTracker() {
           return
         }
 
+        console.log('📍 Click detected:', {
+          element: targetElement.tag,
+          text: targetElement.text,
+          phase: phase,
+          pathname: pathname
+        })
+
         const response = await fetch("/api/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -85,6 +92,8 @@ export default function ClickTracker() {
         if (!response.ok) {
           const errorText = await response.text()
           console.error("Failed to log click:", response.status, errorText)
+        } else {
+          console.log('✅ Click logged to database:', targetElement.tag, targetElement.text?.slice(0, 30))
         }
       } catch (error) {
         console.error("Failed to log click:", error)
