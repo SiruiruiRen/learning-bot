@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,9 +47,14 @@ export default function PrePostKnowledgeCheck({
     )
   }
   
-  // Safety check: ensure currentQuestionIndex is valid
-  const safeIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1))
-  const currentQuestion = questions[safeIndex]
+  // Use useMemo to compute safeIndex and currentQuestion to avoid initialization issues
+  const safeIndex = useMemo(() => {
+    return Math.max(0, Math.min(currentQuestionIndex, questions.length - 1))
+  }, [currentQuestionIndex, questions.length])
+  
+  const currentQuestion = useMemo(() => {
+    return questions[safeIndex]
+  }, [questions, safeIndex])
   
   if (!currentQuestion) {
     return (
@@ -59,16 +64,20 @@ export default function PrePostKnowledgeCheck({
     )
   }
   
-  const isLastQuestion = safeIndex === questions.length - 1
-  const isSelectAll = currentQuestion.isSelectAll || false
-  const allQuestionsAnswered = questions.every(q => {
-    const answer = selectedAnswers[q.id]
-    if (q.isSelectAll) {
-      return Array.isArray(answer) && answer.length > 0
-    }
-    return answer !== undefined && answer !== ""
-  })
-  const allQuestionsCorrect = questions.length > 0 && questions.every(q => questionResults[q.id] === true)
+  const isLastQuestion = useMemo(() => safeIndex === questions.length - 1, [safeIndex, questions.length])
+  const isSelectAll = useMemo(() => currentQuestion.isSelectAll || false, [currentQuestion])
+  const allQuestionsAnswered = useMemo(() => {
+    return questions.every(q => {
+      const answer = selectedAnswers[q.id]
+      if (q.isSelectAll) {
+        return Array.isArray(answer) && answer.length > 0
+      }
+      return answer !== undefined && answer !== ""
+    })
+  }, [questions, selectedAnswers])
+  const allQuestionsCorrect = useMemo(() => {
+    return questions.length > 0 && questions.every(q => questionResults[q.id] === true)
+  }, [questions, questionResults])
   
   // Define logQuizEvent function that doesn't depend on sessionId state
   // It will get sessionId from localStorage or parameter
@@ -256,12 +265,12 @@ export default function PrePostKnowledgeCheck({
     onComplete(selectedAnswers, allCorrect)
   }
   
-  const isSubmitted = submittedQuestions.has(currentQuestion.id)
-  const isCorrect = questionResults[currentQuestion.id] === true
-  const selectedAnswer = selectedAnswers[currentQuestion.id]
-  const selectedAnswerArray = isSelectAll && Array.isArray(selectedAnswer) ? selectedAnswer : []
-  const selectedAnswerString = !isSelectAll && typeof selectedAnswer === 'string' ? selectedAnswer : ''
-  const wrongAnswerFeedback = currentQuestion.feedbackForWrongAnswers?.[selectedAnswerString || '']
+  const isSubmitted = useMemo(() => submittedQuestions.has(currentQuestion.id), [submittedQuestions, currentQuestion.id])
+  const isCorrect = useMemo(() => questionResults[currentQuestion.id] === true, [questionResults, currentQuestion.id])
+  const selectedAnswer = useMemo(() => selectedAnswers[currentQuestion.id], [selectedAnswers, currentQuestion.id])
+  const selectedAnswerArray = useMemo(() => isSelectAll && Array.isArray(selectedAnswer) ? selectedAnswer : [], [isSelectAll, selectedAnswer])
+  const selectedAnswerString = useMemo(() => !isSelectAll && typeof selectedAnswer === 'string' ? selectedAnswer : '', [isSelectAll, selectedAnswer])
+  const wrongAnswerFeedback = useMemo(() => currentQuestion.feedbackForWrongAnswers?.[selectedAnswerString || ''], [currentQuestion, selectedAnswerString])
   
   const accent = "#d8b26f"
   const neutralSurface = "hsl(var(--card) / 0.9)"
