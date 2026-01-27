@@ -196,6 +196,11 @@ export default function GuidedLearningObjective({
       const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation" };
       setMessages(prev => [...prev, botFeedback]);
 
+      // Enable continue button
+      if (onComplete) {
+        onComplete();
+      }
+
       // Log AI response
       try {
         await fetch('/api/events', {

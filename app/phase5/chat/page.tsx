@@ -8,7 +8,7 @@ import { LineChart, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoring from "@/components/guided-monitoring"
-import InstructionGuide from "@/components/instruction-guide"
+import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import { phaseInstructions } from "@/lib/post-task-questions"
 
 export default function Phase5ChatContent() {
@@ -152,14 +152,11 @@ export default function Phase5ChatContent() {
               Back to Instructions
             </Button>
             {chatComplete && (
-              <Button
-                className="font-semibold"
+              <PhaseNavigationButton
+                nextPhase={6}
+                onNavigate={() => router.push('/phase6')}
                 style={primaryButtonStyle}
-                onClick={() => router.push('/phase6')}
-              >
-                Continue to Phase 6
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
+              />
             )}
           </div>
         </motion.div>
