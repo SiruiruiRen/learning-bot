@@ -198,7 +198,6 @@ Specific goals give you a clear roadmap and help you celebrate wins along the wa
 
 Use this template to create a detailed, actionable plan:
 
-```
 **Course/Learning Task:**
 Master [specific calculus topics] including:
 1. [Topic 1 - e.g., derivatives of polynomial functions]
@@ -215,7 +214,6 @@ Master [specific calculus topics] including:
 - **YouTube**: Use for [specific purpose]
 - **Practice**: [How you'll practice]
 - **Assessment**: [How you'll check understanding]
-```
 
 ### ✨ **Example: Transforming Your Plan**
 
@@ -478,105 +476,3 @@ Resource_Specificity: HIGH
 - **Word Count: 220 words** (slightly shorter than warm)
 
 ---
-
-## Comparison Summary
-
-### Scoring Consistency ✅
-
-| Example | Warm Score | Direct Score | Difference |
-|---------|------------|--------------|------------|
-| LOW Quality (Math) | 0/4 | 0/4 | 0 |
-| HIGH Quality (Data Science) | 4/4 | 4/4 | **0** |
-
-**Conclusion**: Perfect scoring consistency at Temperature 0.1
-
----
-
-### Tone Differences
-
-| Dimension | Warm 🌟 | Direct 📋 | Difference |
-|-----------|---------|-----------|------------|
-| **Growth Mindset** | Explicit framing | Minimal/absent | ✅ Clear |
-| **Self-Efficacy** | "You can do this" | "Your plan demonstrates" | ⚠️ Moderate |
-| **Goal Orientation** | Future benefits emphasized | Minimal | ✅ Clear |
-| **Emotional Validation** | "I see your effort" | "I see effort" (still present) | ⚠️ Small |
-| **Praise Frequency** | High (7 instances) | Moderate (4 instances) | ⚠️ Moderate |
-| **Word Count** | 230 words | 220 words | ⚠️ Small (4%) |
-| **Emoji Usage** | Frequent & varied | Still frequent | ⚠️ Small |
-
----
-
-## Research Implications
-
-### Strengths of Current Implementation
-
-1. **Perfect Scoring Consistency**: Temperature 0.1 ensures both conditions evaluate identically
-2. **Motivational Contrast Exists**: Warm explicitly includes growth mindset, self-efficacy; Direct reduces these
-3. **Same Scaffolding**: Both provide identical templates, examples, and guidance depth
-4. **Practical Implementation**: Works with single prompt (fast, cost-effective)
-
-### Limitations
-
-1. **Direct Not Fully "Direct"**: Claude's inherent helpfulness makes it difficult to eliminate all encouragement
-2. **Modest Tone Difference**: Word count differs by only 4%; some motivational language remains in Direct
-3. **Emoji Overlap**: Direct still uses emojis beyond category indicators
-
-### Recommendations
-
-**For Research Publication**:
-- Document as: "Warm (High Motivation) vs Moderate (Reduced Motivation)" rather than "Warm vs Direct"
-- Explicitly note that "complete elimination of encouraging language was not achievable with current LLM constraints"
-- Focus on measurable differences: growth mindset phrases, self-efficacy statements, praise count
-
-**Hypotheses to Test**:
-1. Warm condition → Higher revision rates after LOW/MEDIUM scores
-2. Warm condition → Higher self-reported motivation and self-efficacy
-3. No difference in final learning outcomes (due to identical scaffolding)
-4. Individual differences (e.g., struggling students may benefit more from warm)
-
----
-
-## Technical Implementation
-
-### Production Settings (Already Applied)
-
-```python
-# backend/routes/chat.py
-
-# Optimal settings for scoring consistency
-response = await call_claude(
-    system_prompt=get_prompt(f"phase{phase}_{component}", style=coach_tone),
-    user_message=user_message,
-    chat_history=chat_history,
-    temperature=0.1,  # Critical for consistency
-    max_tokens=800
-)
-```
-
-### Data Collection
-
-System automatically logs:
-- User's chosen tone (warm/direct) from onboarding
-- All chat messages and feedback
-- Scores and evaluation metadata
-- Revision attempts and final submissions
-
-**Database Tables**:
-- `users.profile_data.coach_tone` - User's tone preference
-- `messages` - All conversations
-- `assessments` - Scores and evaluations
-- `content_interaction_logs` - All interactions
-
----
-
-## Files for Lab Meeting
-
-1. **This Document**: Overview and examples
-2. `REAL_CLAUDE_45_TONE_COMPARISON.md`: More examples with actual API outputs
-3. `CONSISTENCY_TEST_RESULTS.md`: Statistical analysis
-4. `LAB_MEETING_SUMMARY.md`: Implementation summary
-
----
-
-**Date Generated**: 2026-02-03
-**Status**: ✅ Ready for lab meeting discussion and research data collection

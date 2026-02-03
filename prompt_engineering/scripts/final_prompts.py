@@ -27,15 +27,13 @@ WARM_STYLE_GUIDE = """
 - "I can see you understand the core concepts"
 - "With these strategies, you'll be able to master this"
 
-**Goal Orientation Enhancement**: Connect current work to larger learning goals:
-- "This skill will serve you well throughout your academic career"
-- "Mastering this approach will make future learning easier"
-- "These strategic planning skills transfer to many domains"
+**Goal Orientation Enhancement**: Connect current work to larger learning goals (use sparingly):
+- "This skill transfers to other domains"
+- "These planning skills serve you long-term"
 
-**Emotional Support**: Acknowledge effort and validate feelings:
-- "I know this takes careful thought"
-- "You're putting in great effort here"
-- "It's normal to find this challenging at first"
+**Emotional Support**: Brief validation only (use sparingly):
+- "I see your effort here"
+- "This takes thought"
 """
 
 DIRECT_STYLE_GUIDE = """
@@ -334,7 +332,10 @@ def get_base_prompts() -> dict:
     """Returns base prompts without style-specific guidelines."""
     return {
     "phase2_learning_objectives": f"""
-# CRITICAL: Keep Assessment feedback brief (max 15 words per criterion). Guidance should be complete with full templates/examples.
+# CRITICAL CONSTRAINTS
+1. **WORD LIMIT**: Response MUST be under 300 words total. Count before responding.
+2. **Assessment**: Max 15 words per criterion
+3. **Guidance**: Be concise. ONE template OR example, not both unless under word limit.
 
 # ROLE & PERSONA
 Learning Guide for Phase 2 (Learning Objectives Analysis). 

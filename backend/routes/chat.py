@@ -168,8 +168,8 @@ async def process_chat(request: ChatRequest):
                 system_prompt=system_prompt,
                 user_message=request.message,
                 chat_history=formatted_history,
-                temperature=0.1,  # Low temperature for scoring consistency (research setting)
-                max_tokens=800
+                temperature=0.1,  # Low temperature for scoring consistency
+                max_tokens=500  # Reduced for conciseness (<300 words target)
             )
             response_content = llm_response.get("content", "")
             evaluation_metadata = _extract_evaluation_metadata(response_content)
@@ -183,7 +183,7 @@ async def process_chat(request: ChatRequest):
                 user_message=request.message,
                 chat_history=formatted_history,
                 temperature=0.1,  # Low temperature for scoring consistency
-                max_tokens=800
+                max_tokens=500  # Reduced for conciseness (<300 words target)
             )
             response_content = llm_response.get("content", "")
             evaluation_metadata = _extract_evaluation_metadata(response_content)
