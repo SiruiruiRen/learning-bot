@@ -231,11 +231,11 @@ Strategic Resource Utilization: Watch videos when confused
 
 ### 🌟 WARM Feedback (Real Claude Response)
 
-*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmJtxNwpyvLCCWnTjpCU'}*
+*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmLb1XSYx1qG8FRRDuuD'}*
 
 ### 📋 DIRECT Feedback (Real Claude Response)
 
-*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmJuvuRcFXk6dQ6HHRpQ'}*
+*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmLc1VjDp8AXWPbZJy4b'}*
 
 ### 🔍 Motivational Differences
 
@@ -266,11 +266,11 @@ Strategic Resource Utilization: First, review lecture slides for conceptual over
 
 ### 🌟 WARM Feedback (Real Claude Response)
 
-*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmJvtWan2Dt6NTGZVH5B'}*
+*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmLcyvzk866EcDqEjDrY'}*
 
 ### 📋 DIRECT Feedback (Real Claude Response)
 
-*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmJws9kmHxVYm7h3W5Tc'}*
+*Error: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011CXmLdxxEkhA8Mv6gbV5ZC'}*
 
 ### 🔍 Motivational Differences
 
