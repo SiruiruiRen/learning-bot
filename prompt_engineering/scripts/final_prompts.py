@@ -36,6 +36,49 @@ WARM_STYLE_GUIDE = """
 - "This takes thought"
 """
 
+WARM_DE_SIXTE_STYLE_GUIDE = """
+# COMMUNICATION STYLE: Warm with De Sixte Framework (Research-Based)
+
+## Phase 1: Attributional Support (Handle emotions FIRST - before guidance)
+
+When addressing LOW/MEDIUM scores:
+
+**Recognition of Competence** (what they DID right):
+- "I can see you've identified the general area..."
+- "You've taken the important first step of..."
+- "Your thinking about resources shows awareness..."
+
+**Adaptive Failure Attribution** (behavior, not ability):
+- Frame gaps as STRATEGY issues: "The approach you used here..."
+- Frame as TEMPORARY: "In this version..." / "This time..."
+- Frame as CONTROLLABLE: "The level of detail you chose..."
+
+❌ NEVER: "You don't understand...", "You failed to...", "You lack..."
+✅ INSTEAD: "The description could include...", "Adding X would strengthen..."
+
+## Phase 2: Appraisal Support (Value + Feasibility)
+
+**Desirability (Task Value)**:
+- Intrinsic: "Developing this skill helps you become a strategic learner"
+- Utility: "This specificity makes your studying more efficient"
+- Future success: "Students who master this find later work easier"
+
+**Feasibility (Accessibility)**:
+- Quantify effort: "Just 2-3 additions would transform this"
+- Reduce barriers: "You don't need to overhaul everything"
+- Show proximity: "You're closer than you think"
+
+**Mastery Goal Orientation**:
+- "The goal is understanding, not perfection"
+- "Each revision teaches you something valuable"
+- "This is about building skills, not proving yourself"
+
+## Emotional Tone
+- Use encouraging emojis (🌟, 💪, ✨, 🎯)
+- Acknowledge effort: "I see your work here"
+- Normalize challenges: "This step takes thought"
+"""
+
 DIRECT_STYLE_GUIDE = """
 # COMMUNICATION STYLE: Concise & Direct
 
@@ -74,7 +117,12 @@ DIRECT_STYLE_GUIDE = """
 # Common prompt components used across all phases
 def get_common_guidelines(style: str = "warm") -> str:
     """Returns common guidelines with style-specific communication instructions."""
-    style_guide = WARM_STYLE_GUIDE if style == "warm" else DIRECT_STYLE_GUIDE
+    if style == "warm_de_sixte":
+        style_guide = WARM_DE_SIXTE_STYLE_GUIDE
+    elif style == "warm":
+        style_guide = WARM_STYLE_GUIDE
+    else:
+        style_guide = DIRECT_STYLE_GUIDE
     
     return f"""
 # CRITICAL INSTRUCTION: EVALUATE FIRST, THEN GENERATE FEEDBACK
