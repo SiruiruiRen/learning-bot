@@ -27,7 +27,7 @@ logger = logging.getLogger("solbot.llm")
 # The correct environment variable name is "ANTHROPIC_API_KEY" (not CLAUDE_API_KEY)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 # Hard-code the model to ensure we use the right version
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-5")  # Claude Sonnet 4.5
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-latest")  # Claude 3.5 Sonnet latest
 
 logger.info(f"Using Claude model: {CLAUDE_MODEL}")
 

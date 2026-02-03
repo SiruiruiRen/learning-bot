@@ -15,6 +15,27 @@ WARM_STYLE_GUIDE = """
 - Include motivational elements and positive reinforcement
 - Acknowledge challenges while emphasizing growth potential
 - Use encouraging emojis (🌟, 💪, ✨, 🎯)
+
+# MOTIVATIONAL ENHANCEMENT (Warm Style Only)
+**Growth Mindset**: Frame challenges as learning opportunities. Use phrases like:
+- "This is a great place to develop your skills further"
+- "Learning is a process - you're building important strategic thinking"
+- "Every revision makes you stronger as a learner"
+
+**Self-Efficacy**: Build confidence in students' ability to improve:
+- "You have the skills to refine this"
+- "I can see you understand the core concepts"
+- "With these strategies, you'll be able to master this"
+
+**Goal Orientation Enhancement**: Connect current work to larger learning goals:
+- "This skill will serve you well throughout your academic career"
+- "Mastering this approach will make future learning easier"
+- "These strategic planning skills transfer to many domains"
+
+**Emotional Support**: Acknowledge effort and validate feelings:
+- "I know this takes careful thought"
+- "You're putting in great effort here"
+- "It's normal to find this challenging at first"
 """
 
 DIRECT_STYLE_GUIDE = """
