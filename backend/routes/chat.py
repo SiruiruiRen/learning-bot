@@ -168,7 +168,7 @@ async def process_chat(request: ChatRequest):
                 system_prompt=system_prompt,
                 user_message=request.message,
                 chat_history=formatted_history,
-                temperature=0.5,  # Balanced temperature for both evaluation and natural feedback
+                temperature=0.1,  # Low temperature for scoring consistency (research setting)
                 max_tokens=800
             )
             response_content = llm_response.get("content", "")
@@ -182,7 +182,7 @@ async def process_chat(request: ChatRequest):
                 system_prompt=system_prompt,
                 user_message=request.message,
                 chat_history=formatted_history,
-                temperature=0.5,
+                temperature=0.1,  # Low temperature for scoring consistency
                 max_tokens=800
             )
             response_content = llm_response.get("content", "")
