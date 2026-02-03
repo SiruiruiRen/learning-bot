@@ -54,6 +54,11 @@ def get_common_guidelines(style: str = "warm") -> str:
     style_guide = WARM_STYLE_GUIDE if style == "warm" else DIRECT_STYLE_GUIDE
     
     return f"""
+# CRITICAL INSTRUCTION: EVALUATE FIRST, THEN GENERATE FEEDBACK
+**Step 1**: Review the submission against the rubric below. Assign scores strictly based on criteria.
+**Step 2**: Generate your feedback response using the exact scores from Step 1.
+**Important**: Communication style (warm/direct) should NOT influence your scoring. Use identical evaluation standards regardless of tone.
+
 # CATEGORIZATION GUIDELINES
 Assess each criterion with an integer score and category:
 - Score 0 = LOW (⚠️)
@@ -64,6 +69,16 @@ Assess each criterion with an integer score and category:
   • ANY criterion LOW = Template + example
   • LOWEST criteria MEDIUM (no LOW) = 2-3 targeted suggestions + Template
   • ALL criteria HIGH = 2-3 reflection question
+
+# SCORING CALIBRATION EXAMPLES (Task Identification)
+- "Learn Python" → 0/2 (too vague, no specific topics)
+- "Learn Python pandas library" → 1/2 (specific library but lacks scope details)
+- "Master Python pandas: data loading, cleaning, aggregation for DS101" → 2/2 (specific with clear scope)
+
+# SCORING CALIBRATION EXAMPLES (Resource Specificity)
+- "Textbook and videos" → 0/2 (completely generic)
+- "Stewart Calculus Ch3, Khan Academy videos" → 1/2 (named but no strategic usage)
+- "Stewart Ch3 for derivative theory, Khan for visual chain rule examples" → 2/2 (named with strategic purposes)
 
 {style_guide}
 
