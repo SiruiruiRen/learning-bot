@@ -259,9 +259,9 @@ export default function Phase5Content() {
                     onClick={nextCard}
                     disabled={(currentCardIndex === 1 && !videoCompleted) || (currentCardIndex === 2 && !postTestCompleted)}
                   >
-                    {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
+                    Next <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
-                ) : (
+                ) : currentCardIndex === 2 && postTestCompleted ? (
                   <Button 
                     className="px-6 py-2 rounded-lg shadow-md"
                     style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
@@ -269,7 +269,15 @@ export default function Phase5Content() {
                   >
                     Continue to Chat <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
-                )}
+                ) : currentCardIndex === 2 && !postTestCompleted ? (
+                  <Button 
+                    className="px-6 py-2 rounded-lg shadow-md opacity-60 cursor-not-allowed"
+                    style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
+                    disabled
+                  >
+                    Next <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : null}
               </div>
             </CardContent>
           </Card>

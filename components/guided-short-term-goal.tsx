@@ -288,8 +288,11 @@ export default function GuidedShortTermGoal({
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-purple-600">
                 <Bot size={16} />
             </div>
-            <div className="typing-indicator" data-message={loadingMessages[currentLoadingMessage]}>
+            <div className="typing-indicator">
+              <div className="typing-indicator-dots">
                 <span></span><span></span><span></span>
+              </div>
+              <span className="typing-indicator-message">{loadingMessages[currentLoadingMessage]}</span>
             </div>
           </motion.div>
         )}

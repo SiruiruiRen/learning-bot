@@ -590,7 +590,7 @@ export default function Phase2Page() {
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
-                ) : currentCardIndex === cards.length - 1 ? (
+                ) : currentCardIndex === cards.length - 1 && (currentCardIndex !== 4 || postTestCompleted) ? (
                   <Button 
                     className="font-semibold px-6 py-3 rounded-full shadow-lg"
                     style={{
@@ -601,6 +601,18 @@ export default function Phase2Page() {
                     onClick={nextCard}
                   >
                     Continue to Chat <ChevronRight className="h-5 w-5 ml-2" />
+                  </Button>
+                ) : currentCardIndex === 4 && !postTestCompleted ? (
+                  <Button 
+                    className="font-semibold px-6 py-2 rounded-lg opacity-60 cursor-not-allowed"
+                    style={{
+                      background: "linear-gradient(135deg, #d8b26f, #c89b51)",
+                      boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+                      color: "#1f1408",
+                    }}
+                    disabled
+                  >
+                    Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : null}
               </div>

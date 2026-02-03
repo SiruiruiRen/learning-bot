@@ -175,9 +175,9 @@ export default function IntroPage() {
             style={{ backgroundColor: neutralSurface, borderColor: neutralBorder, color: mutedText }}
           >
             <Sparkles className="h-5 w-5" style={{ color: accent }} />
-            <span className="text-sm">Loading your experience...</span>
+            <span className="text-base">Loading your experience...</span>
           </div>
-          <p className="text-sm" style={{ color: mutedText }}>
+          <p className="text-base" style={{ color: mutedText }}>
             Preparing your learning journey.
           </p>
         </div>
@@ -199,11 +199,11 @@ export default function IntroPage() {
               <CardHeader className="space-y-3">
                 <div className="flex items-center justify-center gap-3">
                   <Compass className="h-8 w-8" style={{ color: accent }} />
-                  <CardTitle className="text-2xl font-bold text-center">
+                  <CardTitle className="text-3xl font-bold text-center">
                     Science of Learning to Learn Bot
                   </CardTitle>
                 </div>
-                <p className="text-center text-base" style={{ color: mutedText }}>
+                <p className="text-center text-lg" style={{ color: mutedText }}>
                   A 90-minute, evidence-based training to help you study more effectively.
                 </p>
               </CardHeader>
@@ -217,21 +217,21 @@ export default function IntroPage() {
           >
             <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
               <CardHeader>
-                <CardTitle className="text-xl font-semibold">Why this matters</CardTitle>
+                <CardTitle className="text-2xl font-semibold">Why this matters</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm" style={{ color: mutedText }}>
+              <CardContent className="space-y-4 text-base" style={{ color: mutedText }}>
                 <div className="space-y-2">
-                  <p className="font-medium text-foreground">Do any of these sound familiar?</p>
-                  <ul className="space-y-1 ml-1">
-                    <li className="flex items-start gap-2">
+                  <p className="font-medium text-foreground text-lg">Do any of these sound familiar?</p>
+                  <ul className="space-y-2 ml-1">
+                    <li className="flex items-start gap-2 text-base">
                       <span style={{ color: accent }}>•</span>
                       Are you having trouble achieving the grades you want?
                     </li>
-                    <li className="flex items-start gap-2">
+                    <li className="flex items-start gap-2 text-base">
                       <span style={{ color: accent }}>•</span>
                       Is studying taking too much of your time?
                     </li>
-                    <li className="flex items-start gap-2">
+                    <li className="flex items-start gap-2 text-base">
                       <span style={{ color: accent }}>•</span>
                       Do you soon forget what you studied?
                     </li>
@@ -239,16 +239,16 @@ export default function IntroPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <p className="font-medium text-foreground">The SoLBot Advantage</p>
+                  <p className="font-medium text-foreground text-lg">The SoLBot Advantage</p>
                   <div className="flex items-start gap-2">
-                    <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
-                    <p>
+                    <Sparkles className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: accent }} />
+                    <p className="text-base">
                       <strong>Evidence-Based:</strong> This training teaches strategies proven to improve exam scores and course grades compared to standard studying.
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
-                    <p>
+                    <Sparkles className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: accent }} />
+                    <p className="text-base">
                       <strong>AI-Guided Coaching:</strong> SoLBot acts as your personal coach, providing interactive lessons and feedback to help you apply these skills to any course you choose.
                     </p>
                   </div>
@@ -264,7 +264,7 @@ export default function IntroPage() {
           >
             <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
               <CardHeader>
-                <CardTitle className="text-xl font-semibold">Your learning journey</CardTitle>
+                <CardTitle className="text-2xl font-semibold">Your learning journey</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {phaseInfo.map((phase, index) => (
@@ -284,8 +284,8 @@ export default function IntroPage() {
                       <phase.icon className="h-5 w-5" style={{ color: accent }} />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-base">{phase.title}</h4>
-                      <p className="text-sm" style={{ color: mutedText }}>{phase.description}</p>
+                      <h4 className="font-semibold text-lg">{phase.title}</h4>
+                      <p className="text-base" style={{ color: mutedText }}>{phase.description}</p>
                     </div>
                   </div>
                 ))}
@@ -300,16 +300,16 @@ export default function IntroPage() {
           >
             <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
               <CardHeader>
-                <CardTitle className="text-xl font-semibold">Start your personalized session</CardTitle>
+                <CardTitle className="text-2xl font-semibold">Start your personalized session</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm" style={{ color: mutedText }}>
+                <p className="text-base" style={{ color: mutedText }}>
                   We'll customize the AI coach to your specific context.
                 </p>
                 {isClient ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-sm font-medium text-foreground">Full Name</Label>
+                      <Label htmlFor="name" className="text-base font-medium text-foreground">Full Name</Label>
                       <Input
                         id="name"
                         value={userName}
@@ -321,7 +321,7 @@ export default function IntroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-foreground">Email Address</Label>
+                      <Label htmlFor="email" className="text-base font-medium text-foreground">Email Address</Label>
                       <Input
                         id="email"
                         value={userEmail}
@@ -333,7 +333,7 @@ export default function IntroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="year" className="text-sm font-medium text-foreground">Academic Level</Label>
+                      <Label htmlFor="year" className="text-base font-medium text-foreground">Academic Level</Label>
                       <Select value={userYear} onValueChange={setUserYear}>
                         <SelectTrigger
                           className="w-full border"
@@ -356,7 +356,7 @@ export default function IntroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="major" className="text-sm font-medium text-foreground">Field of Study</Label>
+                      <Label htmlFor="major" className="text-base font-medium text-foreground">Field of Study</Label>
                       <Input
                         id="major"
                         value={userMajor}
@@ -368,8 +368,8 @@ export default function IntroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="course" className="text-sm font-medium text-foreground">
-                        Target Course <span className="text-xs font-normal" style={{ color: mutedText }}>(optional – for planning examples)</span>
+                      <Label htmlFor="course" className="text-base font-medium text-foreground">
+                        Target Course <span className="text-sm font-normal" style={{ color: mutedText }}>(optional – for planning examples)</span>
                       </Label>
                       <Input
                         id="course"
@@ -382,8 +382,8 @@ export default function IntroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-foreground">How should SoLBot communicate with you?</Label>
-                      <p className="text-xs" style={{ color: mutedText }}>
+                      <Label className="text-base font-medium text-foreground">How should SoLBot communicate with you?</Label>
+                      <p className="text-sm" style={{ color: mutedText }}>
                         You can view feedback in both styles after each assessment.
                       </p>
                       <div className="flex gap-2">
@@ -395,7 +395,7 @@ export default function IntroPage() {
                             key={option.value}
                             type="button"
                             onClick={() => setCoachTone(option.value)}
-                            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-all"
+                            className="flex-1 px-3 py-2 rounded-lg text-base font-medium border transition-all"
                             style={{
                               backgroundColor: coachTone === option.value ? accent : "hsl(var(--card))",
                               borderColor: coachTone === option.value ? accent : neutralBorder,

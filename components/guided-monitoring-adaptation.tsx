@@ -361,8 +361,11 @@ export default function GuidedMonitoringAdaptation({
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
                 <Bot size={16} style={{ color: "#1f1408" }} />
             </div>
-            <div className="typing-indicator" data-message={loadingMessages[currentLoadingMessage]}>
+            <div className="typing-indicator">
+              <div className="typing-indicator-dots">
                 <span></span><span></span><span></span>
+              </div>
+              <span className="typing-indicator-message">{loadingMessages[currentLoadingMessage]}</span>
             </div>
           </motion.div>
         )}
