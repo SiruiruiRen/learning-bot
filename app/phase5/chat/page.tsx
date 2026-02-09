@@ -8,6 +8,7 @@ import { LineChart, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoring from "@/components/guided-monitoring"
+import InstructionGuide from "@/components/instruction-guide"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import { phaseInstructions } from "@/lib/post-task-questions"
 
