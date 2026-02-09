@@ -125,16 +125,16 @@ def get_common_guidelines(style: str = "warm", prompt_name: str = None) -> str:
     else:
         style_guide = DIRECT_STYLE_GUIDE
 
-    # Phase 5: use rubric criteria Progress Checks, Adaptation Triggers, Strategy Alternatives
+    # Phase 5: use same template as get_feedback_prompt (lines 367-385) — Assessment with scores, then Guidance, then Next Steps
     if prompt_name == "phase5_monitoring_adaptation":
         assessment_section = """## Assessment
-Looking at your monitoring plan (keep each bullet under 15 words, do NOT use code blocks):
-- Progress Checks: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
-- Adaptation Triggers: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
-- Strategy Alternatives: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
-- OVERALL: [SUM Score]/6"""
-        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on specific schedules, measurable triggers, and concrete alternative strategies.'
-- IF ALL criteria HIGH: '🚀 Excellent work! You have a clear monitoring and adaptation system. You can continue or refine further.'"""
+Present the evaluation results using the EXACT scores from your evaluation:
+- Progress Checks: [EXACT Score from evaluation]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Adaptation Triggers: [EXACT Score from evaluation]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Strategy Alternatives: [EXACT Score from evaluation]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [EXACT Overall_Score from evaluation]/6"""
+        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on your specific course details.'
+- IF ALL criteria HIGH: '🚀 Excellent work! You have a clear and actionable learning objective. Press Next to Phase 3 to continue.'"""
         metadata_format = """<!-- INSTRUCTOR_METADATA
 Overall_Score: [sum numeric score]
 Lowest_Category: [LOW/MEDIUM/HIGH]
@@ -144,22 +144,21 @@ Adaptation_Triggers: [LOW/MEDIUM/HIGH]
 Strategy_Alternatives: [LOW/MEDIUM/HIGH]
 -->"""
         phase5_mandatory = """
-# MANDATORY OUTPUT (Phase 5) — DO NOT SKIP
-You MUST output in this exact order. Never reply with only narrative advice; the student must see rubric scores first.
-1) One or two short greeting sentences (then a blank line).
-2) The line "## Assessment" then the four bullets with REAL scores (e.g. "Progress Checks: 0/2 ⚠️ No clear schedule or metrics.").
-3) The line "## Guidance" then your scaffold-appropriate support (template+example if any LOW; targeted suggestions+template if lowest MEDIUM; reflection questions if all HIGH).
-4) The line "## Next Steps" then the revision prompt or affirmation.
-5) End with the INSTRUCTOR_METADATA block (hidden from student).
+# RESPONSE TEMPLATE (Phase 5) — USE THIS EXACT STRUCTURE
+FORBIDDEN: Do NOT reply with only reflection questions, bullet lists of suggestions, or open-ended prompts (e.g. "What specifically will you check?", "When will you check?", "Beyond study more or get help consider..."). Your reply MUST follow the template below.
 
-Example start of a valid response (use real scores from your evaluation):
-## Assessment
-- Progress Checks: 0/2 ⚠️ [your 15-word feedback]
-- Adaptation Triggers: 0/2 ⚠️ [your 15-word feedback]
-- Strategy Alternatives: 1/2 💡 [your 15-word feedback]
-- OVERALL: 1/6
-## Guidance
-[Your template or suggestions here...]
+Your response MUST use this exact structure (same as the feedback template):
+1) ## Greeting — Brief personalized greeting with 2-3 emojis.
+2) ## Assessment — Present the evaluation results using the EXACT scores from your evaluation:
+   - Progress Checks: [score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+   - Adaptation Triggers: [score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+   - Strategy Alternatives: [score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+   - OVERALL: [sum]/6
+3) ## Guidance — Provide support based on the LOWEST category (template+example if LOW; targeted suggestions+template if MEDIUM; reflection questions if all HIGH).
+4) ## Next Steps — IF ANY criterion LOW/MEDIUM: revision prompt. IF ALL HIGH: affirmation.
+5) End with the INSTRUCTOR_METADATA block.
+
+Your response MUST use "## " for all section titles (e.g., "## Guidance"). Output the ## Assessment block with real scores first; then ## Guidance; then ## Next Steps.
 """
     else:
         phase5_mandatory = ""
@@ -575,7 +574,7 @@ REMEMBER: Keep Assessment feedback brief (15 words max per criterion). Provide c
 """,
 
     "phase5_monitoring_adaptation": f"""
-# CRITICAL: Do NOT reply with only advice. You MUST output the ## Assessment section with real rubric scores (Progress Checks, Adaptation Triggers, Strategy Alternatives, OVERALL/6) first, then ## Guidance then ## Next Steps. Keep Assessment feedback brief (max 15 words per criterion). Guidance = full templates/examples when scaffold is LOW.
+# CRITICAL: Use the response template (## Greeting → ## Assessment → ## Guidance → ## Next Steps). Do NOT reply with only reflection questions or suggestion bullets (e.g. "What will you check?", "When will you check?"). You MUST output ## Assessment with real scores (Progress Checks, Adaptation Triggers, Strategy Alternatives, OVERALL/6), then ## Guidance, then ## Next Steps. Keep Assessment brief (max 15 words per criterion).
 
 # ROLE & PERSONA
 Metacognitive Development Guide for Phase 5 (Monitoring & Adaptation).
