@@ -160,7 +160,82 @@ Your response MUST use this exact structure (same as the feedback template):
 
 Your response MUST use "## " for all section titles (e.g., "## Guidance"). Output the ## Assessment block with real scores first; then ## Guidance; then ## Next Steps.
 """
+    elif prompt_name == "phase4_long_term_goals":
+        phase5_mandatory = ""
+        assessment_section = """## Assessment
+Looking at your long-term goal plan (keep each bullet under 15 words, do NOT use code blocks):
+- Goal Clarity: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Goal Orientation: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Visualization: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [SUM Score]/6"""
+        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on your specific course details.'
+- IF ALL criteria HIGH: '🚀 Excellent work! You have clear, well-defined long-term goals. Continue to the next task.'"""
+        metadata_format = """<!-- INSTRUCTOR_METADATA
+Overall_Score: [sum numeric score]
+Lowest_Category: [LOW/MEDIUM/HIGH]
+Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
+Goal_Clarity: [LOW/MEDIUM/HIGH]
+Goal_Orientation: [LOW/MEDIUM/HIGH]
+Visualization: [LOW/MEDIUM/HIGH]
+-->"""
+    elif prompt_name == "phase4_short_term_goals":
+        phase5_mandatory = ""
+        assessment_section = """## Assessment
+Looking at your short-term goal plan (keep each bullet under 15 words, do NOT use code blocks):
+- Specific Goal: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Action Plan: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Timeline: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [SUM Score]/6"""
+        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on your specific course details.'
+- IF ALL criteria HIGH: '🚀 Excellent work! You have clear, actionable short-term goals. Continue to the next task.'"""
+        metadata_format = """<!-- INSTRUCTOR_METADATA
+Overall_Score: [sum numeric score]
+Lowest_Category: [LOW/MEDIUM/HIGH]
+Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
+Specific_Goal: [LOW/MEDIUM/HIGH]
+Action_Plan: [LOW/MEDIUM/HIGH]
+Timeline: [LOW/MEDIUM/HIGH]
+-->"""
+    elif prompt_name == "phase4_contingency_strategies":
+        phase5_mandatory = ""
+        assessment_section = """## Assessment
+Looking at your implementation intention (keep each bullet under 15 words, do NOT use code blocks):
+- If-Then Structure: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Response Specificity: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Feasibility: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [SUM Score]/6"""
+        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on your specific course details.'
+- IF ALL criteria HIGH: '🚀 Excellent work! You have effective implementation intentions. Continue to the next task.'"""
+        metadata_format = """<!-- INSTRUCTOR_METADATA
+Overall_Score: [sum numeric score]
+Lowest_Category: [LOW/MEDIUM/HIGH]
+Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
+If_Then_Structure: [LOW/MEDIUM/HIGH]
+Response_Specificity: [LOW/MEDIUM/HIGH]
+Feasibility: [LOW/MEDIUM/HIGH]
+-->"""
+    elif prompt_name == "phase4_mcii":
+        phase5_mandatory = ""
+        assessment_section = """## Assessment
+Looking at your MCII plan (keep each bullet under 15 words, do NOT use code blocks):
+- Goal Clarity & Relevance: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Visualization Quality: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Obstacle Identification: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Implementation Intention Quality: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [SUM Score]/8"""
+        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on your specific course details.'
+- IF ALL criteria HIGH: '🚀 Excellent work! You have a complete MCII plan. Continue to the next task.'"""
+        metadata_format = """<!-- INSTRUCTOR_METADATA
+Overall_Score: [sum numeric score]
+Lowest_Category: [LOW/MEDIUM/HIGH]
+Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
+Goal_Clarity_Relevance: [LOW/MEDIUM/HIGH]
+Visualization_Quality: [LOW/MEDIUM/HIGH]
+Obstacle_Identification: [LOW/MEDIUM/HIGH]
+Implementation_Intention_Quality: [LOW/MEDIUM/HIGH]
+-->"""
     else:
+        # Phase 2 (default)
         phase5_mandatory = ""
         assessment_section = """## Assessment
 Looking at your learning plan (keep each bullet under 15 words, do NOT use code blocks):
