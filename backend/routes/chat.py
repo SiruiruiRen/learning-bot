@@ -159,7 +159,8 @@ async def process_chat(request: ChatRequest):
         llm_response = None
         
         try:
-            prompt_name = f"phase{request.phase}_{request.component}"
+            # Map (phase, component) to prompt key in final_prompts.py
+            prompt_name = _resolve_prompt_name(request.phase, request.component)
             
             # Single prompt call with user's preferred style
             # This ensures consistent communication style throughout the entire system
@@ -215,6 +216,15 @@ async def process_chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail="Failed to process chat message.")
 
 # --- Helper Functions ---
+def _resolve_prompt_name(phase: str, component: str) -> str:
+    """Map (phase, component) from frontend to prompt key in final_prompts.py.
+    Ensures Phase 5 monitoring chat uses rubric-based prompt (phase5_monitoring_adaptation)."""
+    if phase == "phase5" and component == "progress_monitoring":
+        return "phase5_monitoring_adaptation"
+    if (phase or "").startswith("phase"):
+        return f"{phase}_{component}"
+    return f"phase{phase}_{component}"
+
 def _extract_evaluation_metadata(raw_content: str) -> Dict[str, Any]:
     metadata = {}
     match = re.search(r"<!-- INSTRUCTOR_METADATA\n(.*?)\n-->", raw_content, re.DOTALL)

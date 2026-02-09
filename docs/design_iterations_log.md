@@ -16,6 +16,16 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 23: Phase 5 Chat Use Rubric-Based Template and Scaffold
+**Date**: 2026-02-09 | **Status**: ✅ Complete
+**User Need**: Phase 5 monitoring chat responses were not based on the template; no scoring or scaffold levels. User requested all replies to be based on the template, with different scores giving different scaffold levels per the correct rubric.
+**Key Changes**:
+- Backend: map (phase5, progress_monitoring) to prompt key `phase5_monitoring_adaptation` so the rubric prompt is used instead of the generic fallback.
+- Prompt: Phase 5 now uses phase-specific COMMON_GUIDELINES (Assessment: Progress Checks, Adaptation Triggers, Strategy Alternatives; OVERALL/6; metadata and next steps for Phase 5).
+- Phase 5 base prompt reinforced: response must include Assessment with rubric scores and Guidance by scaffold level (Template+example / Targeted suggestions+Template / Reflection questions).
+**Files Modified**: `backend/routes/chat.py`, `prompt_engineering/scripts/final_prompts.py`, `docs/design_iterations_log.md`
+**Research Impact**: Ensures Phase 5 feedback is rubric-based and scaffold-appropriate, supporting consistent adaptive feedback for research analysis.
+
 ### Iteration 22: Switch to Single Prompt with Consistent Style
 **Date**: 2026-01-21 | **Commit**: `c6e1cf0` | **Status**: ✅ Complete
 **User Need**: "Chain prompt too slow. Use single prompt but design two prompt groups - one for warm (if student selects warm, entire system is warm) and one for direct (entire system feedback stays consistent)."

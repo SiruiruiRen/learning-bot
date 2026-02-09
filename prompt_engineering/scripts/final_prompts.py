@@ -115,15 +115,50 @@ DIRECT_STYLE_GUIDE = """
 """
 
 # Common prompt components used across all phases
-def get_common_guidelines(style: str = "warm") -> str:
-    """Returns common guidelines with style-specific communication instructions."""
+def get_common_guidelines(style: str = "warm", prompt_name: str = None) -> str:
+    """Returns common guidelines with style-specific communication instructions.
+    When prompt_name is given (e.g. phase5_monitoring_adaptation), Assessment and metadata use that phase's rubric criteria."""
     if style == "warm_de_sixte":
         style_guide = WARM_DE_SIXTE_STYLE_GUIDE
     elif style == "warm":
         style_guide = WARM_STYLE_GUIDE
     else:
         style_guide = DIRECT_STYLE_GUIDE
-    
+
+    # Phase 5: use rubric criteria Progress Checks, Adaptation Triggers, Strategy Alternatives
+    if prompt_name == "phase5_monitoring_adaptation":
+        assessment_section = """## Assessment
+Looking at your monitoring plan (keep each bullet under 15 words, do NOT use code blocks):
+- Progress Checks: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Adaptation Triggers: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Strategy Alternatives: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [SUM Score]/6"""
+        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on specific schedules, measurable triggers, and concrete alternative strategies.'
+- IF ALL criteria HIGH: '🚀 Excellent work! You have a clear monitoring and adaptation system. You can continue or refine further.'"""
+        metadata_format = """<!-- INSTRUCTOR_METADATA
+Overall_Score: [sum numeric score]
+Lowest_Category: [LOW/MEDIUM/HIGH]
+Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
+Progress_Checks: [LOW/MEDIUM/HIGH]
+Adaptation_Triggers: [LOW/MEDIUM/HIGH]
+Strategy_Alternatives: [LOW/MEDIUM/HIGH]
+-->"""
+    else:
+        assessment_section = """## Assessment
+Looking at your learning plan (keep each bullet under 15 words, do NOT use code blocks):
+- Task Identification: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- Resource Specificity: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
+- OVERALL: [SUM Score]/4"""
+        next_steps = """- IF ANY criterion LOW/MEDIUM: '📝 Please revise your answer using this template as a guide, focusing on your specific data science course details.'
+- IF ALL criteria HIGH: '🚀 Excellent work! You have a clear and actionable learning objective. Press Next to Phase 3 to continue.'"""
+        metadata_format = """<!-- INSTRUCTOR_METADATA
+Overall_Score: [sum numeric score]
+Lowest_Category: [LOW/MEDIUM/HIGH]
+Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
+Task_Identification: [LOW/MEDIUM/HIGH]
+Resource_Specificity: [LOW/MEDIUM/HIGH]
+-->"""
+
     return f"""
 # CRITICAL INSTRUCTION: EVALUATE FIRST, THEN GENERATE FEEDBACK
 **Step 1**: Review the submission against the rubric below. Assign scores strictly based on criteria.
@@ -157,11 +192,7 @@ Assess each criterion with an integer score and category:
 ## Greeting
 Brief personalized greeting with 2-3 emojis (adjust based on style).
 
-## Assessment
-Looking at your learning plan (keep each bullet under 15 words, do NOT use code blocks):
-- Task Identification: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
-- Resource Specificity: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
-- OVERALL: [SUM Score]/4
+{assessment_section}
 
 Your response MUST use "## " for all section titles (e.g., "## Guidance").
 
@@ -170,17 +201,10 @@ Provide support based on the LOWEST category rating. Include full templates and 
 
 ## Next Steps
 Provide next steps based on the evaluation.
-- IF ANY criterion LOW/MEDIUM: "📝 Please revise your answer using this template as a guide, focusing on your specific data science course details."
-- IF ALL criteria HIGH: "🚀 Excellent work! You have a clear and actionable learning objective. Press 'Next to Phase 3' to continue."
+{next_steps}
 
 # METADATA FORMAT
-<!-- INSTRUCTOR_METADATA
-Overall_Score: [sum numeric score]
-Lowest_Category: [LOW/MEDIUM/HIGH]
-Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
-Task_Identification: [LOW/MEDIUM/HIGH]
-Resource_Specificity: [LOW/MEDIUM/HIGH]
--->
+{metadata_format}
 """
 
 COMMON_GUIDELINES = get_common_guidelines("warm")  # Default for backward compatibility
@@ -215,7 +239,7 @@ def get_evaluation_prompt(prompt_name: str) -> str:
             in_criteria_table = True
         if in_criteria_table:
             criteria_section += line + '\n'
-            if '{COMMON_GUIDELINES}' in line:
+            if '{{COMMON_GUIDELINES}}' in line:
                 break
     
     evaluation_guidelines = f"""
@@ -261,7 +285,7 @@ Scaffolding: [Template + example/Targeted suggestions + Template/Reflection ques
 -->
 """
     
-    # Replace {COMMON_GUIDELINES} with evaluation-only version
+    # Replace {{COMMON_GUIDELINES}} with evaluation-only version
     return base_prompt.replace("{COMMON_GUIDELINES}", evaluation_guidelines)
 
 def get_feedback_prompt(prompt_name: str, style: str = "warm", evaluation_metadata: dict = None) -> str:
@@ -297,7 +321,7 @@ def get_feedback_prompt(prompt_name: str, style: str = "warm", evaluation_metada
         elif '# KEY CRITERIA' in line:
             in_role = False
             in_criteria = True
-        elif '{COMMON_GUIDELINES}' in line:
+        elif '{{COMMON_GUIDELINES}}' in line:
             in_criteria = False
             break
         if in_role:
@@ -371,7 +395,7 @@ def get_prompt(prompt_name: str, style: str = "warm") -> str:
     
     # Get the base prompt and replace COMMON_GUIDELINES with style-specific version
     base_prompt = base_prompts[prompt_name]
-    style_guidelines = get_common_guidelines(style)
+    style_guidelines = get_common_guidelines(style, prompt_name=prompt_name)
     
     # Replace {COMMON_GUIDELINES} placeholder with style-specific version
     return base_prompt.replace("{COMMON_GUIDELINES}", style_guidelines)
@@ -395,7 +419,7 @@ As an empowering academic mentor, you help students develop clear learning objec
 | **Task Identification** | Superficial identification without addressing actual learning content. | Identifies subject matter but lacks sufficient detail OR scope. Examples: mentions general topic without specific components, or lists components without clear boundaries. | Comprehensive identification that clearly articulates specific content domains and learning objectives with both breadth and depth. |
 | **Resource Specificity** | Generic or no resources mentioned (e.g., "textbooks," "online resources"). | Specific resources identified (by name/title) but without explanation of how each resource will be used for specific learning tasks. | Specific resources identified with clear articulation of their distinct purposes and strategic utilization (exactly which parts for which learning objectives). |
 
-{COMMON_GUIDELINES}
+{{COMMON_GUIDELINES}}
 
 # METADATA FORMAT
 <!-- INSTRUCTOR_METADATA
@@ -424,7 +448,7 @@ As an inspiring academic coach, you help students develop meaningful learning go
 | **Visualization** | No visualization of successful outcome or what success looks like. | Basic description of success but limited to factual achievement without personal relevance or emotional connection. Example: "I will have completed all assignments." | Rich description of successful outcome with personal relevance, including emotional and motivational elements (how it will feel, what it enables). |
 
 Your response MUST use "## " for all section titles (e.g., "## Guidance").
-{COMMON_GUIDELINES}
+{{COMMON_GUIDELINES}}
 
 # METADATA FORMAT
 <!-- INSTRUCTOR_METADATA
@@ -454,7 +478,7 @@ As an encouraging academic coach, you help students develop effective short-term
 | **Timeline** | No mentioned timeframe or indefinite period ("sometime"). | General timeframe mentioned but lacking specific deadline or checkpoints. Example: "Within a few weeks" or "By the end of the month." | Precise schedule with specific completion date and progressive checkpoints. Example: "Complete by March 15, with progress check on March 1." |
 
 Your response MUST use "## " for all section titles (e.g., "## Guidance").
-{COMMON_GUIDELINES}
+{{COMMON_GUIDELINES}}
 
 # METADATA FORMAT
 <!-- INSTRUCTOR_METADATA
@@ -484,7 +508,7 @@ As a forward-thinking mentor, you help students develop effective IF-THEN plans.
 | **Feasibility** | Unrealistic or impractical response unlikely to be implemented given resources or constraints. Example: "I will hire a full-time tutor." | Somewhat realistic but with potential implementation barriers or requiring significant effort to execute. Example: "I will reread the entire textbook" (very time-consuming). | Highly practical response that can be readily implemented when triggered, considering available time, resources, and motivation levels. |
 
 Your response MUST use "## " for all section titles (e.g., "## Guidance").
-{COMMON_GUIDELINES}
+{{COMMON_GUIDELINES}}
 
 # METADATA FORMAT
 <!-- INSTRUCTOR_METADATA
@@ -515,7 +539,7 @@ As an inspiring academic coach, you help students complete the full MCII process
 | **Implementation Intention Quality** | Vague plan (e.g. "study harder", "focus"). Missing clear If-Then structure. | Has If-Then structure but action is vague or not immediately actionable. Example: "If I get distracted, then I will stop." | Crystal clear "If [specific situation], Then [specific action]" structure. Action is immediate, effective, and directly addresses the obstacle. |
 
 Your response MUST use "## " for all section titles (e.g., "## Guidance").
-{COMMON_GUIDELINES}
+{{COMMON_GUIDELINES}}
 
 # METADATA FORMAT
 <!-- INSTRUCTOR_METADATA
@@ -538,27 +562,17 @@ REMEMBER: Keep Assessment feedback brief (15 words max per criterion). Provide c
 Metacognitive Development Guide for Phase 5 (Monitoring & Adaptation).
 As an insightful learning coach, you help students develop systems to track progress.
 
-# KEY CRITERIA - SCORING & CATEGORIZATION
+# KEY CRITERIA - SCORING & CATEGORIZATION (use this rubric for every response)
 | Criteria | LOW (0) | MEDIUM (1) | HIGH (2) |
 |----------|---------|------------|----------|
 | **Progress Checks** | No clear monitoring schedule or metrics (e.g., "I'll check my progress occasionally"). | Includes monitoring frequency OR specific metrics, but not both together. Example: "I'll check weekly" (without specifying what to measure) or "I'll track my understanding" (without clear schedule). | Detailed monitoring plan with specific schedule AND clear metrics. Example: "Every Sunday evening, I'll complete 5 practice problems and track the percentage correct and types of errors." |
 | **Adaptation Triggers** | No clear triggers for when to change approach (e.g., "I'll adjust if needed"). | General conditions for adaptation but without specific measurable thresholds. Example: "If I'm struggling with problems" (subjective, not measurable). | Clear, measurable thresholds for triggering adaptations. Example: "If I score below 70% on weekly self-tests for two consecutive weeks" or "If I spend more than 2 hours on a single problem set." |
 | **Strategy Alternatives** | No alternative strategies identified or only mentions "trying something else." | Names 1-2 alternative approaches but without detailed implementation steps. Example: "I'll use a different resource" (without specifying which one or how). | Multiple specific alternatives with clear implementation steps for each. Example: "Option 1: Switch to video tutorials on Khan Academy for topics X and Y. Option 2: Form a study group meeting twice weekly focusing on problem sets." |
 
-Your response MUST use "## " for all section titles (e.g., "## Guidance").
-{COMMON_GUIDELINES}
+Your response MUST: (1) Include ## Assessment with scores for Progress Checks, Adaptation Triggers, Strategy Alternatives from this rubric; (2) Set Guidance by scaffold level (LOWEST category: Template+example / Targeted suggestions+Template / Reflection questions); (3) Use "## " for all section titles.
+{{COMMON_GUIDELINES}}
 
-# METADATA FORMAT
-<!-- INSTRUCTOR_METADATA
-Overall_Score: [sum numeric score]
-Lowest_Category: [LOW/MEDIUM/HIGH]
-Scaffolding: [Template + example/Targeted suggestions + Template/Reflection questions]
-Progress_Checks: [LOW/MEDIUM/HIGH]
-Adaptation_Triggers: [LOW/MEDIUM/HIGH]
-Strategy_Alternatives: [LOW/MEDIUM/HIGH]
--->
-
-REMEMBER: Keep Assessment feedback brief (15 words max per criterion). Provide complete Guidance with full templates and examples.
+REMEMBER: Score first using the rubric above. Keep Assessment brief (15 words max per criterion). Provide complete Guidance with full templates and examples matched to scaffold level.
 """
 }
 
@@ -581,7 +595,7 @@ def get_prompt(phase_name: str, style: str = "warm") -> str:
     
     # Get the base prompt and replace {COMMON_GUIDELINES} with style-specific version
     base_prompt = base_prompts[phase_name]
-    style_guidelines = get_common_guidelines(style)
+    style_guidelines = get_common_guidelines(style, prompt_name=phase_name)
     
     # Replace {COMMON_GUIDELINES} placeholder with style-specific version
     return base_prompt.replace("{COMMON_GUIDELINES}", style_guidelines)
