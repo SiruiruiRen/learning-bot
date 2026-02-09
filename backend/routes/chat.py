@@ -179,12 +179,17 @@ async def process_chat(request: ChatRequest):
             
             # Single prompt call with user's preferred style
             system_prompt = get_prompt(prompt_name, style=coach_tone)
+            # Floating chatbot uses Claude 3.5 Haiku for faster, cheaper responses
+            # Main phases use Claude Sonnet 4.5 for detailed rubric evaluations
+            FLOATING_MODEL = "claude-3-5-haiku-20241022"
+            
             llm_response = await call_claude(
                 system_prompt=system_prompt,
                 user_message=request.message,
                 chat_history=formatted_history,
                 temperature=0.3 if is_floating else 0.1,  # Floating: more natural; Rubric: strict
-                max_tokens=250 if is_floating else 500     # Floating: short answers = faster
+                max_tokens=250 if is_floating else 500,    # Floating: short answers = faster
+                model=FLOATING_MODEL if is_floating else None  # Haiku for speed; default Sonnet for quality
             )
             response_content = llm_response.get("content", "")
             evaluation_metadata = _extract_evaluation_metadata(response_content)

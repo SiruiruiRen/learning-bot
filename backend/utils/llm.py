@@ -219,7 +219,8 @@ async def call_claude(
     conversation_id: Optional[str] = None,
     message_id: Optional[str] = None,
     phase: Optional[str] = None,
-    component: Optional[str] = None
+    component: Optional[str] = None,
+    model: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Call Claude with the specified prompts and parameters
@@ -238,10 +239,14 @@ async def call_claude(
         message_id: Optional message ID for logging
         phase: Optional phase for logging
         component: Optional component for logging
+        model: Optional model override (default: uses CLAUDE_MODEL env var)
         
     Returns:
         Dictionary containing the model's response
     """
+    # Resolve effective model - allow per-call override
+    effective_model = model or CLAUDE_MODEL
+    
     # Track request start time
     request_timestamp = time.time()
     cache_hit = False
@@ -315,7 +320,7 @@ async def call_claude(
         
         # Prepare API call parameters
         params = {
-            "model": CLAUDE_MODEL,
+            "model": effective_model,
             "max_tokens": max_tokens,
             "temperature": temperature,
             "system": system_prompt,
@@ -350,7 +355,7 @@ Content_Quality: 2
 
             result = {
                 "content": mock_content,
-                "model": CLAUDE_MODEL,
+                "model": effective_model,
                 "usage": {
                     "input_tokens": len(system_prompt + user_message) // 4,  # Rough estimate
                     "output_tokens": len(mock_content) // 4
@@ -371,7 +376,7 @@ Content_Quality: 2
                 user_message=user_message,
                 raw_llm_response=mock_content,
                 processed_response=mock_content,
-                model_name="MOCK_" + CLAUDE_MODEL,
+                model_name="MOCK_" + effective_model,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 input_tokens=result["usage"]["input_tokens"],
@@ -393,7 +398,7 @@ Content_Quality: 2
             # Set a generous timeout for educational prompts that need quality feedback
             api_timeout = 80  # Generous timeout for complex educational content
             
-            logger.info(f"Calling Claude API with model={CLAUDE_MODEL}, temperature={temperature}")
+            logger.info(f"Calling Claude API with model={effective_model}, temperature={temperature}")
             
             # Create the API call as a task
             if stream:
@@ -481,7 +486,7 @@ Content_Quality: 2
                 system_prompt=system_prompt,
                 user_message=user_message,
                 raw_llm_response="TIMEOUT",
-                model_name=CLAUDE_MODEL,
+                model_name=effective_model,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 request_timestamp=request_timestamp,
@@ -518,7 +523,7 @@ Content_Quality: 2
                 system_prompt=system_prompt,
                 user_message=user_message,
                 raw_llm_response=f"CONNECTION_ERROR: {str(e)}",
-                model_name=CLAUDE_MODEL,
+                model_name=effective_model,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 request_timestamp=request_timestamp,
@@ -548,7 +553,7 @@ Content_Quality: 2
         # Create result object
         result = {
             "content": content,
-            "model": CLAUDE_MODEL,
+            "model": effective_model,
             "usage": {
                 "input_tokens": response.usage.input_tokens,
                 "output_tokens": response.usage.output_tokens
@@ -570,7 +575,7 @@ Content_Quality: 2
             user_message=user_message,
             raw_llm_response=content,
             processed_response=content,
-            model_name=CLAUDE_MODEL,
+            model_name=effective_model,
             temperature=temperature,
             max_tokens=max_tokens,
             input_tokens=response.usage.input_tokens,
@@ -622,7 +627,7 @@ Content_Quality: 2
             system_prompt=system_prompt,
             user_message=user_message,
             raw_llm_response=f"ERROR: {str(e)}",
-            model_name=CLAUDE_MODEL,
+            model_name=effective_model,
             temperature=temperature,
             max_tokens=max_tokens,
             request_timestamp=request_timestamp,
