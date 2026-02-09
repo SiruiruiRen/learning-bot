@@ -47,7 +47,9 @@ function FloatingChatbotWrapper() {
     return null
   }
   
-  return <FloatingChatbot currentPhase={currentPhase} />
+  // key={pathname} forces React to fully unmount/remount on page change,
+  // ensuring fresh messages state and per-page suggested questions
+  return <FloatingChatbot key={pathname} currentPhase={currentPhase} />
 }
 
 // Ensure participants start from onboarding so session_id exists for analytics + study flow.

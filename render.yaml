@@ -32,6 +32,8 @@ services:
         value: production
       - key: BACKEND_URL
         value: https://solbot-backend.onrender.com  # Render 会自动生成此 URL
+      - key: NEXT_PUBLIC_BACKEND_URL
+        value: https://solbot-backend.onrender.com  # Direct backend URL for floating chatbot (browser-side)
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false  # 需要在 Render Dashboard 手动设置
       - key: SUPABASE_SERVICE_KEY

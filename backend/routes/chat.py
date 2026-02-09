@@ -179,9 +179,9 @@ async def process_chat(request: ChatRequest):
             
             # Single prompt call with user's preferred style
             system_prompt = get_prompt(prompt_name, style=coach_tone)
-            # Floating chatbot uses Claude 3.5 Haiku for faster, cheaper responses
+            # Floating chatbot uses Claude 3 Haiku for fastest possible responses
             # Main phases use Claude Sonnet 4.5 for detailed rubric evaluations
-            FLOATING_MODEL = "claude-3-5-haiku-20241022"
+            FLOATING_MODEL = "claude-3-haiku-20240307"
             selected_model = FLOATING_MODEL if is_floating else None
             
             # Resolve user_id for LLM interaction tracking

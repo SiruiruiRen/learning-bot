@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea"
 import ChatMessageParser from "@/components/chat-message-parser"
 import { usePathname } from "next/navigation"
 
+// Direct backend URL — bypasses Next.js proxy for faster floating chatbot responses
+const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ""
+
 interface FloatingChatbotProps {
   currentPhase?: string
 }
@@ -307,7 +310,13 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     }
 
     try {
-      const response = await fetch("/api/chat", {
+      // Call backend directly (skip Next.js proxy) for faster responses
+      // Falls back to proxy if NEXT_PUBLIC_BACKEND_URL not set
+      const chatUrl = DIRECT_BACKEND_URL
+        ? `${DIRECT_BACKEND_URL}/api/chat`
+        : "/api/chat"
+      
+      const response = await fetch(chatUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
