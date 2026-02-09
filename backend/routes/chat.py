@@ -242,7 +242,9 @@ async def process_chat(request: ChatRequest):
 # --- Helper Functions ---
 def _resolve_prompt_name(phase: str, component: str) -> str:
     """Map (phase, component) from frontend to prompt key in final_prompts.py.
-    Ensures Phase 5 monitoring chat uses rubric-based prompt (phase5_monitoring_adaptation)."""
+    Special cases: floating_chatbot uses knowledge-base prompt; Phase 5 monitoring uses rubric prompt."""
+    if component == "floating_chatbot":
+        return "floating_chatbot"
     if phase == "phase5" and component == "progress_monitoring":
         return "phase5_monitoring_adaptation"
     if (phase or "").startswith("phase"):

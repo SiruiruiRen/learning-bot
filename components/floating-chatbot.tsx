@@ -12,43 +12,168 @@ interface FloatingChatbotProps {
   currentPhase?: string
 }
 
-// Phase-specific suggested questions
-const PHASE_QUESTIONS: { [key: string]: string[] } = {
-  "phase1": [
-    "What is self-regulated learning (SRL)?",
-    "Can you explain the 4-stage model?",
-    "What does metacognition mean?",
-    "How does planning relate to learning?"
-  ],
-  "phase2": [
-    "What is a learning objective?",
-    "How do I identify cognitive levels?",
-    "What resources should I use?",
-    "What is task analysis?"
-  ],
-  "phase3": [
-    "What is self-testing?",
-    "How does spacing work?",
-    "What is self-explanation?",
-    "What is retrieval practice?"
-  ],
-  "phase4": [
-    "What is MCII?",
-    "What is mental contrasting?",
-    "What are implementation intentions?",
-    "How do I create an if-then plan?"
-  ],
-  "phase5": [
-    "What is monitoring?",
-    "How do I adapt my strategies?",
-    "What is self-assessment?",
-    "How do I know if my plan is working?"
-  ],
-  "default": [
-    "Can you explain this concept?",
-    "What does this term mean?",
-    "Can you give me an example?",
-    "How does this relate to learning?"
+// Per-PAGE suggested questions (more specific than per-phase)
+const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] } } = {
+  // Phase 1 — SRL intro
+  "/phase1": {
+    greeting: "Hi! I'm here to help you understand Self-Regulated Learning.",
+    questions: [
+      "What are the 4 stages of self-regulated learning?",
+      "Why is metacognition important for learning?",
+      "How is SRL different from regular studying?",
+      "Can you give me an example of SRL in action?"
+    ]
+  },
+  // Phase 2 — Task analysis (instruction + video)
+  "/phase2": {
+    greeting: "Need help understanding task analysis and learning objectives?",
+    questions: [
+      "What is a learning objective and why does it matter?",
+      "How do I identify the right cognitive level for my goal?",
+      "What makes a resource 'strategic' vs just 'listed'?",
+      "Can you explain Bloom's taxonomy simply?"
+    ]
+  },
+  // Phase 2 — Chat (guided learning objective)
+  "/phase2/chat": {
+    greeting: "Working on your learning objective? I can clarify concepts.",
+    questions: [
+      "What's the difference between LOW and HIGH task identification?",
+      "How specific should my resource list be?",
+      "Can you show me an example of a good learning objective?",
+      "What does 'strategic resource utilization' mean?"
+    ]
+  },
+  // Phase 3 — Learning strategies
+  "/phase3": {
+    greeting: "Let me help you understand effective learning strategies!",
+    questions: [
+      "What is retrieval practice and how do I use it?",
+      "How does the spacing effect improve memory?",
+      "What is self-explanation and when should I use it?",
+      "Which strategy is best for my situation?"
+    ]
+  },
+  // Phase 4 — Strategic planning intro
+  "/phase4": {
+    greeting: "Ready to create your strategic learning plan? Ask me anything!",
+    questions: [
+      "What is MCII (Mental Contrasting with Implementation Intentions)?",
+      "Why is mental contrasting effective?",
+      "What's the difference between a wish and a goal?",
+      "How do implementation intentions work?"
+    ]
+  },
+  // Phase 4 — MCII exercise
+  "/phase4/mcii": {
+    greeting: "Working on your MCII exercise? I can help explain the steps.",
+    questions: [
+      "How do I visualize my best outcome vividly?",
+      "What counts as an internal obstacle?",
+      "How specific should my if-then plan be?",
+      "Can you give me an example of a complete MCII?"
+    ]
+  },
+  // Phase 4 — Long-term goals
+  "/phase4/long_term_goals": {
+    greeting: "Setting long-term goals? I can help you think through them.",
+    questions: [
+      "What makes a goal mastery-oriented vs performance-oriented?",
+      "How should I visualize success?",
+      "How specific should my long-term goal be?",
+      "What's the difference between a goal and a wish?"
+    ]
+  },
+  // Phase 4 — Short-term goals
+  "/phase4/short_term_goals": {
+    greeting: "Creating SMART objectives? Let me help!",
+    questions: [
+      "What does SMART stand for?",
+      "How do I make my goal measurable?",
+      "What's a good timeline for short-term goals?",
+      "How do I break a big goal into smaller steps?"
+    ]
+  },
+  // Phase 4 — Contingency / if-then
+  "/phase4/contingency_strategies": {
+    greeting: "Building your contingency plan? Happy to clarify!",
+    questions: [
+      "What is an if-then plan?",
+      "How specific should my trigger be?",
+      "What makes a response 'feasible'?",
+      "Can you give me examples of good if-then plans?"
+    ]
+  },
+  // Phase 4 — Tasks hub
+  "/phase4/tasks": {
+    greeting: "This is your Phase 4 task hub. Need guidance on any task?",
+    questions: [
+      "Which task should I do first?",
+      "What is the MCII exercise about?",
+      "How do these tasks connect to each other?",
+      "What if I'm stuck on one of the tasks?"
+    ]
+  },
+  // Phase 5 — Monitoring intro
+  "/phase5": {
+    greeting: "Let me help you understand monitoring and adaptation!",
+    questions: [
+      "What does 'monitoring your learning' mean?",
+      "How often should I check my progress?",
+      "What are adaptation triggers?",
+      "Why do I need backup strategies?"
+    ]
+  },
+  // Phase 5 — Chat (monitoring system)
+  "/phase5/chat": {
+    greeting: "Creating your monitoring system? I'm here to help!",
+    questions: [
+      "What are specific, measurable progress checks?",
+      "How do I set a clear adaptation trigger?",
+      "What are good alternative strategies?",
+      "Can you show me an example monitoring plan?"
+    ]
+  },
+  // Phase 5 — Monitoring adaptation
+  "/phase5/monitoring": {
+    greeting: "Refining your monitoring plan? Ask me anything!",
+    questions: [
+      "How detailed should my monitoring schedule be?",
+      "What's the difference between a vague and specific trigger?",
+      "How many alternative strategies do I need?",
+      "What if my first strategy doesn't work?"
+    ]
+  },
+  // Phase 6 — Final assessment
+  "/phase6": {
+    greeting: "Time for your final assessment! I can explain what's expected.",
+    questions: [
+      "What should my exam preparation plan include?",
+      "How do I combine all the strategies I learned?",
+      "What are the key elements of a good study plan?",
+      "How should I structure my response?"
+    ]
+  },
+  // Summary page
+  "/summary": {
+    greeting: "Here's your learning journey summary! Questions?",
+    questions: [
+      "How can I use these strategies going forward?",
+      "What were my strongest areas?",
+      "How do I keep improving after this course?",
+      "Can you summarize the key takeaways?"
+    ]
+  }
+}
+
+// Fallback for unrecognized pages
+const DEFAULT_PAGE = {
+  greeting: "Hi! I'm SoLBot. Ask me anything about self-regulated learning!",
+  questions: [
+    "What is self-regulated learning?",
+    "How can I improve my study habits?",
+    "What strategies work best for exams?",
+    "How do I stay motivated?"
   ]
 }
 
@@ -59,24 +184,18 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [isHovering, setIsHovering] = useState(false)
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
 
-  // Detect phase from pathname
-  useEffect(() => {
-    const phaseMatch = pathname.match(/\/phase(\d+)/)
-    if (phaseMatch) {
-      const phaseNum = phaseMatch[1]
-      // Update currentPhase based on pathname
-    }
-  }, [pathname])
+  // Get page-specific or phase-specific config
+  const pageConfig = PAGE_QUESTIONS[pathname] || PAGE_QUESTIONS[`/${currentPhase}`] || DEFAULT_PAGE
 
   useEffect(() => {
     try {
       const storedSessionId = localStorage.getItem("session_id")
-      if (storedSessionId) {
-        setSessionId(storedSessionId)
-      }
+      if (storedSessionId) setSessionId(storedSessionId)
     } catch (error) {
       console.error("Error accessing localStorage:", error)
     }
@@ -88,10 +207,29 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     }
   }, [messages, isOpen])
 
-  const handleSend = async () => {
-    if (!input.trim() || !sessionId) return
+  // Hover to open: when user hovers on button area for 600ms, auto-open
+  const handleMouseEnter = () => {
+    if (isOpen) return
+    setIsHovering(true)
+    hoverTimerRef.current = setTimeout(() => {
+      setIsOpen(true)
+      setIsHovering(false)
+    }, 600)
+  }
 
-    const userMessage = { role: "user", content: input }
+  const handleMouseLeave = () => {
+    setIsHovering(false)
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+  }
+
+  const handleSend = async (messageOverride?: string) => {
+    const messageToSend = messageOverride || input.trim()
+    if (!messageToSend || !sessionId) return
+
+    const userMessage = { role: "user", content: messageToSend }
     setMessages(prev => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
@@ -106,10 +244,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           event_type: 'floating_chat_question',
           phase: currentPhase,
           component: 'floating_chatbot',
-          metadata: {
-            question: input,
-            timestamp: new Date().toISOString()
-          }
+          metadata: { question: messageToSend, page: pathname, timestamp: new Date().toISOString() }
         })
       })
     } catch (error) {
@@ -122,7 +257,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          message: input,
+          message: messageToSend,
           phase: currentPhase,
           component: "floating_chatbot",
           is_submission: false,
@@ -132,63 +267,34 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || errorData.details || "Failed to get response from server.")
+        throw new Error(errorData.error || errorData.details || "Server error")
       }
 
       const result = await response.json()
-      
-      // Handle error responses
+
       if (result.error || !result.data) {
-        throw new Error(result.error || result.details || "Invalid response from server")
+        throw new Error(result.error || result.details || "Invalid response")
       }
 
       const assistantMessage = {
         role: "assistant",
-        content: result.data.message || result.data.content || "I received your message but couldn't process it properly.",
+        content: result.data.message || result.data.content || "Sorry, I couldn't process that.",
       }
-
       setMessages(prev => [...prev, assistantMessage])
-
-      // Log AI response to analytics
-      try {
-        await fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'floating_chat_response',
-            phase: currentPhase,
-            component: 'floating_chatbot',
-            metadata: {
-              response: result.data.message,
-              timestamp: new Date().toISOString()
-            }
-          })
-        })
-      } catch (error) {
-        console.error("Failed to log response:", error)
-      }
     } catch (error) {
       console.error("Chat error:", error)
-      const errorMessage = {
+      setMessages(prev => [...prev, {
         role: "assistant",
         content: "Sorry, I encountered an error. Please try again.",
-      }
-      setMessages(prev => [...prev, errorMessage])
+      }])
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleSuggestedQuestion = (question: string) => {
-    setInput(question)
-    // Auto-send suggested questions
-    setTimeout(() => {
-      handleSend()
-    }, 100)
+    handleSend(question)
   }
-
-  const suggestedQuestions = PHASE_QUESTIONS[currentPhase] || PHASE_QUESTIONS.default
 
   const accent = "#d8b26f"
   const neutralSurface = "hsl(var(--card))"
@@ -196,7 +302,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Floating Button — hover triggers popup */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
@@ -204,17 +310,31 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             className="fixed bottom-6 right-6 z-50"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
-            <Button
-              onClick={() => setIsOpen(true)}
-              className="rounded-full w-14 h-14 shadow-lg"
-              style={{
-                backgroundColor: accent,
-                color: "#1f1408"
-              }}
-            >
-              <MessageCircle className="w-6 h-6" />
-            </Button>
+            <div className="relative">
+              <Button
+                onClick={() => setIsOpen(true)}
+                className="rounded-full w-14 h-14 shadow-lg hover:scale-110 transition-transform"
+                style={{ backgroundColor: accent, color: "#1f1408" }}
+              >
+                <MessageCircle className="w-6 h-6" />
+              </Button>
+              {/* Hover tooltip */}
+              <AnimatePresence>
+                {isHovering && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="absolute bottom-2 right-16 whitespace-nowrap bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg"
+                  >
+                    Ask SoLBot a question
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -227,57 +347,36 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-2rem)]"
-            style={{
-              height: isMinimized ? "60px" : "600px",
-              maxHeight: "calc(100vh - 3rem)"
-            }}
+            style={{ height: isMinimized ? "60px" : "520px", maxHeight: "calc(100vh - 3rem)" }}
           >
             <div
-              className="flex flex-col h-full rounded-lg shadow-2xl border"
-              style={{
-                backgroundColor: neutralSurface,
-                borderColor: neutralBorder
-              }}
+              className="flex flex-col h-full rounded-xl shadow-2xl border overflow-hidden"
+              style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
             >
               {/* Header */}
               <div
-                className="flex items-center justify-between p-4 border-b cursor-pointer"
-                style={{ borderColor: neutralBorder }}
+                className="flex items-center justify-between px-4 py-3 border-b cursor-pointer"
+                style={{ borderColor: neutralBorder, background: `linear-gradient(135deg, ${accent}22, ${accent}08)` }}
                 onClick={() => setIsMinimized(!isMinimized)}
               >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: accent }}
-                  >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
                     <Bot className="w-5 h-5" style={{ color: "#1f1408" }} />
                   </div>
-                  <span className="font-semibold" style={{ color: "hsl(var(--foreground))" }}>
-                    Ask SoLBot
-                  </span>
+                  <div>
+                    <span className="font-semibold text-sm block" style={{ color: "hsl(var(--foreground))" }}>
+                      Ask SoLBot
+                    </span>
+                    <span className="text-[10px]" style={{ color: "hsl(var(--muted-foreground))" }}>
+                      Learning assistant
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsMinimized(!isMinimized)
-                    }}
-                    className="h-6 w-6 p-0"
-                  >
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized) }} className="h-7 w-7 p-0 rounded-full">
                     <ChevronDown className={`w-4 h-4 transition-transform ${isMinimized ? '' : 'rotate-180'}`} />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsOpen(false)
-                      setIsMinimized(false)
-                    }}
-                    className="h-6 w-6 p-0"
-                  >
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setIsOpen(false); setIsMinimized(false) }} className="h-7 w-7 p-0 rounded-full">
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -286,80 +385,63 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
               {!isMinimized && (
                 <>
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ maxHeight: "400px" }}>
+                  <div className="flex-1 overflow-y-auto p-3 space-y-3">
                     {messages.length === 0 && (
-                      <div className="space-y-2">
-                        <p className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-                          Ask me anything about this phase! Here are some suggested questions:
-                        </p>
-                        <div className="space-y-2">
-                          {suggestedQuestions.slice(0, 4).map((question, index) => (
-                            <Button
+                      <div className="space-y-3">
+                        {/* Welcome message */}
+                        <div className="flex items-start gap-2">
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
+                            <Bot className="w-4 h-4" style={{ color: "#1f1408" }} />
+                          </div>
+                          <div className="p-2.5 rounded-lg rounded-bl-none text-sm" style={{ backgroundColor: "hsl(var(--muted))", color: "hsl(var(--foreground))", border: `1px solid ${neutralBorder}` }}>
+                            {pageConfig.greeting}
+                          </div>
+                        </div>
+                        {/* Suggested questions */}
+                        <div className="space-y-1.5 pl-8">
+                          {pageConfig.questions.map((question, index) => (
+                            <button
                               key={index}
-                              variant="outline"
-                              size="sm"
-                              className="w-full text-left justify-start text-xs h-auto py-2 px-3"
-                              style={{
-                                borderColor: neutralBorder,
-                                color: "hsl(var(--foreground))"
-                              }}
+                              className="w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors hover:border-current"
+                              style={{ borderColor: neutralBorder, color: accent, backgroundColor: `${accent}08` }}
                               onClick={() => handleSuggestedQuestion(question)}
                             >
                               {question}
-                            </Button>
+                            </button>
                           ))}
                         </div>
                       </div>
                     )}
 
                     {messages.map((msg, index) => (
-                      <div
-                        key={index}
-                        className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}
-                      >
+                      <div key={index} className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                         {msg.role === 'assistant' && (
-                          <div
-                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: accent }}
-                          >
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
                             <Bot className="w-4 h-4" style={{ color: "#1f1408" }} />
                           </div>
                         )}
                         <div
-                          className={`max-w-[80%] p-2 rounded-lg text-sm ${
-                            msg.role === 'user' ? 'rounded-br-none' : 'rounded-bl-none'
-                          }`}
+                          className={`max-w-[80%] p-2.5 rounded-lg text-sm ${msg.role === 'user' ? 'rounded-br-none' : 'rounded-bl-none'}`}
                           style={{
-                            backgroundColor: msg.role === 'user'
-                              ? "hsl(var(--primary) / 0.15)"
-                              : "hsl(var(--muted))",
+                            backgroundColor: msg.role === 'user' ? `${accent}20` : "hsl(var(--muted))",
                             color: "hsl(var(--foreground))",
-                            border: `1px solid ${msg.role === 'user' ? "hsl(var(--primary) / 0.3)" : neutralBorder}`
+                            border: `1px solid ${msg.role === 'user' ? `${accent}40` : neutralBorder}`
                           }}
                         >
                           <ChatMessageParser content={msg.content} />
                         </div>
-                        {msg.role === 'user' && (
-                          <div
-                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: "hsl(var(--muted))" }}
-                          >
-                            <MessageCircle className="w-4 h-4" style={{ color: "hsl(var(--foreground))" }} />
-                          </div>
-                        )}
                       </div>
                     ))}
 
                     {isLoading && (
                       <div className="flex items-center gap-2">
-                        <div
-                          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: accent }}
-                        >
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
                           <Bot className="w-4 h-4" style={{ color: "#1f1408" }} />
                         </div>
-                        <div className="text-sm" style={{ color: "hsl(var(--muted-foreground))" }}>
-                          Thinking...
+                        <div className="flex gap-1 p-2">
+                          <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: accent, animationDelay: "0ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: accent, animationDelay: "150ms" }} />
+                          <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: accent, animationDelay: "300ms" }} />
                         </div>
                       </div>
                     )}
@@ -367,35 +449,28 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                   </div>
 
                   {/* Input */}
-                  <div className="p-4 border-t" style={{ borderColor: neutralBorder }}>
+                  <div className="p-3 border-t" style={{ borderColor: neutralBorder }}>
                     <div className="flex gap-2">
                       <Textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e) => {
+                        onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
                             handleSend()
                           }
                         }}
-                        placeholder="Ask a question..."
-                        className="flex-1 text-sm"
-                        style={{
-                          backgroundColor: neutralSurface,
-                          borderColor: neutralBorder,
-                          color: "hsl(var(--foreground))"
-                        }}
-                        rows={2}
+                        placeholder="Type your question..."
+                        className="flex-1 text-sm resize-none"
+                        style={{ backgroundColor: neutralSurface, borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
+                        rows={1}
                         disabled={isLoading}
                       />
                       <Button
-                        onClick={handleSend}
+                        onClick={() => handleSend()}
                         disabled={isLoading || !input.trim()}
-                        className="h-auto"
-                        style={{
-                          backgroundColor: accent,
-                          color: "#1f1408"
-                        }}
+                        className="h-auto px-3"
+                        style={{ backgroundColor: accent, color: "#1f1408" }}
                       >
                         <Send className="w-4 h-4" />
                       </Button>
