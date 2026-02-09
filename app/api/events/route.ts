@@ -96,6 +96,11 @@ export async function POST(request: NextRequest) {
       case 'floating_chat_response':
         await handleFloatingChatEvent(session_id, userId, phase, event_type, metadata);
         break;
+      case 'floating_chatbot_opened':
+      case 'floating_chatbot_closed':
+        // Logged via master content_interaction_logs above — no extra table needed.
+        // metadata includes: trigger (hover/click), opened_at, closed_at, duration_seconds, message_count, page
+        break;
       case 'chat_message':
         await handleChatMessage(session_id, userId, phase, component, metadata);
         break;

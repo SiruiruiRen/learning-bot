@@ -186,6 +186,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isHovering, setIsHovering] = useState(false)
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const openTimestampRef = useRef<string | null>(null)  // Track when chatbot was opened
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
 
@@ -213,12 +214,60 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     }
   }, [messages, isOpen])
 
+  // --- Analytics: track open/close with timestamps ---
+  const logChatbotEvent = async (eventType: string, extraMetadata: Record<string, any> = {}) => {
+    if (!sessionId) return
+    try {
+      await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: eventType,
+          phase: currentPhase,
+          component: 'floating_chatbot',
+          metadata: {
+            page: pathname,
+            timestamp: new Date().toISOString(),
+            ...extraMetadata
+          }
+        })
+      })
+    } catch (err) {
+      console.error(`Failed to log ${eventType}:`, err)
+    }
+  }
+
+  const openChatbot = (trigger: 'hover' | 'click') => {
+    const now = new Date().toISOString()
+    openTimestampRef.current = now
+    setIsOpen(true)
+    logChatbotEvent('floating_chatbot_opened', { trigger, message_count: messages.length })
+  }
+
+  const closeChatbot = () => {
+    const openedAt = openTimestampRef.current
+    const closedAt = new Date().toISOString()
+    const durationSeconds = openedAt
+      ? Math.round((new Date(closedAt).getTime() - new Date(openedAt).getTime()) / 1000)
+      : null
+    logChatbotEvent('floating_chatbot_closed', {
+      opened_at: openedAt,
+      closed_at: closedAt,
+      duration_seconds: durationSeconds,
+      message_count: messages.length
+    })
+    openTimestampRef.current = null
+    setIsOpen(false)
+    setIsMinimized(false)
+  }
+
   // Hover to open: when user hovers on button area for 600ms, auto-open
   const handleMouseEnter = () => {
     if (isOpen) return
     setIsHovering(true)
     hoverTimerRef.current = setTimeout(() => {
-      setIsOpen(true)
+      openChatbot('hover')
       setIsHovering(false)
     }, 600)
   }
@@ -347,7 +396,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           >
             <div className="relative">
               <Button
-                onClick={() => setIsOpen(true)}
+                onClick={() => openChatbot('click')}
                 className="rounded-full w-14 h-14 shadow-lg hover:scale-110 transition-transform"
                 style={{ backgroundColor: accent, color: "#1f1408" }}
               >
@@ -408,7 +457,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                   <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized) }} className="h-7 w-7 p-0 rounded-full">
                     <ChevronDown className={`w-4 h-4 transition-transform ${isMinimized ? '' : 'rotate-180'}`} />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setIsOpen(false); setIsMinimized(false) }} className="h-7 w-7 p-0 rounded-full">
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); closeChatbot() }} className="h-7 w-7 p-0 rounded-full">
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
