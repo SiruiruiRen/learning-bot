@@ -192,6 +192,12 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   // Get page-specific or phase-specific config
   const pageConfig = PAGE_QUESTIONS[pathname] || PAGE_QUESTIONS[`/${currentPhase}`] || DEFAULT_PAGE
 
+  // Reset chat when navigating to a new page — show fresh suggested questions
+  useEffect(() => {
+    setMessages([])
+    setInput("")
+  }, [pathname])
+
   useEffect(() => {
     try {
       const storedSessionId = localStorage.getItem("session_id")
