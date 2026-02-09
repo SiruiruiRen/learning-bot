@@ -122,33 +122,47 @@ async def get_user_data(user_id: str, data_type: str = None):
 async def process_chat(request: ChatRequest):
     start_time = time.time()
     try:
-        user_message_record = db.log_message(
-            session_id=request.session_id, role="user", content=request.message,
-            phase=request.phase, component=request.component,
-            metadata={"is_submission": request.is_submission, "attempt_number": request.attempt_number}
-        )
-        chat_history = db.get_messages_for_session(request.session_id, limit=10)
-        formatted_history = [
-            {"role": msg["role"], "content": msg["content"]}
-            for msg in chat_history if msg["role"] in ["user", "assistant"]
-        ] if chat_history else []
+        # Log user message — non-blocking: don't let DB failure prevent chat
+        user_message_record = None
+        try:
+            user_message_record = db.log_message(
+                session_id=request.session_id, role="user", content=request.message,
+                phase=request.phase, component=request.component,
+                metadata={"is_submission": request.is_submission, "attempt_number": request.attempt_number}
+            )
+        except Exception as db_err:
+            logger.warning(f"Failed to log user message (non-fatal): {db_err}")
+            user_message_record = {"id": str(uuid.uuid4())}  # fallback ID
         
-        # Get user's communication style preference
-        session_details = db.get_session_by_id(request.session_id)
+        # Get chat history — non-blocking
+        formatted_history = []
+        try:
+            chat_history = db.get_messages_for_session(request.session_id, limit=10)
+            formatted_history = [
+                {"role": msg["role"], "content": msg["content"]}
+                for msg in chat_history if msg["role"] in ["user", "assistant"]
+            ] if chat_history else []
+        except Exception as db_err:
+            logger.warning(f"Failed to get chat history (non-fatal): {db_err}")
+        
+        # Get user's communication style preference — non-blocking
         coach_tone = "warm"  # default
-        if session_details:
-            user_id = session_details.get("user_id")
-            if user_id:
-                user_data = db.get_user_by_id(user_id)
-                if user_data and user_data.get("profile_data"):
-                    import json
-                    profile_data = json.loads(user_data["profile_data"]) if isinstance(user_data["profile_data"], str) else user_data["profile_data"]
-                    coach_tone = profile_data.get("coach_tone", "warm")
-                    # Map "balanced" to "warm" for now, or keep as is
-                    if coach_tone == "balanced":
-                        coach_tone = "warm"
-                    elif coach_tone not in ["warm", "direct"]:
-                        coach_tone = "warm"
+        try:
+            session_details = db.get_session_by_id(request.session_id)
+            if session_details:
+                user_id = session_details.get("user_id")
+                if user_id:
+                    user_data = db.get_user_by_id(user_id)
+                    if user_data and user_data.get("profile_data"):
+                        import json
+                        profile_data = json.loads(user_data["profile_data"]) if isinstance(user_data["profile_data"], str) else user_data["profile_data"]
+                        coach_tone = profile_data.get("coach_tone", "warm")
+                        if coach_tone == "balanced":
+                            coach_tone = "warm"
+                        elif coach_tone not in ["warm", "direct"]:
+                            coach_tone = "warm"
+        except Exception as db_err:
+            logger.warning(f"Failed to get coach_tone (non-fatal, defaulting to warm): {db_err}")
         
         # Single Prompt Approach with Style Consistency:
         # Use one prompt call with user's preferred style (warm or direct)
@@ -190,23 +204,33 @@ async def process_chat(request: ChatRequest):
             evaluation_metadata = _extract_evaluation_metadata(response_content)
             cleaned_content = _clean_message_for_student(response_content)
         
-        assistant_message_record = db.log_message(
-            session_id=request.session_id, role="assistant", content=cleaned_content,
-            phase=request.phase, component=request.component,
-            metadata={"api_usage": llm_response.get("usage", {}), "evaluation": evaluation_metadata, "raw_llm_response": response_content}
-        )
+        # Log assistant response — non-blocking
+        assistant_message_record = None
+        try:
+            assistant_message_record = db.log_message(
+                session_id=request.session_id, role="assistant", content=cleaned_content,
+                phase=request.phase, component=request.component,
+                metadata={"api_usage": llm_response.get("usage", {}), "evaluation": evaluation_metadata, "raw_llm_response": response_content}
+            )
+        except Exception as db_err:
+            logger.warning(f"Failed to log assistant message (non-fatal): {db_err}")
+            assistant_message_record = {"id": str(uuid.uuid4())}
         
-        if request.is_submission and evaluation_metadata:
-            session_details = db.get_session_by_id(request.session_id)
-            if session_details:
-                db.log_assessment(
-                    session_id=request.session_id, user_id=session_details["user_id"],
-                    submission_message_id=user_message_record["id"], feedback_message_id=assistant_message_record["id"],
-                    phase=request.phase, component=request.component,
-                    attempt_number=request.attempt_number, evaluation=evaluation_metadata,
-                    feedback_style=coach_tone,
-                    evaluation_method="single_prompt"
-                )
+        # Log assessment — non-blocking
+        try:
+            if request.is_submission and evaluation_metadata:
+                session_details = db.get_session_by_id(request.session_id)
+                if session_details:
+                    db.log_assessment(
+                        session_id=request.session_id, user_id=session_details["user_id"],
+                        submission_message_id=user_message_record["id"], feedback_message_id=assistant_message_record["id"],
+                        phase=request.phase, component=request.component,
+                        attempt_number=request.attempt_number, evaluation=evaluation_metadata,
+                        feedback_style=coach_tone,
+                        evaluation_method="single_prompt"
+                    )
+        except Exception as db_err:
+            logger.warning(f"Failed to log assessment (non-fatal): {db_err}")
         
         logger.info(f"Request for session {request.session_id} completed in {time.time() - start_time:.2f}s")
         return {"success": True, "data": {"message": cleaned_content, "evaluation": evaluation_metadata}}
