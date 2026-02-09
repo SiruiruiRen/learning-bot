@@ -168,7 +168,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
 
 // Fallback for unrecognized pages
 const DEFAULT_PAGE = {
-  greeting: "Hi! I'm SoLBot. Ask me anything about self-regulated learning!",
+  greeting: "Hi! I'm SoL2LBot. Ask me anything about self-regulated learning!",
   questions: [
     "What is self-regulated learning?",
     "How can I improve my study habits?",
@@ -330,7 +330,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                     exit={{ opacity: 0, x: 10 }}
                     className="absolute bottom-2 right-16 whitespace-nowrap bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg"
                   >
-                    Ask SoLBot a question
+                    Ask SoL2LBot a question
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -365,7 +365,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                   </div>
                   <div>
                     <span className="font-semibold text-sm block" style={{ color: "hsl(var(--foreground))" }}>
-                      Ask SoLBot
+                      Ask SoL2LBot
                     </span>
                     <span className="text-[10px]" style={{ color: "hsl(var(--muted-foreground))" }}>
                       Learning assistant

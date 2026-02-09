@@ -175,16 +175,16 @@ async def process_chat(request: ChatRequest):
         try:
             # Map (phase, component) to prompt key in final_prompts.py
             prompt_name = _resolve_prompt_name(request.phase, request.component)
+            is_floating = (request.component == "floating_chatbot")
             
             # Single prompt call with user's preferred style
-            # This ensures consistent communication style throughout the entire system
             system_prompt = get_prompt(prompt_name, style=coach_tone)
             llm_response = await call_claude(
                 system_prompt=system_prompt,
                 user_message=request.message,
                 chat_history=formatted_history,
-                temperature=0.1,  # Low temperature for scoring consistency
-                max_tokens=500  # Reduced for conciseness (<300 words target)
+                temperature=0.3 if is_floating else 0.1,  # Floating: more natural; Rubric: strict
+                max_tokens=250 if is_floating else 500     # Floating: short answers = faster
             )
             response_content = llm_response.get("content", "")
             evaluation_metadata = _extract_evaluation_metadata(response_content)
