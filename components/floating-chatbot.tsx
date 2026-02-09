@@ -282,11 +282,37 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         throw new Error(result.error || result.details || "Invalid response")
       }
 
+      const responseContent = result.data.message || result.data.content || "Sorry, I couldn't process that."
+      const responseModel = result.data.model || "unknown"
+      
       const assistantMessage = {
         role: "assistant",
-        content: result.data.message || result.data.content || "Sorry, I couldn't process that.",
+        content: responseContent,
       }
       setMessages(prev => [...prev, assistantMessage])
+
+      // Log AI response to analytics for research tracking
+      try {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'floating_chat_response',
+            phase: currentPhase,
+            component: 'floating_chatbot',
+            metadata: {
+              question: messageToSend,
+              response: responseContent,
+              model: responseModel,
+              page: pathname,
+              timestamp: new Date().toISOString()
+            }
+          })
+        })
+      } catch (logError) {
+        console.error("Failed to log response:", logError)
+      }
     } catch (error) {
       console.error("Chat error:", error)
       setMessages(prev => [...prev, {

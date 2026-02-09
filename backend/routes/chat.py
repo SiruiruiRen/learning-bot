@@ -182,6 +182,16 @@ async def process_chat(request: ChatRequest):
             # Floating chatbot uses Claude 3.5 Haiku for faster, cheaper responses
             # Main phases use Claude Sonnet 4.5 for detailed rubric evaluations
             FLOATING_MODEL = "claude-3-5-haiku-20241022"
+            selected_model = FLOATING_MODEL if is_floating else None
+            
+            # Resolve user_id for LLM interaction tracking
+            tracking_user_id = None
+            try:
+                session_details_for_tracking = db.get_session_by_id(request.session_id)
+                if session_details_for_tracking:
+                    tracking_user_id = session_details_for_tracking.get("user_id")
+            except Exception:
+                pass
             
             llm_response = await call_claude(
                 system_prompt=system_prompt,
@@ -189,7 +199,11 @@ async def process_chat(request: ChatRequest):
                 chat_history=formatted_history,
                 temperature=0.3 if is_floating else 0.1,  # Floating: more natural; Rubric: strict
                 max_tokens=250 if is_floating else 500,    # Floating: short answers = faster
-                model=FLOATING_MODEL if is_floating else None  # Haiku for speed; default Sonnet for quality
+                model=selected_model,                      # Haiku for speed; default Sonnet for quality
+                user_id=tracking_user_id,
+                conversation_id=request.session_id,
+                phase=request.phase,
+                component=request.component
             )
             response_content = llm_response.get("content", "")
             evaluation_metadata = _extract_evaluation_metadata(response_content)
@@ -215,7 +229,12 @@ async def process_chat(request: ChatRequest):
             assistant_message_record = db.log_message(
                 session_id=request.session_id, role="assistant", content=cleaned_content,
                 phase=request.phase, component=request.component,
-                metadata={"api_usage": llm_response.get("usage", {}), "evaluation": evaluation_metadata, "raw_llm_response": response_content}
+                metadata={
+                    "api_usage": llm_response.get("usage", {}),
+                    "model": llm_response.get("model", "unknown"),
+                    "evaluation": evaluation_metadata,
+                    "raw_llm_response": response_content
+                }
             )
         except Exception as db_err:
             logger.warning(f"Failed to log assistant message (non-fatal): {db_err}")
@@ -238,7 +257,14 @@ async def process_chat(request: ChatRequest):
             logger.warning(f"Failed to log assessment (non-fatal): {db_err}")
         
         logger.info(f"Request for session {request.session_id} completed in {time.time() - start_time:.2f}s")
-        return {"success": True, "data": {"message": cleaned_content, "evaluation": evaluation_metadata}}
+        return {
+            "success": True,
+            "data": {
+                "message": cleaned_content,
+                "evaluation": evaluation_metadata,
+                "model": llm_response.get("model", "unknown") if llm_response else "unknown"
+            }
+        }
 
     except Exception as e:
         logger.error(f"Chat processing error: {e}\n{traceback.format_exc()}")
