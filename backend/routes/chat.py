@@ -271,3 +271,37 @@ def _extract_evaluation_metadata(raw_content: str) -> Dict[str, Any]:
 
 def _clean_message_for_student(raw_content: str) -> str:
     return re.sub(r"<!-- INSTRUCTOR_METADATA.*?-->", "", raw_content, flags=re.DOTALL).strip()
+
+@router.get("/db-check")
+async def db_check():
+    """Diagnostic endpoint to check database connectivity and table structure."""
+    results = {}
+    try:
+        supabase = db.get_db()
+        results["connection"] = "OK"
+    except Exception as e:
+        results["connection"] = f"FAILED: {e}"
+        return results
+    
+    # Check messages table
+    try:
+        test_id = str(uuid.uuid4())
+        resp = supabase.table("messages").insert({
+            "id": test_id, "session_id": test_id, "role": "system",
+            "content": "db-check probe", "phase": "test", "component": "test"
+        }).execute()
+        results["messages_insert"] = "OK" if resp.data else "NO DATA"
+        # Clean up
+        supabase.table("messages").delete().eq("id", test_id).execute()
+        results["messages_cleanup"] = "OK"
+    except Exception as e:
+        results["messages_insert"] = f"FAILED: {e}"
+    
+    # Check assessments table
+    try:
+        resp = supabase.table("assessments").select("id").limit(1).execute()
+        results["assessments_select"] = "OK"
+    except Exception as e:
+        results["assessments_select"] = f"FAILED: {e}"
+    
+    return results
