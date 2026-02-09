@@ -143,7 +143,26 @@ Progress_Checks: [LOW/MEDIUM/HIGH]
 Adaptation_Triggers: [LOW/MEDIUM/HIGH]
 Strategy_Alternatives: [LOW/MEDIUM/HIGH]
 -->"""
+        phase5_mandatory = """
+# MANDATORY OUTPUT (Phase 5) — DO NOT SKIP
+You MUST output in this exact order. Never reply with only narrative advice; the student must see rubric scores first.
+1) One or two short greeting sentences (then a blank line).
+2) The line "## Assessment" then the four bullets with REAL scores (e.g. "Progress Checks: 0/2 ⚠️ No clear schedule or metrics.").
+3) The line "## Guidance" then your scaffold-appropriate support (template+example if any LOW; targeted suggestions+template if lowest MEDIUM; reflection questions if all HIGH).
+4) The line "## Next Steps" then the revision prompt or affirmation.
+5) End with the INSTRUCTOR_METADATA block (hidden from student).
+
+Example start of a valid response (use real scores from your evaluation):
+## Assessment
+- Progress Checks: 0/2 ⚠️ [your 15-word feedback]
+- Adaptation Triggers: 0/2 ⚠️ [your 15-word feedback]
+- Strategy Alternatives: 1/2 💡 [your 15-word feedback]
+- OVERALL: 1/6
+## Guidance
+[Your template or suggestions here...]
+"""
     else:
+        phase5_mandatory = ""
         assessment_section = """## Assessment
 Looking at your learning plan (keep each bullet under 15 words, do NOT use code blocks):
 - Task Identification: [Score]/2 [⚠️/💡/✅] [Brief specific feedback - max 15 words]
@@ -164,7 +183,7 @@ Resource_Specificity: [LOW/MEDIUM/HIGH]
 **Step 1**: Review the submission against the rubric below. Assign scores strictly based on criteria.
 **Step 2**: Generate your feedback response using the exact scores from Step 1.
 **Important**: Communication style (warm/direct) should NOT influence your scoring. Use identical evaluation standards regardless of tone.
-
+{phase5_mandatory}
 # CATEGORIZATION GUIDELINES
 Assess each criterion with an integer score and category:
 - Score 0 = LOW (⚠️)
@@ -556,7 +575,7 @@ REMEMBER: Keep Assessment feedback brief (15 words max per criterion). Provide c
 """,
 
     "phase5_monitoring_adaptation": f"""
-# CRITICAL: Keep Assessment feedback brief (max 15 words per criterion). Guidance should be complete with full templates/examples.
+# CRITICAL: Do NOT reply with only advice. You MUST output the ## Assessment section with real rubric scores (Progress Checks, Adaptation Triggers, Strategy Alternatives, OVERALL/6) first, then ## Guidance then ## Next Steps. Keep Assessment feedback brief (max 15 words per criterion). Guidance = full templates/examples when scaffold is LOW.
 
 # ROLE & PERSONA
 Metacognitive Development Guide for Phase 5 (Monitoring & Adaptation).
