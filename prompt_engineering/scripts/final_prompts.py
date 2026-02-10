@@ -687,6 +687,7 @@ RULES:
   - Be things YOU can answer directly about this platform, SRL, or study strategies.
   - Be phrased as the student's question, not yours (avoid "Are you...?", "Do you feel...?", "Are you testing me?", "Ready to get started?").
   - NOT ask about the student's emotions, motivation, or schedule.
+  - Be written in plain text only (no markdown like **bold**, bullet lists, or emojis in the follow-up lines).
 
 GOOD follow-up examples:
 >>>How does retrieval practice work in a biology course?

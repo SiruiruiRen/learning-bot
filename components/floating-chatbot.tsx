@@ -226,7 +226,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
 
     // Post-process follow-ups so they feel like natural user questions (not the bot interrogating the user)
     const followUps = rawFollowUps
-      .map(q => q.replace(/\s+/g, ' ').trim())
+      .map(q => q.replace(/\s+/g, ' ').trim().replace(/\*\*/g, "")) // normalize spaces and strip markdown bold
       .filter(q => {
         if (!q) return false
         if (q.length < 6 || q.length > 160) return false
@@ -501,15 +501,14 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         )}
       </AnimatePresence>
 
-      {/* Chat Window — full-height right sidebar on desktop */}
+      {/* Chat Window — right sidebar, leaving room for top phase title */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed inset-y-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)]"
-            style={{ height: isMinimized ? "64px" : "100%", maxHeight: "calc(100vh - 2rem)" }}
+            className="fixed right-4 bottom-4 top-24 z-50 w-96 max-w-[calc(100vw-2rem)]"
           >
             <div
               className="flex flex-col h-full rounded-xl shadow-2xl border overflow-hidden"
