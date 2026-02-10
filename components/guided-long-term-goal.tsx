@@ -155,6 +155,31 @@ export default function GuidedLongTermGoal({
       console.warn("Could not save responses to localStorage:", error);
     }
 
+    // Log individual question response for research analytics
+    try {
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: 'text_input',
+          phase: phase,
+          component: component,
+          metadata: {
+            field_name: questionId,
+            input_value: userInput,
+            question_index: currentQuestionIndex,
+            question_text: LONGTERM_QUESTIONS[currentQuestionIndex].question,
+            is_submission: false,
+            attempt_number: 1,
+            timestamp: new Date().toISOString()
+          }
+        })
+      })
+    } catch (error) {
+      console.error("Failed to log question response:", error)
+    }
+
     const userMessage: Message = { id: uuidv4(), sender: "user", content: userInput, type: "response" };
     let botMessages: Message[] = [];
 
