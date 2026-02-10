@@ -18,6 +18,16 @@ interface FloatingChatbotProps {
 
 // Per-PAGE suggested questions (more specific than per-phase)
 const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] } } = {
+  // Intro / Onboarding
+  "/intro": {
+    greeting: "Welcome! I'm SoL2LBot, your learning assistant. Ask me anything about this training!",
+    questions: [
+      "What will I learn in this training?",
+      "How long does this take?",
+      "What is self-regulated learning?",
+      "How will the AI coach help me?"
+    ]
+  },
   // Phase 1 — SRL intro
   "/phase1": {
     greeting: "Hi! I'm here to help you understand Self-Regulated Learning.",

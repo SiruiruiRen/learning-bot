@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
+import GuidedTour from "@/components/guided-tour"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -187,6 +188,7 @@ export default function IntroPage() {
 
   return (
     <div className="min-h-screen text-foreground" style={{ background: canvasGradient }}>
+      <GuidedTour />
       <div className="container mx-auto px-4 py-8">
         <ModuleBar currentPhase={0} />
         <div className="max-w-4xl mx-auto space-y-6">

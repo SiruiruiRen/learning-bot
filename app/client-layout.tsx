@@ -42,8 +42,8 @@ function FloatingChatbotWrapper() {
   const phaseMatch = pathname.match(/\/phase(\d+)/)
   const currentPhase = phaseMatch ? `phase${phaseMatch[1]}` : "default"
   
-  // Don't show on landing/intro pages
-  if (pathname === "/landing" || pathname === "/" || pathname === "/intro") {
+  // Don't show on landing page only
+  if (pathname === "/landing" || pathname === "/") {
     return null
   }
   
