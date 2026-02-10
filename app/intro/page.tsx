@@ -190,7 +190,9 @@ export default function IntroPage() {
     <div className="min-h-screen text-foreground" style={{ background: canvasGradient }}>
       <GuidedTour />
       <div className="container mx-auto px-4 py-8">
-        <ModuleBar currentPhase={0} />
+        <div data-tour="progress-bar">
+          <ModuleBar currentPhase={0} />
+        </div>
         <div className="max-w-4xl mx-auto space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -264,7 +266,7 @@ export default function IntroPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.1 }}
           >
-            <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
+            <Card data-tour="phases" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
               <CardHeader>
                 <CardTitle className="text-2xl font-semibold">Your learning journey</CardTitle>
               </CardHeader>
@@ -300,7 +302,7 @@ export default function IntroPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.2 }}
           >
-            <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
+            <Card data-tour="form" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
               <CardHeader>
                 <CardTitle className="text-2xl font-semibold">Start your personalized session</CardTitle>
               </CardHeader>

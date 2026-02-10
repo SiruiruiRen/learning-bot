@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, ChevronRight, ChevronLeft, MessageCircle, BarChart2, BookOpen, BrainCircuit, FormInput } from "lucide-react"
+import { X, ChevronRight, ChevronLeft, MessageCircle, BarChart2, BookOpen, BrainCircuit, PenLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const accent = "#d8b26f"
@@ -11,309 +11,272 @@ interface TourStep {
   title: string
   description: string
   icon: React.ReactNode
-  // Position of the tooltip on screen
-  position: "center" | "left" | "right" | "bottom-right" | "bottom-center"
-  // Arrow direction pointing FROM the tooltip TO the element
-  arrow?: "left" | "right" | "down" | "down-right" | "none"
+  // CSS selector to find the target element
+  target: string | null  // null = center screen (no element)
+  // Where to place tooltip relative to the target
+  placement: "center" | "right" | "bottom" | "top" | "left"
 }
 
 const TOUR_STEPS: TourStep[] = [
   {
     title: "Welcome to SoL2LBot! 👋",
-    description: "This is a 90-minute AI-guided training to help you study more effectively. Let me show you around!",
-    icon: <BrainCircuit className="w-6 h-6" />,
-    position: "center",
-    arrow: "none",
+    description: "This is a 90-minute AI-guided training that teaches you evidence-based study strategies. Let me give you a quick tour!",
+    icon: <BrainCircuit className="w-5 h-5" />,
+    target: null,
+    placement: "center",
   },
   {
-    title: "Progress Tracker",
-    description: "This sidebar shows your journey through 6 learning phases. Each phase builds on the last — you'll see your progress light up as you go.",
-    icon: <BarChart2 className="w-6 h-6" />,
-    position: "left",
-    arrow: "left",
+    title: "📊 Your Progress Tracker",
+    description: "This sidebar tracks your journey through 6 learning phases. Each phase lights up as you complete it — you can always see where you are.",
+    icon: <BarChart2 className="w-5 h-5" />,
+    target: "[data-tour='progress-bar']",
+    placement: "right",
   },
   {
-    title: "Your 6 Learning Phases",
-    description: "You'll learn SRL fundamentals, set goals with MCII, discover study strategies, and build a monitoring plan. Each phase has videos, quizzes, and AI coaching.",
-    icon: <BookOpen className="w-6 h-6" />,
-    position: "center",
-    arrow: "none",
+    title: "📚 6 Learning Phases",
+    description: "You'll progress through: SRL intro → Task analysis → Learning strategies → Goal setting (MCII) → Monitoring → Final assessment. Each phase has videos, quizzes, and AI coaching.",
+    icon: <BookOpen className="w-5 h-5" />,
+    target: "[data-tour='phases']",
+    placement: "top",
   },
   {
-    title: "AI Learning Assistant",
-    description: "This floating chatbot is always available! Click it anytime to ask questions about self-regulated learning. It gives quick, helpful answers with examples.",
-    icon: <MessageCircle className="w-6 h-6" />,
-    position: "bottom-right",
-    arrow: "down-right",
+    title: "💬 AI Learning Assistant",
+    description: "This floating button is your AI helper — click it anytime to ask questions about learning strategies. It gives quick, helpful answers with real examples!",
+    icon: <MessageCircle className="w-5 h-5" />,
+    target: ".fixed.bottom-6.right-6",  // The floating chatbot button container
+    placement: "left",
   },
   {
-    title: "Start Here!",
-    description: "Fill in your info below and choose your AI coach style. Then click 'Begin Learning Intervention' to start Phase 1. You've got this!",
-    icon: <FormInput className="w-6 h-6" />,
-    position: "bottom-center",
-    arrow: "down",
+    title: "✏️ Fill In & Get Started",
+    description: "Enter your info, choose your AI coach style (warm or direct), then click 'Begin Learning Intervention' to start Phase 1!",
+    icon: <PenLine className="w-5 h-5" />,
+    target: "[data-tour='form']",
+    placement: "top",
   },
 ]
 
-// Position styles for each step
-function getPositionStyle(position: TourStep["position"]): React.CSSProperties {
-  switch (position) {
-    case "center":
-      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
-    case "left":
-      return { top: "40%", left: "240px", transform: "translateY(-50%)" }
-    case "right":
-      return { top: "40%", right: "24px", transform: "translateY(-50%)" }
-    case "bottom-right":
-      return { bottom: "90px", right: "24px" }
-    case "bottom-center":
-      return { bottom: "40px", left: "50%", transform: "translateX(-50%)" }
-    default:
-      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
-  }
-}
-
-// Arrow component
-function Arrow({ direction }: { direction: string }) {
-  if (direction === "none") return null
-
-  const baseStyle = "absolute w-0 h-0"
-  switch (direction) {
-    case "left":
-      return (
-        <div
-          className={baseStyle}
-          style={{
-            left: "-12px", top: "50%", transform: "translateY(-50%)",
-            borderTop: "10px solid transparent",
-            borderBottom: "10px solid transparent",
-            borderRight: `12px solid ${accent}`,
-          }}
-        />
-      )
-    case "right":
-      return (
-        <div
-          className={baseStyle}
-          style={{
-            right: "-12px", top: "50%", transform: "translateY(-50%)",
-            borderTop: "10px solid transparent",
-            borderBottom: "10px solid transparent",
-            borderLeft: `12px solid ${accent}`,
-          }}
-        />
-      )
-    case "down":
-      return (
-        <div
-          className={baseStyle}
-          style={{
-            bottom: "-12px", left: "50%", transform: "translateX(-50%)",
-            borderLeft: "10px solid transparent",
-            borderRight: "10px solid transparent",
-            borderTop: `12px solid ${accent}`,
-          }}
-        />
-      )
-    case "down-right":
-      return (
-        <div
-          className={baseStyle}
-          style={{
-            bottom: "-12px", right: "30px",
-            borderLeft: "10px solid transparent",
-            borderRight: "10px solid transparent",
-            borderTop: `12px solid ${accent}`,
-          }}
-        />
-      )
-    default:
-      return null
-  }
+interface Rect {
+  top: number; left: number; width: number; height: number
 }
 
 export default function GuidedTour() {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [isVisible, setIsVisible] = useState(false)
+  const [step, setStep] = useState(0)
+  const [visible, setVisible] = useState(false)
+  const [targetRect, setTargetRect] = useState<Rect | null>(null)
+
+  // Measure the target element for the current step
+  const measureTarget = useCallback(() => {
+    const s = TOUR_STEPS[step]
+    if (!s.target) {
+      setTargetRect(null)
+      return
+    }
+    const el = document.querySelector(s.target)
+    if (el) {
+      const r = el.getBoundingClientRect()
+      setTargetRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+      // Scroll element into view if needed
+      el.scrollIntoView({ behavior: "smooth", block: "center" })
+    } else {
+      setTargetRect(null)
+    }
+  }, [step])
 
   useEffect(() => {
-    // Only show tour once per user
     try {
-      const tourSeen = localStorage.getItem("solbot_tour_completed")
-      if (!tourSeen) {
-        // Small delay so page renders first
-        const timer = setTimeout(() => setIsVisible(true), 800)
-        return () => clearTimeout(timer)
-      }
-    } catch {
-      // If localStorage fails, show tour anyway
-      const timer = setTimeout(() => setIsVisible(true), 800)
-      return () => clearTimeout(timer)
-    }
+      if (localStorage.getItem("solbot_tour_completed")) return
+    } catch {}
+    const timer = setTimeout(() => setVisible(true), 1000)
+    return () => clearTimeout(timer)
   }, [])
 
-  const handleNext = () => {
-    if (currentStep < TOUR_STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1)
-    } else {
-      handleClose()
+  useEffect(() => {
+    if (!visible) return
+    // Small delay to let scroll finish before measuring
+    const timer = setTimeout(measureTarget, 350)
+    const handleResize = () => measureTarget()
+    window.addEventListener("resize", handleResize)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener("resize", handleResize)
     }
-  }
+  }, [visible, step, measureTarget])
 
-  const handlePrev = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1)
-    }
-  }
-
-  const handleClose = () => {
-    setIsVisible(false)
+  const close = () => {
+    setVisible(false)
+    try { localStorage.setItem("solbot_tour_completed", "true") } catch {}
     try {
-      localStorage.setItem("solbot_tour_completed", "true")
-    } catch {}
-
-    // Log tour completion for analytics
-    try {
-      const sessionId = localStorage.getItem("session_id")
-      if (sessionId) {
-        fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+      const sid = localStorage.getItem("session_id")
+      if (sid) {
+        fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'tour_completed',
-            phase: 'intro',
-            component: 'guided_tour',
-            metadata: {
-              steps_viewed: currentStep + 1,
-              total_steps: TOUR_STEPS.length,
-              completed: currentStep === TOUR_STEPS.length - 1,
-              timestamp: new Date().toISOString()
-            }
+            session_id: sid, event_type: "tour_completed", phase: "intro", component: "guided_tour",
+            metadata: { steps_viewed: step + 1, total_steps: TOUR_STEPS.length, completed: step === TOUR_STEPS.length - 1, timestamp: new Date().toISOString() }
           })
         })
       }
     } catch {}
   }
 
-  if (!isVisible) return null
+  const next = () => { if (step < TOUR_STEPS.length - 1) setStep(s => s + 1); else close() }
+  const prev = () => { if (step > 0) setStep(s => s - 1) }
 
-  const step = TOUR_STEPS[currentStep]
+  if (!visible) return null
+
+  const s = TOUR_STEPS[step]
+  const pad = 8 // padding around highlight
+
+  // Calculate tooltip position based on target and placement
+  const getTooltipStyle = (): React.CSSProperties => {
+    if (!targetRect || s.placement === "center") {
+      return { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
+    }
+    const { top, left, width, height } = targetRect
+    switch (s.placement) {
+      case "right":
+        return { position: "fixed", top: top + height / 2, left: left + width + pad + 16, transform: "translateY(-50%)" }
+      case "left":
+        return { position: "fixed", top: top + height / 2, right: window.innerWidth - left + pad + 16, transform: "translateY(-50%)" }
+      case "bottom":
+        return { position: "fixed", top: top + height + pad + 16, left: left + width / 2, transform: "translateX(-50%)" }
+      case "top":
+        return { position: "fixed", bottom: window.innerHeight - top + pad + 16, left: Math.max(20, Math.min(left + width / 2, window.innerWidth - 360)), transform: "translateX(-50%)" }
+      default:
+        return { position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
+    }
+  }
+
+  // SVG overlay with a cut-out hole around the target element
+  const renderOverlay = () => {
+    const w = window.innerWidth
+    const h = window.innerHeight
+
+    if (!targetRect) {
+      // No target — full dark overlay
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9998]"
+          style={{ backgroundColor: "rgba(0,0,0,0.65)" }}
+          onClick={close}
+        />
+      )
+    }
+
+    const { top: rTop, left: rLeft, width: rWidth, height: rHeight } = targetRect
+    const x = rLeft - pad
+    const y = rTop - pad
+    const rw = rWidth + pad * 2
+    const rh = rHeight + pad * 2
+    const radius = 12
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9998]"
+        onClick={close}
+      >
+        <svg width={w} height={h} className="absolute inset-0">
+          <defs>
+            <mask id="tour-mask">
+              <rect x="0" y="0" width={w} height={h} fill="white" />
+              <rect x={x} y={y} width={rw} height={rh} rx={radius} ry={radius} fill="black" />
+            </mask>
+          </defs>
+          <rect x="0" y="0" width={w} height={h} fill="rgba(0,0,0,0.65)" mask="url(#tour-mask)" />
+          {/* Highlight border around the element */}
+          <rect
+            x={x} y={y} width={rw} height={rh} rx={radius} ry={radius}
+            fill="none" stroke={accent} strokeWidth="2.5" strokeDasharray="6 3"
+          />
+        </svg>
+      </motion.div>
+    )
+  }
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {visible && (
         <>
-          {/* Backdrop overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9998]"
-            style={{ backgroundColor: "rgba(0, 0, 0, 0.6)", backdropFilter: "blur(2px)" }}
-            onClick={handleClose}
-          />
+          {renderOverlay()}
 
-          {/* Tour tooltip */}
+          {/* Tooltip card */}
           <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.25 }}
-            className="fixed z-[9999] max-w-sm w-[340px]"
-            style={getPositionStyle(step.position)}
+            key={step}
+            initial={{ opacity: 0, scale: 0.92, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ duration: 0.2 }}
+            className="z-[9999] w-[340px]"
+            style={getTooltipStyle()}
+            onClick={e => e.stopPropagation()}
           >
             <div
-              className="relative rounded-xl border shadow-2xl overflow-hidden"
-              style={{
-                backgroundColor: "hsl(var(--card))",
-                borderColor: accent,
-                borderWidth: "2px",
-              }}
+              className="rounded-xl border-2 shadow-2xl overflow-hidden"
+              style={{ backgroundColor: "hsl(var(--card))", borderColor: accent }}
             >
-              {/* Arrow pointer */}
-              <Arrow direction={step.arrow || "none"} />
-
-              {/* Header with step counter */}
-              <div
-                className="px-4 py-3 flex items-center justify-between"
-                style={{ background: `linear-gradient(135deg, ${accent}30, ${accent}10)` }}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: accent, color: "#1f1408" }}
-                  >
-                    {step.icon}
+              {/* Header */}
+              <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${accent}25, ${accent}08)` }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: accent, color: "#1f1408" }}>
+                    {s.icon}
                   </div>
-                  <span className="text-xs font-medium" style={{ color: "hsl(var(--muted-foreground))" }}>
-                    {currentStep + 1} / {TOUR_STEPS.length}
+                  <span className="text-xs font-bold" style={{ color: accent }}>
+                    Step {step + 1} of {TOUR_STEPS.length}
                   </span>
                 </div>
-                <button
-                  onClick={handleClose}
-                  className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
-                >
-                  <X className="w-4 h-4" style={{ color: "hsl(var(--muted-foreground))" }} />
+                <button onClick={close} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors">
+                  <X className="w-3.5 h-3.5" style={{ color: "hsl(var(--muted-foreground))" }} />
                 </button>
               </div>
 
-              {/* Content */}
+              {/* Body */}
               <div className="px-4 py-3">
-                <h3 className="text-base font-semibold mb-1.5" style={{ color: "hsl(var(--foreground))" }}>
-                  {step.title}
+                <h3 className="text-[15px] font-bold mb-1" style={{ color: "hsl(var(--foreground))" }}>
+                  {s.title}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
-                  {step.description}
+                <p className="text-[13px] leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
+                  {s.description}
                 </p>
               </div>
 
-              {/* Navigation */}
-              <div className="px-4 py-3 flex items-center justify-between border-t" style={{ borderColor: "hsl(var(--border))" }}>
+              {/* Footer */}
+              <div className="px-4 py-2.5 flex items-center justify-between border-t" style={{ borderColor: "hsl(var(--border))" }}>
+                {/* Dots */}
                 <div className="flex gap-1.5">
-                  {TOUR_STEPS.map((_, idx) => (
+                  {TOUR_STEPS.map((_, i) => (
                     <div
-                      key={idx}
-                      className="w-2 h-2 rounded-full transition-colors"
+                      key={i}
+                      className="rounded-full transition-all"
                       style={{
-                        backgroundColor: idx === currentStep ? accent : "hsl(var(--muted))",
+                        width: i === step ? 16 : 7,
+                        height: 7,
+                        backgroundColor: i === step ? accent : "hsl(var(--muted))",
                       }}
                     />
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {currentStep > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handlePrev}
-                      className="h-8 px-2 text-xs"
-                    >
-                      <ChevronLeft className="w-4 h-4 mr-0.5" />
-                      Back
+                {/* Buttons */}
+                <div className="flex items-center gap-1.5">
+                  {step === 0 ? (
+                    <Button variant="ghost" size="sm" onClick={close} className="h-7 px-2 text-[11px]" style={{ color: "hsl(var(--muted-foreground))" }}>
+                      Skip tour
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={prev} className="h-7 px-2 text-[11px]">
+                      <ChevronLeft className="w-3.5 h-3.5 mr-0.5" /> Back
                     </Button>
                   )}
-                  {currentStep === 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClose}
-                      className="h-8 px-2 text-xs"
-                      style={{ color: "hsl(var(--muted-foreground))" }}
-                    >
-                      Skip
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    onClick={handleNext}
-                    className="h-8 px-3 text-xs font-semibold"
-                    style={{ backgroundColor: accent, color: "#1f1408" }}
-                  >
-                    {currentStep === TOUR_STEPS.length - 1 ? "Got it!" : "Next"}
-                    {currentStep < TOUR_STEPS.length - 1 && <ChevronRight className="w-4 h-4 ml-0.5" />}
+                  <Button size="sm" onClick={next} className="h-7 px-3 text-[11px] font-bold" style={{ backgroundColor: accent, color: "#1f1408" }}>
+                    {step === TOUR_STEPS.length - 1 ? "Let's go! 🚀" : "Next"}
+                    {step < TOUR_STEPS.length - 1 && <ChevronRight className="w-3.5 h-3.5 ml-0.5" />}
                   </Button>
                 </div>
               </div>
