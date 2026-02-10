@@ -9,7 +9,8 @@ import ChatMessageParser from "@/components/chat-message-parser"
 import { usePathname } from "next/navigation"
 
 // Direct backend URL — bypasses Next.js proxy for faster floating chatbot responses
-const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ""
+// Hardcoded fallback ensures direct call even if env var not set during build
+const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
 interface FloatingChatbotProps {
   currentPhase?: string
