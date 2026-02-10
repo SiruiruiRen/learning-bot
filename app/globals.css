@@ -264,3 +264,14 @@ p, span, li, input, button, textarea {
   animation: thinking-dots 1.5s infinite;
 }
 
+/* When the floating chatbot is open on desktop, create a right sidebar so it doesn't cover the main content */
+html.floating-chat-open body {
+  padding-right: 26rem; /* ~w-96 (24rem) chat width + gap */
+}
+
+@media (max-width: 1024px) {
+  html.floating-chat-open body {
+    padding-right: 0; /* On small screens, allow the chatbot to overlay */
+  }
+}
+

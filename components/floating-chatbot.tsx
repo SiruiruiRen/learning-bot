@@ -211,19 +211,55 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   // Parse follow-up questions from AI response (lines starting with ">>>")
   const parseFollowUps = (text: string): { cleanText: string; followUps: string[] } => {
     const lines = text.split('\n')
-    const followUps: string[] = []
+    const rawFollowUps: string[] = []
     const contentLines: string[] = []
     for (const line of lines) {
       const trimmed = line.trim()
       if (trimmed.startsWith('>>>')) {
         const q = trimmed.replace(/^>>>+\s*/, '').trim()
-        if (q) followUps.push(q)
+        if (q) rawFollowUps.push(q)
       } else {
         contentLines.push(line)
       }
     }
-    return { cleanText: contentLines.join('\n').trim(), followUps }
+    const cleanText = contentLines.join('\n').trim()
+
+    // Post-process follow-ups so they feel like natural user questions (not the bot interrogating the user)
+    const followUps = rawFollowUps
+      .map(q => q.replace(/\s+/g, ' ').trim())
+      .filter(q => {
+        if (!q) return false
+        if (q.length < 6 || q.length > 160) return false
+        // Must look like a question the user would ask
+        if (!q.endsWith('?')) return false
+        const lower = q.toLowerCase()
+        // Filter out meta / bot-centered questions
+        if (/(are you |do you feel |are you worried|are you stressed|are you testing me|am i testing you|ready to get started\?)/.test(lower)) {
+          return false
+        }
+        if (/(i don'?t have questions|i am the one asking|i'm the one asking)/.test(lower)) {
+          return false
+        }
+        return true
+      })
+      .slice(0, 3)
+
+    return { cleanText, followUps }
   }
+
+  // When floating chatbot is open on desktop, reserve a right sidebar so it doesn't cover the main content frame
+  useEffect(() => {
+    if (typeof document === "undefined") return
+    const root = document.documentElement
+    if (isOpen) {
+      root.classList.add("floating-chat-open")
+    } else {
+      root.classList.remove("floating-chat-open")
+    }
+    return () => {
+      root.classList.remove("floating-chat-open")
+    }
+  }, [isOpen])
 
   // Reset chat when navigating to a new page — show fresh suggested questions
   useEffect(() => {
@@ -456,7 +492,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                     exit={{ opacity: 0, x: 10 }}
                     className="absolute bottom-2 right-16 whitespace-nowrap bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg"
                   >
-                    Ask SoL2LBot a question
+                    Quick Help Chatbot
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -465,15 +501,15 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         )}
       </AnimatePresence>
 
-      {/* Chat Window */}
+      {/* Chat Window — full-height right sidebar on desktop */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-2rem)]"
-            style={{ height: isMinimized ? "60px" : "520px", maxHeight: "calc(100vh - 3rem)" }}
+            className="fixed inset-y-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)]"
+            style={{ height: isMinimized ? "64px" : "100%", maxHeight: "calc(100vh - 2rem)" }}
           >
             <div
               className="flex flex-col h-full rounded-xl shadow-2xl border overflow-hidden"
@@ -491,10 +527,10 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                   </div>
                   <div>
                     <span className="font-semibold text-sm block" style={{ color: "hsl(var(--foreground))" }}>
-                      Ask SoL2LBot
+                      Quick Help Chatbot
                     </span>
                     <span className="text-[10px]" style={{ color: "hsl(var(--muted-foreground))" }}>
-                      Learning assistant
+                      Short questions about this training
                     </span>
                   </div>
                 </div>
