@@ -547,7 +547,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                           </div>
                         )}
                         <div
-                          className={`max-w-[80%] p-2.5 rounded-lg text-sm ${msg.role === 'user' ? 'rounded-br-none' : 'rounded-bl-none'}`}
+                          className={`max-w-[80%] p-2.5 rounded-lg text-sm overflow-hidden ${msg.role === 'user' ? 'rounded-br-none' : 'rounded-bl-none'}`}
                           style={{
                             backgroundColor: msg.role === 'user' ? `${accent}20` : "hsl(var(--muted))",
                             color: "hsl(var(--foreground))",

@@ -11,7 +11,7 @@ export default function ClickableOption({ text, onClick }: ClickableOptionProps)
   return (
     <Button
       onClick={onClick}
-      className="mb-2 bg-blue-600 hover:bg-blue-700 text-white w-full text-left justify-start p-3 rounded-md transition-colors"
+      className="mb-2 bg-blue-600 hover:bg-blue-700 text-white w-full text-left justify-start p-3 rounded-md transition-colors whitespace-normal break-words h-auto"
       variant="ghost"
     >
       {text}
