@@ -134,42 +134,54 @@ export default function GuidedTour() {
 
   const s = TOUR_STEPS[step]
   const pad = 10
+  const TOOLTIP_H = 240  // height of tooltip card so bottom (Continue button) stays in viewport
+  const VIEWPORT_PAD = 24
 
-  // Tooltip position relative to target element
+  // Tooltip position relative to target element — always keep full card (and Continue button) in view
   const getTooltipStyle = (): React.CSSProperties => {
     if (!targetRect || s.placement === "center") {
       return { position: "fixed", top: "35%", left: "50%", transform: "translateX(-50%)" }
     }
     const { top, left, width, height } = targetRect
     const gap = 14
+    const centerX = Math.max(20, Math.min(left + width / 2 - 165, window.innerWidth - 350))
+
+    let style: React.CSSProperties
     switch (s.placement) {
       case "right":
-        return {
+        style = {
           position: "fixed",
-          top: Math.max(20, top + height / 2 - 80),
+          top: Math.max(20, Math.min(top + height / 2 - 80, window.innerHeight - TOOLTIP_H - VIEWPORT_PAD)),
           left: Math.min(left + width + gap, window.innerWidth - 360),
         }
+        break
       case "left":
-        return {
+        style = {
           position: "fixed",
-          top: Math.max(20, top + height / 2 - 80),
+          top: Math.max(20, Math.min(top + height / 2 - 80, window.innerHeight - TOOLTIP_H - VIEWPORT_PAD)),
           left: Math.max(20, left - 340 - gap),
         }
-      case "bottom":
-        return {
-          position: "fixed",
-          top: Math.min(top + height + gap, window.innerHeight - 220),
-          left: Math.max(20, Math.min(left + width / 2 - 165, window.innerWidth - 350)),
+        break
+      case "bottom": {
+        let tooltipTop = top + height + gap
+        if (tooltipTop + TOOLTIP_H > window.innerHeight - VIEWPORT_PAD) {
+          tooltipTop = Math.max(VIEWPORT_PAD, top - TOOLTIP_H - gap)
         }
-      case "top":
-        return {
-          position: "fixed",
-          top: Math.max(20, Math.min(top - 210, window.innerHeight - 230)),
-          left: Math.max(20, Math.min(left - 280, window.innerWidth - 360)),
+        style = { position: "fixed", top: tooltipTop, left: centerX }
+        break
+      }
+      case "top": {
+        let tooltipTop = top - TOOLTIP_H - gap
+        if (tooltipTop < VIEWPORT_PAD) {
+          tooltipTop = Math.min(top + height + gap, window.innerHeight - TOOLTIP_H - VIEWPORT_PAD)
         }
+        style = { position: "fixed", top: tooltipTop, left: centerX }
+        break
+      }
       default:
-        return { position: "fixed", top: "35%", left: "50%", transform: "translateX(-50%)" }
+        style = { position: "fixed", top: "35%", left: "50%", transform: "translateX(-50%)" }
     }
+    return style
   }
 
   // Arrow connecting tooltip to target
