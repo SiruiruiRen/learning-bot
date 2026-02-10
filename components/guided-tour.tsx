@@ -28,7 +28,7 @@ const TOUR_STEPS: TourStep[] = [
     description: "SoL2LBot is your personal AI coach. In each phase, it guides you through interactive lessons, evaluates your answers based on research-backed rubrics, and gives you specific feedback to improve your learning skills.",
     icon: <BrainCircuit className="w-5 h-5" />,
     target: "[data-tour='main-ai']",
-    placement: "right",
+    placement: "bottom",
   },
   {
     title: "💬 Quick Help Chatbot",
@@ -49,7 +49,7 @@ const TOUR_STEPS: TourStep[] = [
     description: "Fill in your info below, choose your preferred coaching style (warm or direct), and click 'Begin Learning Intervention' to start Phase 1!",
     icon: <PenLine className="w-5 h-5" />,
     target: "[data-tour='form']",
-    placement: "top",
+    placement: "bottom",
   },
 ]
 
@@ -158,8 +158,8 @@ export default function GuidedTour() {
       case "bottom":
         return {
           position: "fixed",
-          top: top + height + gap,
-          left: Math.max(20, Math.min(left + width / 2 - 170, window.innerWidth - 360)),
+          top: Math.min(top + height + gap, window.innerHeight - 220),
+          left: Math.max(20, Math.min(left + width / 2 - 165, window.innerWidth - 350)),
         }
       case "top":
         return {

@@ -198,7 +198,7 @@ async def process_chat(request: ChatRequest):
                 user_message=request.message,
                 chat_history=formatted_history,
                 temperature=0.3 if is_floating else 0.1,  # Floating: more natural; Rubric: strict
-                max_tokens=250 if is_floating else 500,    # Floating: short answers = faster
+                max_tokens=400 if is_floating else 500,    # Floating: up to 200 words; Rubric: detailed
                 model=selected_model,                      # Haiku for speed; default Sonnet for quality
                 user_id=tracking_user_id,
                 conversation_id=request.session_id,
