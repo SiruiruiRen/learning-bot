@@ -264,9 +264,10 @@ p, span, li, input, button, textarea {
   animation: thinking-dots 1.5s infinite;
 }
 
-/* When the floating chatbot is open on desktop, create a right sidebar so it doesn't cover the main content */
+/* When the floating chatbot is open on desktop, create side gutters so JOURNEY, main content, and Quick Help don't overlap */
 html.floating-chat-open body {
-  padding-right: 26rem; /* ~w-96 (24rem) chat width + gap */
+  padding-right: 24rem; /* ~w-96 (24rem) chat width */
+  padding-left: 5rem;   /* room for JOURNEY sidebar + gap */
 }
 
 @media (max-width: 1024px) {
