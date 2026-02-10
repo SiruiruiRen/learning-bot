@@ -219,7 +219,7 @@ export default function IntroPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.05 }}
           >
-            <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
+            <Card data-tour="main-ai" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
               <CardHeader>
                 <CardTitle className="text-2xl font-semibold">Why this matters</CardTitle>
               </CardHeader>

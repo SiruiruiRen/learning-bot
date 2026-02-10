@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+// No framer-motion needed — using CSS transitions for lightweight tour
 import { X, ChevronRight, ChevronLeft, MessageCircle, BarChart2, BookOpen, BrainCircuit, PenLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -18,35 +18,35 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     title: "Welcome to SoL2LBot! 👋",
-    description: "This is a 90-minute AI-guided training that teaches you evidence-based study strategies. Let me give you a quick tour!",
+    description: "Welcome to the Science of Learning to Learn Bot! This 90-minute training teaches you evidence-based study strategies with AI coaching. Let me show you around.",
     icon: <BrainCircuit className="w-5 h-5" />,
     target: null,
     placement: "center",
   },
   {
-    title: "📊 JOURNEY Sidebar",
-    description: "This shows your current position in the 6-phase learning journey. The active phase is highlighted — you'll progress from Phase 1 all the way to Phase 6.",
-    icon: <BarChart2 className="w-5 h-5" />,
-    target: "[data-tour='progress-bar']",
+    title: "🤖 Your AI Learning Coach",
+    description: "SoL2LBot is your personal AI coach. In each phase, it guides you through interactive lessons, evaluates your answers based on research-backed rubrics, and gives you specific feedback to improve your learning skills.",
+    icon: <BrainCircuit className="w-5 h-5" />,
+    target: "[data-tour='main-ai']",
     placement: "right",
   },
   {
-    title: "📚 6 Learning Phases",
-    description: "SRL intro → Task analysis → Learning strategies → Goal setting (MCII) → Monitoring → Final assessment. Each has videos, quizzes, and AI coaching.",
-    icon: <BookOpen className="w-5 h-5" />,
-    target: "[data-tour='phases']",
-    placement: "top",
-  },
-  {
-    title: "💬 AI Learning Assistant",
-    description: "The gold button in the bottom-right corner is your AI helper — click it anytime to ask questions about learning strategies. It gives quick answers with real examples!",
+    title: "💬 Quick Help Chatbot",
+    description: "See the gold button in the bottom-right? That's also SoL2LBot — but for quick questions! Click it anytime to ask about learning concepts, and it'll give you a short answer with examples. You can also type your own questions.",
     icon: <MessageCircle className="w-5 h-5" />,
     target: ".fixed.bottom-6.right-6",
     placement: "top",
   },
   {
-    title: "✏️ Fill In & Get Started",
-    description: "Enter your info, choose your AI coach style (warm or direct), then click 'Begin Learning Intervention' to start!",
+    title: "📊 JOURNEY Sidebar",
+    description: "On the left side is your progress tracker. It shows 6 phases — the active phase is highlighted so you always know where you are. You'll go from Phase 1 to Phase 6.",
+    icon: <BarChart2 className="w-5 h-5" />,
+    target: "[data-tour='progress-bar']",
+    placement: "right",
+  },
+  {
+    title: "✏️ Get Started!",
+    description: "Fill in your info below, choose your preferred coaching style (warm or direct), and click 'Begin Learning Intervention' to start Phase 1!",
     icon: <PenLine className="w-5 h-5" />,
     target: "[data-tour='form']",
     placement: "top",
@@ -144,8 +144,8 @@ export default function GuidedTour() {
       case "top":
         return {
           position: "fixed",
-          top: Math.max(20, Math.min(top - 200, window.innerHeight - 220)),
-          left: Math.max(20, Math.min(left + width / 2 - 170, window.innerWidth - 360)),
+          top: Math.max(20, Math.min(top - 210, window.innerHeight - 230)),
+          left: Math.max(20, Math.min(left - 280, window.innerWidth - 360)),
         }
       default:
         return { position: "fixed", top: "35%", left: "50%", transform: "translateX(-50%)" }
@@ -208,12 +208,9 @@ export default function GuidedTour() {
     if (!targetRect) return null
     const { top, left, width, height } = targetRect
     return (
-      <motion.div
+      <div
         key={`highlight-${step}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed z-[9997] pointer-events-none rounded-xl"
+        className="fixed z-[9997] pointer-events-none rounded-xl transition-opacity duration-300"
         style={{
           top: top - pad,
           left: left - pad,
@@ -237,15 +234,11 @@ export default function GuidedTour() {
         }
       `}</style>
 
-      <AnimatePresence>
-        {visible && (
+      {visible && (
           <>
             {/* Light semi-transparent backdrop — still see the page */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9996]"
+            <div
+              className="fixed inset-0 z-[9996] transition-opacity duration-300"
               style={{ backgroundColor: "rgba(0,0,0,0.15)" }}
               onClick={close}
             />
@@ -257,15 +250,11 @@ export default function GuidedTour() {
             {renderArrow()}
 
             {/* Tooltip */}
-            <motion.div
+            <div
               key={step}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="fixed z-[9999] w-[330px]"
+              className="fixed z-[9999] w-[330px] transition-all duration-300"
               style={getTooltipStyle()}
-              onClick={e => e.stopPropagation()}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div
                 className="rounded-xl shadow-2xl overflow-hidden"
@@ -332,10 +321,10 @@ export default function GuidedTour() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
+      
     </>
   )
 }
