@@ -24,8 +24,8 @@ const TOUR_STEPS: TourStep[] = [
     placement: "center",
   },
   {
-    title: "📊 Your Progress Tracker",
-    description: "This sidebar tracks your journey through 6 learning phases. Each phase lights up as you complete it — you can always see where you are.",
+    title: "📊 JOURNEY Sidebar",
+    description: "This shows your current position in the 6-phase learning journey. The active phase is highlighted — you'll progress from Phase 1 all the way to Phase 6.",
     icon: <BarChart2 className="w-5 h-5" />,
     target: "[data-tour='progress-bar']",
     placement: "right",
@@ -39,10 +39,10 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     title: "💬 AI Learning Assistant",
-    description: "This floating button is your AI helper — click it anytime to ask questions about learning strategies. It gives quick answers with real examples!",
+    description: "The gold button in the bottom-right corner is your AI helper — click it anytime to ask questions about learning strategies. It gives quick answers with real examples!",
     icon: <MessageCircle className="w-5 h-5" />,
     target: ".fixed.bottom-6.right-6",
-    placement: "left",
+    placement: "top",
   },
   {
     title: "✏️ Fill In & Get Started",
@@ -78,8 +78,8 @@ export default function GuidedTour() {
   }, [step])
 
   useEffect(() => {
-    try { if (localStorage.getItem("solbot_tour_completed")) return } catch {}
-    const timer = setTimeout(() => setVisible(true), 1000)
+    // Always show tour on every page load — helps new users orient themselves
+    const timer = setTimeout(() => setVisible(true), 800)
     return () => clearTimeout(timer)
   }, [])
 
@@ -93,9 +93,6 @@ export default function GuidedTour() {
 
   const close = () => {
     setVisible(false)
-    try { localStorage.setItem("solbot_tour_completed", "true") } catch {}
-    // Remove all highlight rings
-    document.querySelectorAll(".tour-highlight-ring").forEach(el => el.remove())
     try {
       const sid = localStorage.getItem("session_id")
       if (sid) {
@@ -147,7 +144,7 @@ export default function GuidedTour() {
       case "top":
         return {
           position: "fixed",
-          top: Math.max(20, top - 180),
+          top: Math.max(20, Math.min(top - 200, window.innerHeight - 220)),
           left: Math.max(20, Math.min(left + width / 2 - 170, window.innerWidth - 360)),
         }
       default:
