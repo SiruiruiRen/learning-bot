@@ -190,9 +190,7 @@ export default function IntroPage() {
     <div className="min-h-screen text-foreground" style={{ background: canvasGradient }}>
       <GuidedTour />
       <div className="container mx-auto px-4 py-8">
-        <div data-tour="progress-bar">
-          <ModuleBar currentPhase={0} />
-        </div>
+        <ModuleBar currentPhase={0} />
         <div className="max-w-4xl mx-auto space-y-6">
           <motion.div
             initial={{ opacity: 0, y: 12 }}

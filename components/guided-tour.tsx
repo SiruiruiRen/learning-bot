@@ -41,7 +41,7 @@ const TOUR_STEPS: TourStep[] = [
     title: "📊 JOURNEY Sidebar",
     description: "On the left side is your progress tracker. It shows 6 phases — the active phase is highlighted so you always know where you are. You'll go from Phase 1 to Phase 6.",
     icon: <BarChart2 className="w-5 h-5" />,
-    target: "[data-tour='progress-bar']",
+    target: "[data-tour='sidebar']",
     placement: "right",
   },
   {
@@ -61,17 +61,30 @@ export default function GuidedTour() {
   const [targetRect, setTargetRect] = useState<Rect | null>(null)
 
   const measureTarget = useCallback(() => {
+    // Reset z-index on ALL tour targets first
+    TOUR_STEPS.forEach(ts => {
+      if (ts.target) {
+        const prevEl = document.querySelector(ts.target) as HTMLElement | null
+        if (prevEl) prevEl.style.removeProperty("z-index")
+      }
+    })
+
     const s = TOUR_STEPS[step]
     if (!s.target) { setTargetRect(null); return }
-    const el = document.querySelector(s.target)
+    const el = document.querySelector(s.target) as HTMLElement | null
     if (el) {
-      // Scroll into view first
-      el.scrollIntoView({ behavior: "smooth", block: "center" })
+      // Raise this element above the backdrop so it's visible and clickable
+      el.style.zIndex = "9997"
+      // Scroll into view first (skip for fixed elements like sidebar/chatbot)
+      const isFixed = window.getComputedStyle(el).position === "fixed"
+      if (!isFixed) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" })
+      }
       // Measure after scroll
       setTimeout(() => {
         const r = el.getBoundingClientRect()
         setTargetRect({ top: r.top, left: r.left, width: r.width, height: r.height })
-      }, 400)
+      }, isFixed ? 50 : 400)
     } else {
       setTargetRect(null)
     }
@@ -93,6 +106,13 @@ export default function GuidedTour() {
 
   const close = () => {
     setVisible(false)
+    // Reset z-indexes on all tour targets
+    TOUR_STEPS.forEach(ts => {
+      if (ts.target) {
+        const el = document.querySelector(ts.target) as HTMLElement | null
+        if (el) el.style.removeProperty("z-index")
+      }
+    })
     try {
       const sid = localStorage.getItem("session_id")
       if (sid) {

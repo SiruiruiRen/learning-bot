@@ -406,7 +406,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
   const neutralMuted = "hsl(var(--foreground) / 0.75)"
 
   return (
-    <div className="fixed left-3 top-1/2 transform -translate-y-1/2 z-30 hidden lg:block">
+    <div data-tour="sidebar" className="fixed left-3 top-1/2 transform -translate-y-1/2 z-30 hidden lg:block">
       <div
         className="backdrop-blur-md rounded-2xl p-3 shadow-xl w-auto border"
         style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
