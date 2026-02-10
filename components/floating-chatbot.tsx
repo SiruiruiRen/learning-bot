@@ -189,6 +189,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isHovering, setIsHovering] = useState(false)
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([])
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
   const openTimestampRef = useRef<string | null>(null)  // Track when chatbot was opened
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -197,10 +198,28 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   // Get page-specific or phase-specific config
   const pageConfig = PAGE_QUESTIONS[pathname] || PAGE_QUESTIONS[`/${currentPhase}`] || DEFAULT_PAGE
 
+  // Parse follow-up questions from AI response (lines starting with ">>>")
+  const parseFollowUps = (text: string): { cleanText: string; followUps: string[] } => {
+    const lines = text.split('\n')
+    const followUps: string[] = []
+    const contentLines: string[] = []
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.startsWith('>>>')) {
+        const q = trimmed.replace(/^>>>+\s*/, '').trim()
+        if (q) followUps.push(q)
+      } else {
+        contentLines.push(line)
+      }
+    }
+    return { cleanText: contentLines.join('\n').trim(), followUps }
+  }
+
   // Reset chat when navigating to a new page — show fresh suggested questions
   useEffect(() => {
     setMessages([])
     setInput("")
+    setFollowUpQuestions([])
   }, [pathname])
 
   useEffect(() => {
@@ -292,6 +311,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     setMessages(prev => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
+    setFollowUpQuestions([])  // Clear old follow-ups while waiting for new response
 
     // Log user question to analytics
     try {
@@ -341,14 +361,19 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         throw new Error(result.error || result.details || "Invalid response")
       }
 
-      const responseContent = result.data.message || result.data.content || "Sorry, I couldn't process that."
+      const rawResponse = result.data.message || result.data.content || "Sorry, I couldn't process that."
       const responseModel = result.data.model || "unknown"
+      
+      // Parse follow-up questions (>>> lines) from the AI response
+      const { cleanText, followUps } = parseFollowUps(rawResponse)
+      const responseContent = cleanText
       
       const assistantMessage = {
         role: "assistant",
         content: responseContent,
       }
       setMessages(prev => [...prev, assistantMessage])
+      setFollowUpQuestions(followUps)
 
       // Log AI response to analytics for research tracking
       try {
@@ -523,6 +548,25 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                         </div>
                       </div>
                     ))}
+
+                    {/* Follow-up suggested questions after AI response */}
+                    {followUpQuestions.length > 0 && !isLoading && messages.length > 0 && (
+                      <div className="space-y-1.5 pl-8">
+                        <div className="text-[10px] font-medium mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+                          You might also want to ask:
+                        </div>
+                        {followUpQuestions.map((q, idx) => (
+                          <button
+                            key={idx}
+                            className="w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors hover:border-current"
+                            style={{ borderColor: neutralBorder, color: accent, backgroundColor: `${accent}08` }}
+                            onClick={() => handleSuggestedQuestion(q)}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     {isLoading && (
                       <div className="flex items-center gap-2">

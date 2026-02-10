@@ -666,7 +666,13 @@ KEY CONCEPTS:
 - Monitoring: Schedule progress checks + set adaptation triggers + have backup strategies
 - Platform: Phase 1 (SRL intro) → Phase 2 (task analysis) → Phase 3 (strategies) → Phase 4 (MCII + goals) → Phase 5 (monitoring) → Phase 6 (final assessment)
 
-RULES: MAX 100 words. Plain language. Include one STEM example. No headers. 1 emoji max. If off-topic: "That's outside my area — happy to help with learning strategies!"
+RULES:
+- MAX 100 words for the answer. Plain language. Include one STEM example. No headers. 1 emoji max.
+- If off-topic: "That's outside my area — happy to help with learning strategies!"
+- ALWAYS end your response with exactly 2 follow-up questions the student might want to ask next, related to what you just explained.
+- Format follow-ups on separate lines starting with ">>>" like this:
+>>>How do I apply this to my biology class?
+>>>What's the next step after setting goals?
 """
 }
 
