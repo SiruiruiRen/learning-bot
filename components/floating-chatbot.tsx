@@ -20,7 +20,7 @@ interface FloatingChatbotProps {
 const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] } } = {
   // Intro / Onboarding
   "/intro": {
-    greeting: "Welcome! I'm SoL2LBot, your learning assistant. Ask me anything about this training!",
+    greeting: "",
     questions: [
       "What will I learn in this training?",
       "How long does this take?",
@@ -30,7 +30,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 1 — SRL intro
   "/phase1": {
-    greeting: "Hi! I'm here to help you understand Self-Regulated Learning.",
+    greeting: "",
     questions: [
       "What are the 4 stages of self-regulated learning?",
       "Why is metacognition important for learning?",
@@ -40,7 +40,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 2 — Task analysis (instruction + video)
   "/phase2": {
-    greeting: "Need help understanding task analysis and learning objectives?",
+    greeting: "",
     questions: [
       "What is a learning objective and why does it matter?",
       "How do I identify the right cognitive level for my goal?",
@@ -50,7 +50,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 2 — Chat (guided learning objective)
   "/phase2/chat": {
-    greeting: "Working on your learning objective? I can clarify concepts.",
+    greeting: "",
     questions: [
       "What's the difference between LOW and HIGH task identification?",
       "How specific should my resource list be?",
@@ -60,7 +60,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 3 — Learning strategies
   "/phase3": {
-    greeting: "Let me help you understand effective learning strategies!",
+    greeting: "",
     questions: [
       "What is retrieval practice and how do I use it?",
       "How does the spacing effect improve memory?",
@@ -70,7 +70,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 4 — Strategic planning intro
   "/phase4": {
-    greeting: "Ready to create your strategic learning plan? Ask me anything!",
+    greeting: "",
     questions: [
       "What is MCII (Mental Contrasting with Implementation Intentions)?",
       "Why is mental contrasting effective?",
@@ -80,7 +80,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 4 — MCII exercise
   "/phase4/mcii": {
-    greeting: "Working on your MCII exercise? I can help explain the steps.",
+    greeting: "",
     questions: [
       "How do I visualize my best outcome vividly?",
       "What counts as an internal obstacle?",
@@ -90,7 +90,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 4 — Long-term goals
   "/phase4/long_term_goals": {
-    greeting: "Setting long-term goals? I can help you think through them.",
+    greeting: "",
     questions: [
       "What makes a goal mastery-oriented vs performance-oriented?",
       "How should I visualize success?",
@@ -100,7 +100,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 4 — Short-term goals
   "/phase4/short_term_goals": {
-    greeting: "Creating SMART objectives? Let me help!",
+    greeting: "",
     questions: [
       "What does SMART stand for?",
       "How do I make my goal measurable?",
@@ -110,7 +110,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 4 — Contingency / if-then
   "/phase4/contingency_strategies": {
-    greeting: "Building your contingency plan? Happy to clarify!",
+    greeting: "",
     questions: [
       "What is an if-then plan?",
       "How specific should my trigger be?",
@@ -120,7 +120,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 4 — Tasks hub
   "/phase4/tasks": {
-    greeting: "This is your Phase 4 task hub. Need guidance on any task?",
+    greeting: "",
     questions: [
       "Which task should I do first?",
       "What is the MCII exercise about?",
@@ -130,7 +130,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 5 — Monitoring intro
   "/phase5": {
-    greeting: "Let me help you understand monitoring and adaptation!",
+    greeting: "",
     questions: [
       "What does 'monitoring your learning' mean?",
       "How often should I check my progress?",
@@ -140,7 +140,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 5 — Chat (monitoring system)
   "/phase5/chat": {
-    greeting: "Creating your monitoring system? I'm here to help!",
+    greeting: "",
     questions: [
       "What are specific, measurable progress checks?",
       "How do I set a clear adaptation trigger?",
@@ -150,7 +150,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 5 — Monitoring adaptation
   "/phase5/monitoring": {
-    greeting: "Refining your monitoring plan? Ask me anything!",
+    greeting: "",
     questions: [
       "How detailed should my monitoring schedule be?",
       "What's the difference between a vague and specific trigger?",
@@ -160,7 +160,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Phase 6 — Final assessment
   "/phase6": {
-    greeting: "Time for your final assessment! I can explain what's expected.",
+    greeting: "",
     questions: [
       "What should my exam preparation plan include?",
       "How do I combine all the strategies I learned?",
@@ -170,7 +170,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
   },
   // Summary page
   "/summary": {
-    greeting: "Here's your learning journey summary! Questions?",
+    greeting: "",
     questions: [
       "How can I use these strategies going forward?",
       "What were my strongest areas?",
@@ -182,7 +182,7 @@ const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] }
 
 // Fallback for unrecognized pages
 const DEFAULT_PAGE = {
-  greeting: "Hi! I'm SoL2LBot. Ask me anything about self-regulated learning!",
+  greeting: "", // use HELP_SEEKING_INTRO
   questions: [
     "What is self-regulated learning?",
     "How can I improve my study habits?",
@@ -190,6 +190,10 @@ const DEFAULT_PAGE = {
     "How do I stay motivated?"
   ]
 }
+
+// Unified intro: help-seeking role; guide users to video/instructions first (used in UI + prompt)
+const HELP_SEEKING_INTRO =
+  "Hi! I'm your Quick Help assistant. I'm here for help-seeking: when you have a question after watching the video or reading the instructions on this page, you can ask me here. I recommend watching the video or reading the content first—then come back if something's unclear."
 
 export default function FloatingChatbot({ currentPhase = "default" }: FloatingChatbotProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -201,6 +205,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const [isHovering, setIsHovering] = useState(false)
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([])
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)  // Close panel when mouse leaves
   const openTimestampRef = useRef<string | null>(null)  // Track when chatbot was opened
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
@@ -315,6 +320,10 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   }
 
   const closeChatbot = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
+    }
     const openedAt = openTimestampRef.current
     const closedAt = new Date().toISOString()
     const durationSeconds = openedAt
@@ -329,6 +338,20 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     openTimestampRef.current = null
     setIsOpen(false)
     setIsMinimized(false)
+  }
+
+  // Collapse panel when mouse leaves the chatbot area (on-demand: open by hover/click, close on leave)
+  const PANEL_LEAVE_DELAY_MS = 800
+  const handlePanelMouseEnter = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
+    }
+  }
+  const handlePanelMouseLeave = () => {
+    leaveTimeoutRef.current = setTimeout(() => {
+      closeChatbot()
+    }, PANEL_LEAVE_DELAY_MS)
   }
 
   // Hover to open: when user hovers on button area for 600ms, auto-open
@@ -501,7 +524,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         )}
       </AnimatePresence>
 
-      {/* Chat Window — right sidebar, leaving room for top phase title */}
+      {/* Chat Window — right sidebar, on-demand; collapses when mouse leaves */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -509,6 +532,8 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="fixed right-4 bottom-4 top-24 z-50 w-96 max-w-[calc(100vw-2rem)]"
+            onMouseEnter={handlePanelMouseEnter}
+            onMouseLeave={handlePanelMouseLeave}
           >
             <div
               className="flex flex-col h-full rounded-xl shadow-2xl border overflow-hidden"
@@ -555,7 +580,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                             <Bot className="w-4 h-4" style={{ color: "#1f1408" }} />
                           </div>
                           <div className="p-2.5 rounded-lg rounded-bl-none text-sm" style={{ backgroundColor: "hsl(var(--muted))", color: "hsl(var(--foreground))", border: `1px solid ${neutralBorder}` }}>
-                            {pageConfig.greeting}
+                            {pageConfig.greeting || HELP_SEEKING_INTRO}
                           </div>
                         </div>
                         {/* Suggested questions */}
