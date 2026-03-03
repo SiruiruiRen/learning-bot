@@ -485,16 +485,16 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     >
       {/* Collapsed tab — always visible; hover or click to expand */}
       <motion.div
-        animate={{ width: isOpen ? 0 : 44 }}
+        animate={{ width: isOpen ? 0 : 52 }}
         transition={{ duration: 0.2 }}
         className="flex-shrink-0 h-full overflow-hidden cursor-pointer"
-        style={{ minWidth: isOpen ? 0 : 44 }}
+        style={{ minWidth: isOpen ? 0 : 52 }}
         onClick={() => !isOpen && openChatbot('click')}
       >
         <div
-          className="h-full w-11 flex flex-col items-center justify-center gap-1"
+          className="h-full w-12 flex flex-col items-center justify-center gap-1 relative"
           style={{
-            backgroundColor: neutralSurface,
+            backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
             borderLeft: `1px solid ${neutralBorder}`,
             borderTop: `1px solid ${neutralBorder}`,
             borderBottom: `1px solid ${neutralBorder}`,
@@ -503,7 +503,12 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
           }}
         >
-          <Bot className="h-4 w-4" style={{ color: accent }} />
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center animate-pulse"
+            style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}` }}
+          >
+            <Bot className="h-4 w-4" style={{ color: accent }} />
+          </div>
           <span
             className="text-[10px] font-medium whitespace-nowrap"
             style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
@@ -511,7 +516,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             Quick Help
           </span>
           <span
-            className="text-[9px] font-semibold"
+            className="text-[9px font-semibold animate-pulse"
             style={{ color: accent, transform: "rotate(-90deg)" }}
           >
             ◀
