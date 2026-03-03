@@ -135,21 +135,21 @@ export const phase4KnowledgeChecks: KnowledgeCheckSet = {
       }
     },
     {
-      id: 'ii_quality',
+      id: 'mcii_carrie',
       questionType: 'scenario',
-      question: "Which student effectively utilizes implementation intentions towards the following goal: Student wants to lose 5 pounds?",
+      question: "Which student utilizes mental contrasting best for the goal 'wants to go on a walk every day'?",
       options: [
-        "Anna makes a schedule of her day to go to the gym before her classes at 7:30 AM so that she has time in her day.",
-        "Barry decides to go to the gym whenever he has time throughout his day.",
-        "Claire can't find a close gym, find time to go to the gym and make healthy meals, and needs someone to babysit her daughter. Because of this she creates a detailed schedule to overcome all of these obstacles.",
-        "Derek decides to go to the gym after he cooks a healthy meal, until he sees visible results"
+        "Addy: thinks about difficulty finding time, THEN how relaxing it would feel (wrong order)",
+        "Blair: thinks only about how good it would feel to take walks (only indulging)",
+        "Carrie: thinks about relaxation and health benefits, THEN considers what might be time-consuming (indulge first, then obstacle)",
+        "Darryl: thinks only about how time-consuming it would be (only dwelling)"
       ],
-      correctAnswer: "Anna makes a schedule of her day to go to the gym before her classes at 7:30 AM so that she has time in her day.",
-      explanation: "This is the correct answer because Anna's implementation intention is specific and focuses on the one obstacle she wants to overcome.",
+      correctAnswer: "Carrie: thinks about relaxation and health benefits, THEN considers what might be time-consuming (indulge first, then obstacle)",
+      explanation: "Mental contrasting works best when you first indulge (imagine the positive outcome), then dwell on obstacles. Carrie does both in the correct order.",
       feedbackForWrongAnswers: {
-        "Barry decides to go to the gym whenever he has time throughout his day.": "These implementation intentions are too vague and not specific enough.",
-        "Claire can't find a close gym, find time to go to the gym and make healthy meals, and needs someone to babysit her daughter. Because of this she creates a detailed schedule to overcome all of these obstacles.": "Claire is trying to focus on many obstacles at once and creating multiple implementation intentions for it. This will get too confusing for Claire. Remember, less is more!",
-        "Derek decides to go to the gym after he cooks a healthy meal, until he sees visible results": "These implementation intentions are too vague and not specific enough."
+        "Addy: thinks about difficulty finding time, THEN how relaxing it would feel (wrong order)": "The order matters: you should indulge (imagine the positive outcome) first, then consider obstacles. Addy reversed the order.",
+        "Blair: thinks only about how good it would feel to take walks (only indulging)": "Mental contrasting requires both indulging AND dwelling on obstacles. Blair only indulges.",
+        "Darryl: thinks only about how time-consuming it would be (only dwelling)": "Mental contrasting requires both indulging AND dwelling on obstacles. Darryl only dwells on obstacles."
       }
     }
   ]

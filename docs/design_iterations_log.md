@@ -16,6 +16,16 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 24: Shunki-Selected Quiz Questions + Gemini-Like Help Bot
+**Date**: 2026-03-03 | **Status**: ✅ Complete
+**User Need**: Add Shunki-selected questions (Carrie mental contrasting, Phase 6 scale items); redesign help-seeking bot to Gemini-like right sidebar with hover-to-expand.
+**Key Changes**:
+- Phase 4: Replaced Anna 7:30 II question with Carrie mental contrasting (indulge→obstacle order) per Shunki [SK16]
+- Phase 6: Added 3 Scale questions before open-ended plan: aiming grade, expected grade, preparation level (F/D/C/B/A and Very prepared...Not at all)
+- Help-seeking bot: Right-edge vertical "Quick Help" tab (44px); hover 300ms to expand (no click); Gemini-like 360px panel with "Hello, [name]. How can I help you today?" and suggested action buttons; collapses on mouse leave (800ms delay)
+**Files Modified**: `lib/knowledge-check-questions.ts`, `app/phase6/page.tsx`, `components/floating-chatbot.tsx`, `app/globals.css`, `docs/quiz_questions_comparison.md`
+**Research Impact**: Aligns questions with expert selection; Phase 6 scales support calibration/self-assessment research; reduced friction for help-seeking may increase engagement.
+
 ### Iteration 23: Phase 5 Chat Use Rubric-Based Template and Scaffold
 **Date**: 2026-02-09 | **Status**: ✅ Complete
 **User Need**: Phase 5 monitoring chat responses were not based on the template; no scoring or scaffold levels. User requested all replies to be based on the template, with different scores giving different scaffold levels per the correct rubric.

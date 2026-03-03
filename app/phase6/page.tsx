@@ -13,9 +13,15 @@ export default function Phase6Page() {
   const router = useRouter()
   const [courseName, setCourseName] = useState<string>("your course")
   const [answer, setAnswer] = useState<string>("")
+  const [aimingGrade, setAimingGrade] = useState<string>("")
+  const [expectedGrade, setExpectedGrade] = useState<string>("")
+  const [preparationLevel, setPreparationLevel] = useState<string>("")
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+
+  const GRADE_OPTIONS = ["F", "D", "C", "B", "A"]
+  const PREP_OPTIONS = ["Very prepared", "Mostly", "Somewhat", "Not very", "Not at all"]
 
   const accent = "#d8b26f"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -100,6 +106,9 @@ export default function Phase6Page() {
             metadata: {
               course_name: courseName,
               answer_length: answer.length,
+              aiming_grade: aimingGrade || null,
+              expected_grade: expectedGrade || null,
+              preparation_level: preparationLevel || null,
               timestamp: new Date().toISOString()
             }
           })
@@ -182,6 +191,73 @@ export default function Phase6Page() {
                     <p className="text-base" style={{ color: mutedText }}>
                       Based on what you learned in this training, describe your complete plan to prepare for this exam.
                     </p>
+                  </div>
+
+                  {/* Scale questions (Shunki-selected) */}
+                  <div className="space-y-4 p-4 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted) / 0.3)", borderColor: neutralBorder }}>
+                    <p className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>Quick check-in:</p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs block mb-1.5" style={{ color: mutedText }}>What grade are you aiming to earn?</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {GRADE_OPTIONS.map((g) => (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => setAimingGrade(g)}
+                              className="px-3 py-1.5 text-sm rounded-lg border transition-colors"
+                              style={{
+                                borderColor: aimingGrade === g ? accent : neutralBorder,
+                                backgroundColor: aimingGrade === g ? `${accent}20` : "transparent",
+                                color: aimingGrade === g ? accent : "hsl(var(--foreground))"
+                              }}
+                            >
+                              {g}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs block mb-1.5" style={{ color: mutedText }}>What grade do you think you will achieve?</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {GRADE_OPTIONS.map((g) => (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => setExpectedGrade(g)}
+                              className="px-3 py-1.5 text-sm rounded-lg border transition-colors"
+                              style={{
+                                borderColor: expectedGrade === g ? accent : neutralBorder,
+                                backgroundColor: expectedGrade === g ? `${accent}20` : "transparent",
+                                color: expectedGrade === g ? accent : "hsl(var(--foreground))"
+                              }}
+                            >
+                              {g}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs block mb-1.5" style={{ color: mutedText }}>How well have you prepared to achieve the grade you are aiming for?</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {PREP_OPTIONS.map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => setPreparationLevel(p)}
+                              className="px-2.5 py-1.5 text-xs rounded-lg border transition-colors"
+                              style={{
+                                borderColor: preparationLevel === p ? accent : neutralBorder,
+                                backgroundColor: preparationLevel === p ? `${accent}20` : "transparent",
+                                color: preparationLevel === p ? accent : "hsl(var(--foreground))"
+                              }}
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">

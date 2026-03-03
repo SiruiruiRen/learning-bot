@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Bot, X, Send, MessageCircle, ChevronDown } from "lucide-react"
+import { Bot, X, Send, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import ChatMessageParser from "@/components/chat-message-parser"
@@ -197,13 +197,13 @@ const HELP_SEEKING_INTRO =
 
 export default function FloatingChatbot({ currentPhase = "default" }: FloatingChatbotProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isMinimized, setIsMinimized] = useState(false)
   const [messages, setMessages] = useState<any[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isHovering, setIsHovering] = useState(false)
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([])
+  const [userName, setUserName] = useState<string>("")
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)  // Close panel when mouse leaves
   const openTimestampRef = useRef<string | null>(null)  // Track when chatbot was opened
@@ -277,6 +277,8 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     try {
       const storedSessionId = localStorage.getItem("session_id")
       if (storedSessionId) setSessionId(storedSessionId)
+      const storedName = localStorage.getItem("solbot_user_name")
+      if (storedName) setUserName(storedName)
     } catch (error) {
       console.error("Error accessing localStorage:", error)
     }
@@ -337,7 +339,6 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     })
     openTimestampRef.current = null
     setIsOpen(false)
-    setIsMinimized(false)
   }
 
   // Collapse panel when mouse leaves the chatbot area (on-demand: open by hover/click, close on leave)
@@ -354,14 +355,15 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     }, PANEL_LEAVE_DELAY_MS)
   }
 
-  // Hover to open: when user hovers on button area for 600ms, auto-open
+  // Hover to open: when user hovers on tab/panel for 300ms, auto-open (no click needed)
+  const HOVER_OPEN_DELAY_MS = 300
   const handleMouseEnter = () => {
     if (isOpen) return
     setIsHovering(true)
     hoverTimerRef.current = setTimeout(() => {
       openChatbot('hover')
       setIsHovering(false)
-    }, 600)
+    }, HOVER_OPEN_DELAY_MS)
   }
 
   const handleMouseLeave = () => {
@@ -485,111 +487,107 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const neutralSurface = "hsl(var(--card))"
   const neutralBorder = "hsl(var(--border))"
 
-  return (
-    <>
-      {/* Floating Button — hover triggers popup */}
-      <AnimatePresence>
-        {!isOpen && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="fixed bottom-6 right-6 z-50"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="relative">
-              <Button
-                onClick={() => openChatbot('click')}
-                className="rounded-full w-14 h-14 shadow-lg hover:scale-110 transition-transform"
-                style={{ backgroundColor: accent, color: "#1f1408" }}
-              >
-                <MessageCircle className="w-6 h-6" />
-              </Button>
-              {/* Hover tooltip */}
-              <AnimatePresence>
-                {isHovering && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    className="absolute bottom-2 right-16 whitespace-nowrap bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg"
-                  >
-                    Quick Help Chatbot
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+  // Gemini-like: right-edge sidebar tab that expands on hover
+  const PANEL_WIDTH = 360
 
-      {/* Chat Window — right sidebar, on-demand; collapses when mouse leaves */}
+  return (
+    <div
+      className="fixed right-0 top-24 bottom-4 z-50 flex"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Collapsed tab — always visible; hover or click to expand */}
+      <motion.div
+        animate={{ width: isOpen ? 0 : 44 }}
+        transition={{ duration: 0.2 }}
+        className="flex-shrink-0 h-full overflow-hidden cursor-pointer"
+        style={{ minWidth: isOpen ? 0 : 44 }}
+        onClick={() => !isOpen && openChatbot('click')}
+      >
+        <div
+          className="h-full w-11 flex items-center justify-center"
+          style={{
+            backgroundColor: neutralSurface,
+            borderLeft: `1px solid ${neutralBorder}`,
+            borderTop: `1px solid ${neutralBorder}`,
+            borderBottom: `1px solid ${neutralBorder}`,
+            borderTopLeftRadius: 12,
+            borderBottomLeftRadius: 12,
+            boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
+          }}
+        >
+          <span
+            className="text-[10px] font-medium whitespace-nowrap"
+            style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
+          >
+            Quick Help
+          </span>
+        </div>
+      </motion.div>
+
+      {/* Chat panel — Gemini-like, expands on hover */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed right-4 bottom-4 top-24 z-50 w-96 max-w-[calc(100vw-2rem)]"
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: PANEL_WIDTH }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex-shrink-0 h-full overflow-hidden"
             onMouseEnter={handlePanelMouseEnter}
             onMouseLeave={handlePanelMouseLeave}
           >
             <div
-              className="flex flex-col h-full rounded-xl shadow-2xl border overflow-hidden"
-              style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
+              className="flex flex-col h-full overflow-hidden"
+              style={{
+                backgroundColor: neutralSurface,
+                borderLeft: `1px solid ${neutralBorder}`,
+                borderTop: `1px solid ${neutralBorder}`,
+                borderBottom: `1px solid ${neutralBorder}`,
+                borderTopLeftRadius: 12,
+                borderBottomLeftRadius: 12,
+                boxShadow: "-8px 0 24px rgba(0,0,0,0.08)"
+              }}
             >
-              {/* Header */}
+              {/* Header — Gemini-like compact */}
               <div
-                className="flex items-center justify-between px-4 py-3 border-b cursor-pointer"
-                style={{ borderColor: neutralBorder, background: `linear-gradient(135deg, ${accent}22, ${accent}08)` }}
-                onClick={() => setIsMinimized(!isMinimized)}
+                className="flex items-center justify-between px-4 py-3 border-b"
+                style={{ borderColor: neutralBorder }}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
-                    <Bot className="w-5 h-5" style={{ color: "#1f1408" }} />
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: `${accent}30` }}>
+                    <Bot className="w-4 h-4" style={{ color: accent }} />
                   </div>
-                  <div>
-                    <span className="font-semibold text-sm block" style={{ color: "hsl(var(--foreground))" }}>
-                      Quick Help Chatbot
-                    </span>
-                    <span className="text-[10px]" style={{ color: "hsl(var(--muted-foreground))" }}>
-                      Short questions about this training
-                    </span>
-                  </div>
+                  <span className="font-semibold text-sm" style={{ color: "hsl(var(--foreground))" }}>
+                    Quick Help
+                  </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized) }} className="h-7 w-7 p-0 rounded-full">
-                    <ChevronDown className={`w-4 h-4 transition-transform ${isMinimized ? '' : 'rotate-180'}`} />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); closeChatbot() }} className="h-7 w-7 p-0 rounded-full">
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); closeChatbot() }} className="h-6 w-6 p-0 rounded">
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
 
-              {!isMinimized && (
-                <>
+              <>
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-3 space-y-3">
                     {messages.length === 0 && (
-                      <div className="space-y-3">
-                        {/* Welcome message */}
-                        <div className="flex items-start gap-2">
-                          <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
-                            <Bot className="w-4 h-4" style={{ color: "#1f1408" }} />
-                          </div>
-                          <div className="p-2.5 rounded-lg rounded-bl-none text-sm" style={{ backgroundColor: "hsl(var(--muted))", color: "hsl(var(--foreground))", border: `1px solid ${neutralBorder}` }}>
-                            {pageConfig.greeting || HELP_SEEKING_INTRO}
-                          </div>
+                      <div className="space-y-4">
+                        {/* Gemini-style greeting */}
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                            Hello{userName ? `, ${userName}` : ""}. How can I help you today?
+                          </p>
+                          <p className="text-xs mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+                            Ask about this page or training.
+                          </p>
                         </div>
-                        {/* Suggested questions */}
-                        <div className="space-y-1.5 pl-8">
+                        {/* Suggested actions — Gemini-style buttons */}
+                        <div className="space-y-1.5">
                           {pageConfig.questions.map((question, index) => (
                             <button
                               key={index}
-                              className="w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors hover:border-current"
-                              style={{ borderColor: neutralBorder, color: accent, backgroundColor: `${accent}08` }}
+                              className="w-full text-left text-xs px-3 py-2.5 rounded-lg border transition-colors hover:bg-opacity-100"
+                              style={{ borderColor: neutralBorder, color: accent, backgroundColor: `${accent}0a` }}
                               onClick={() => handleSuggestedQuestion(question)}
                             >
                               {question}
@@ -681,8 +679,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                       </Button>
                     </div>
                   </div>
-                </>
-              )}
+              </>
             </div>
           </motion.div>
         )}

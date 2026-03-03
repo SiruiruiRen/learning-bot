@@ -266,7 +266,7 @@ p, span, li, input, button, textarea {
 
 /* When the floating chatbot is open on desktop, create side gutters so JOURNEY, main content, and Quick Help don't overlap */
 html.floating-chat-open body {
-  padding-right: 24rem; /* ~w-96 (24rem) chat width */
+  padding-right: 22.5rem; /* 360px Gemini-like panel width */
   padding-left: 5rem;   /* room for JOURNEY sidebar + gap */
 }
 
