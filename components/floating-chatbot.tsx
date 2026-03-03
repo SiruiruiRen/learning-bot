@@ -492,7 +492,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         onClick={() => !isOpen && openChatbot('click')}
       >
         <div
-          className="h-full w-12 flex flex-col items-center justify-center gap-1 relative"
+          className="h-full w-12 flex flex-col items-center justify-between py-4"
           style={{
             backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
             borderLeft: `1px solid ${neutralBorder}`,
@@ -516,8 +516,8 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             Quick Help
           </span>
           <span
-            className="text-[9px font-semibold animate-pulse"
-            style={{ color: accent, transform: "rotate(-90deg)" }}
+            className="text-[9px] font-semibold"
+            style={{ color: accent }}
           >
             ◀
           </span>
