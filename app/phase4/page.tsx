@@ -14,8 +14,9 @@ import { phase4KnowledgeChecks } from "@/lib/knowledge-check-questions"
 export default function Phase4IntroPage() {
   const router = useRouter()
   const [userName, setUserName] = useState("")
-  const [videoCompleted, setVideoCompleted] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [videoCompleted, setVideoCompleted] = useState(false)
+  const [postTestCompleted, setPostTestCompleted] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
 
   useEffect(() => {
     try {
@@ -39,8 +40,12 @@ export default function Phase4IntroPage() {
   }
 
   const handleVideoComplete = () => {
-    setVideoCompleted(true);
-  };
+    setVideoCompleted(true)
+  }
+
+  const handlePostTestComplete = () => {
+    setPostTestCompleted(true)
+  }
 
   const handleNext = () => {
     if (currentStep === 0) {
@@ -197,8 +202,18 @@ export default function Phase4IntroPage() {
                     }}
                   >
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will proceed directly to the MCII exercise.</p>
+                    <p className="text-muted-foreground text-sm">You will complete a quick 2-question knowledge check, then move to the MCII exercise.</p>
                   </div>
+
+                  {videoCompleted && (
+                    <div className="mt-6">
+                      <PrePostKnowledgeCheck
+                        questions={phase4KnowledgeChecks.postTest}
+                        testType="post"
+                        onComplete={handlePostTestComplete}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -225,9 +240,9 @@ export default function Phase4IntroPage() {
                       color: "#1f1408",
                     }}
                     onClick={handleNext}
-                    disabled={!videoCompleted}
+                    disabled={!videoCompleted || !postTestCompleted}
                   >
-                    Continue to Tasks <ArrowRight className="h-4 w-4 ml-2" />
+                    Continue to MCII Exercise <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 )}
               </div>

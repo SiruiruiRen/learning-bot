@@ -478,6 +478,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
 
   return (
     <div
+      data-tour="quick-help"
       className="fixed right-0 top-24 bottom-4 z-50 flex"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -491,7 +492,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         onClick={() => !isOpen && openChatbot('click')}
       >
         <div
-          className="h-full w-11 flex items-center justify-center"
+          className="h-full w-11 flex flex-col items-center justify-center gap-1"
           style={{
             backgroundColor: neutralSurface,
             borderLeft: `1px solid ${neutralBorder}`,
@@ -502,11 +503,18 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
           }}
         >
+          <Bot className="h-4 w-4" style={{ color: accent }} />
           <span
             className="text-[10px] font-medium whitespace-nowrap"
             style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
           >
             Quick Help
+          </span>
+          <span
+            className="text-[9px] font-semibold"
+            style={{ color: accent, transform: "rotate(-90deg)" }}
+          >
+            ◀
           </span>
         </div>
       </motion.div>

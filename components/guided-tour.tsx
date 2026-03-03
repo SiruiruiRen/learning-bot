@@ -32,10 +32,10 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     title: "💬 Quick Help Chatbot",
-    description: "See the gold button in the bottom-right? That's also SoL2LBot — but for quick questions! Click it anytime to ask about learning concepts, and it'll give you a short answer with examples. You can also type your own questions.",
+    description: "On the right edge, you'll see a vertical 'Quick Help' tab. Hover or click it to open a side window where you can ask short questions about the video or instructions on this page. It's best to watch/read first, then use Quick Help when something is unclear.",
     icon: <MessageCircle className="w-5 h-5" />,
-    target: ".fixed.bottom-6.right-6",
-    placement: "top",
+    target: "[data-tour='quick-help']",
+    placement: "left",
   },
   {
     title: "📊 JOURNEY Sidebar",

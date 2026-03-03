@@ -275,11 +275,14 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
   // Mobile header bar
   if (isMobile) {
     return (
-      <div className="bg-slate-900/80 backdrop-blur-md border-b border-indigo-500/20 sticky top-0 z-20 py-3 px-4 w-full">
+      <div
+        className="backdrop-blur-md border-b sticky top-0 z-20 py-3 px-4 w-full"
+        style={{ backgroundColor: "hsl(var(--background) / 0.92)", borderColor: "hsl(var(--border) / 0.4)" }}
+      >
         <div className="mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={navigateToHome}>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600/80 to-blue-500/50 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#d8b26f] to-[#e6c98c] flex items-center justify-center">
                 <Compass className="h-4 w-4 text-white" />
               </div>
               <h2 className="text-base font-bold text-white">SoL2LBot</h2>
@@ -317,7 +320,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
           {expandedSidebar && (
             <div className="mt-3 pt-3 border-t border-slate-700/50">
               {/* Mini roadmap indicators at the top */}
-              <div className="flex items-center justify-between mb-3 px-2">
+                  <div className="flex items-center justify-between mb-3 px-2">
                 <div className="h-1.5 bg-slate-800 rounded-full flex-1 overflow-hidden relative">
                   {/* Phase marker dots */}
                   <div className="absolute top-0 left-0 right-0 bottom-0 flex justify-between items-center px-0.5">
@@ -334,7 +337,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                   
                   {/* Progress filled bar */}
                   <div 
-                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500"
+                    className="h-full bg-gradient-to-r from-[#d8b26f] via-[#e6c98c] to-[#f3dfaa]"
                     style={{ width: `${progressPercentage}%` }}
                   ></div>
                 </div>
@@ -427,7 +430,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
               }}
             />
             
-            {/* Start point */}
+          {/* Start point */}
             <div className="relative mb-4 z-10">
               <TooltipProvider>
                 <Tooltip>
@@ -435,7 +438,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                     <div 
                     className="w-10 h-10 flex items-center justify-center cursor-pointer rounded-full border"
                     style={{
-                      color: displayPhase === 0 ? "#9fc5ff" : neutralMuted,
+                      color: displayPhase === 0 ? accentHex : neutralMuted,
                       borderColor: neutralBorder,
                       backgroundColor: displayPhase === 0 ? "hsl(var(--muted) / 0.25)" : "hsl(var(--card) / 0.78)"
                     }}
@@ -450,7 +453,10 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                 </Tooltip>
               </TooltipProvider>
               {displayPhase === 0 && (
-                <div className="absolute -left-1 -top-1 w-12 h-12 rounded-full border-2 border-indigo-400/50 animate-pulse"></div>
+                <div
+                  className="absolute -left-1 -top-1 w-12 h-12 rounded-full border-2 animate-pulse"
+                  style={{ borderColor: accentHex }}
+                ></div>
               )}
             </div>
             
