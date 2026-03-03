@@ -684,6 +684,6 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   )
 }
