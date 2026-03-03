@@ -18,24 +18,24 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     title: "Welcome to SoL2LBot! 👋",
-    description: "Welcome to the Science of Learning to Learn Bot! This 90-minute training teaches you evidence-based study strategies with AI coaching. Let me show you around.",
+    description: "Welcome to the Science of Learning to Learn Bot! This 90-minute training teaches you evidence-based study strategies with AI coaching. Before we start, you'll try a short Quick Help demo so you know where to get support at any time.",
     icon: <BrainCircuit className="w-5 h-5" />,
     target: null,
     placement: "center",
   },
   {
-    title: "🤖 Your AI Learning Coach",
+    title: "💬 Try the Quick Help chatbot",
+    description: "On the right edge, you'll see the vertical 'Quick Help' tab with the bot icon. I've opened it for you. Click ONE of the practice questions at the bottom of the panel to see how the chatbot responds. When you're done, close the panel (or leave it open) and click Continue below.",
+    icon: <MessageCircle className="w-5 h-5" />,
+    target: "[data-tour='quick-help']",
+    placement: "left",
+  },
+  {
+    title: "🤖 Your main AI Learning Coach",
     description: "SoL2LBot is your personal AI coach. In each phase, it guides you through interactive lessons, evaluates your answers based on research-backed rubrics, and gives you specific feedback to improve your learning skills.",
     icon: <BrainCircuit className="w-5 h-5" />,
     target: "[data-tour='main-ai']",
     placement: "bottom",
-  },
-  {
-    title: "💬 Quick Help Chatbot",
-    description: "On the right edge, you'll see a vertical 'Quick Help' tab. Hover or click it to open a side window where you can ask short questions about the video or instructions on this page. It's best to watch/read first, then use Quick Help when something is unclear.",
-    icon: <MessageCircle className="w-5 h-5" />,
-    target: "[data-tour='quick-help']",
-    placement: "left",
   },
   {
     title: "📊 JOURNEY Sidebar",
@@ -101,6 +101,15 @@ export default function GuidedTour() {
     measureTarget()
     const handleResize = () => measureTarget()
     window.addEventListener("resize", handleResize)
+    // When we are on the Quick Help step, programmatically open the chatbot so users see the greeting
+    const currentStep = TOUR_STEPS[step]
+    if (currentStep && currentStep.target === "[data-tour='quick-help']") {
+      try {
+        window.dispatchEvent(new CustomEvent("solbot-open-quick-help"))
+      } catch {
+        // ignore if CustomEvent not available
+      }
+    }
     return () => window.removeEventListener("resize", handleResize)
   }, [visible, step, measureTarget])
 

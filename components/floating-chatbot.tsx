@@ -20,7 +20,8 @@ interface FloatingChatbotProps {
 const PAGE_QUESTIONS: { [key: string]: { greeting: string; questions: string[] } } = {
   // Intro / Onboarding
   "/intro": {
-    greeting: "",
+    greeting:
+      "Before you start, try this Quick Help chatbot once: click one of the questions below so you can see how it works. Later, any time a video or instruction on this page is confusing, you can reopen the Quick Help tab on the right edge and ask a short question about this page.",
     questions: [
       "What will I learn in this training?",
       "How long does this take?",
@@ -191,9 +192,9 @@ const DEFAULT_PAGE = {
   ]
 }
 
-// Unified intro: help-seeking role; guide users to video/instructions first (used in UI + prompt)
-const HELP_SEEKING_INTRO =
-  "Hi! I'm your Quick Help assistant. I'm here for help-seeking: when you have a question after watching the video or reading the instructions on this page, you can ask me here. I recommend watching the video or reading the content first—then come back if something's unclear."
+  // Unified intro: help-seeking role; guide users to video/instructions first (used in UI + prompt)
+  const HELP_SEEKING_INTRO =
+  "I'm here for help-seeking: after you watch the video or read the instructions on this page, you can ask me clarifying questions. I recommend watching or reading first—then coming back here when something is unclear."
 
 export default function FloatingChatbot({ currentPhase = "default" }: FloatingChatbotProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -326,6 +327,19 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     openTimestampRef.current = null
     setIsOpen(false)
   }
+
+  // Allow guided tour to programmatically open Quick Help so users see a greeting
+  useEffect(() => {
+    const handleOpenFromTour = () => {
+      if (isOpen) return
+      const now = new Date().toISOString()
+      openTimestampRef.current = now
+      setIsOpen(true)
+      logChatbotEvent('floating_chatbot_opened', { trigger: 'tour', message_count: messages.length })
+    }
+    window.addEventListener('solbot-open-quick-help', handleOpenFromTour)
+    return () => window.removeEventListener('solbot-open-quick-help', handleOpenFromTour)
+  }, [isOpen, messages.length])
 
   // Collapse panel when mouse leaves the chatbot area (on-demand: open by hover/click, close on leave)
   const PANEL_LEAVE_DELAY_MS = 800
@@ -483,16 +497,24 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Collapsed tab — always visible; hover or click to expand */}
+      {/* Collapsed tab — arrow outside box (in content area), box on right; hover or click to expand */}
       <motion.div
-        animate={{ width: isOpen ? 0 : 52 }}
+        animate={{ width: isOpen ? 0 : 64 }}
         transition={{ duration: 0.2 }}
-        className="flex-shrink-0 h-full overflow-hidden cursor-pointer"
-        style={{ minWidth: isOpen ? 0 : 52 }}
+        className="flex-shrink-0 h-full overflow-visible cursor-pointer flex items-center relative"
+        style={{ minWidth: isOpen ? 0 : 64 }}
         onClick={() => !isOpen && openChatbot('click')}
       >
+        {/* Arrow outside the box — floats in content area, points at expandable panel */}
         <div
-          className="h-full w-12 flex flex-col items-center justify-between py-4"
+          className="absolute flex items-center justify-center w-10 h-full left-0 -translate-x-full"
+          style={{ color: accent }}
+          title="Hover or click to expand"
+        >
+          <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
+        </div>
+        <div
+          className="h-full w-12 flex flex-col items-center justify-center gap-2 py-4 flex-shrink-0"
           style={{
             backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
             borderLeft: `1px solid ${neutralBorder}`,
@@ -514,12 +536,6 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
           >
             Quick Help
-          </span>
-          <span
-            className="text-[9px] font-semibold"
-            style={{ color: accent }}
-          >
-            ◀
           </span>
         </div>
       </motion.div>
@@ -574,10 +590,10 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                         {/* Gemini-style greeting */}
                         <div>
                           <p className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
-                            Hello{userName ? `, ${userName}` : ""}. How can I help you today?
+                            Hello{userName ? `, ${userName}` : ""} — I'm your Quick Help chatbot.
                           </p>
                           <p className="text-xs mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>
-                            Ask about this page or training.
+                            {pageConfig.greeting || HELP_SEEKING_INTRO}
                           </p>
                         </div>
                         {/* Suggested actions — Gemini-style buttons */}
