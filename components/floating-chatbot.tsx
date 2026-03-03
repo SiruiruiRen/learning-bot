@@ -252,20 +252,6 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     return { cleanText, followUps }
   }
 
-  // When floating chatbot is open on desktop, reserve a right sidebar so it doesn't cover the main content frame
-  useEffect(() => {
-    if (typeof document === "undefined") return
-    const root = document.documentElement
-    if (isOpen) {
-      root.classList.add("floating-chat-open")
-    } else {
-      root.classList.remove("floating-chat-open")
-    }
-    return () => {
-      root.classList.remove("floating-chat-open")
-    }
-  }, [isOpen])
-
   // Reset chat when navigating to a new page — show fresh suggested questions
   useEffect(() => {
     setMessages([])
