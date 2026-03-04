@@ -494,83 +494,91 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const neutralSurface = "hsl(var(--card))"
   const neutralBorder = "hsl(var(--border))"
 
-  // Gemini-like: right-edge sidebar tab that expands on hover
-  const PANEL_WIDTH = 360
+  // Centered modal: Quick Help opens in the middle of the screen, more prominent
+  const PANEL_WIDTH = 400
+  const PANEL_MAX_H = "85vh"
 
   return (
-    <div
-      data-tour="quick-help"
-      className="fixed right-0 top-24 bottom-4 z-50 flex"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Collapsed tab — arrow outside box (in content area), box on right; hover or click to expand */}
-      <motion.div
-        animate={{ width: isOpen ? 0 : 64 }}
-        transition={{ duration: 0.2 }}
-        className="flex-shrink-0 h-full overflow-visible cursor-pointer flex items-center relative"
-        style={{ minWidth: isOpen ? 0 : 64 }}
-        onClick={() => !isOpen && openChatbot('click')}
+    <>
+      {/* Trigger: right-edge tab, hover or click to open */}
+      <div
+        data-tour="quick-help"
+        className="fixed right-0 top-24 bottom-4 z-50 flex items-center"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        {/* Arrow outside the box — floats in content area, points at expandable panel */}
-        <div
-          className="absolute flex items-center justify-center w-10 h-full left-0 -translate-x-full"
-          style={{ color: accent }}
-          title="Hover or click to expand"
-        >
-          <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
-        </div>
-        <div
-          className="h-full w-12 flex flex-col items-center justify-between py-4 flex-shrink-0"
-          style={{
-            backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
-            borderLeft: `1px solid ${neutralBorder}`,
-            borderTop: `1px solid ${neutralBorder}`,
-            borderBottom: `1px solid ${neutralBorder}`,
-            borderTopLeftRadius: 12,
-            borderBottomLeftRadius: 12,
-            boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
-          }}
+        <motion.div
+          animate={{ width: isOpen ? 0 : 64 }}
+          transition={{ duration: 0.2 }}
+          className="flex-shrink-0 h-full overflow-visible cursor-pointer flex items-center relative"
+          style={{ minWidth: isOpen ? 0 : 64 }}
+          onClick={() => !isOpen && openChatbot('click')}
         >
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center animate-pulse"
-            style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}` }}
+            className="absolute flex items-center justify-center w-10 h-full left-0 -translate-x-full"
+            style={{ color: accent }}
+            title="Hover or click to open Quick Help"
           >
-            <Bot className="h-4 w-4" style={{ color: accent }} />
+            <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
           </div>
-          <span
-            className="text-[10px] font-medium whitespace-nowrap"
-            style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
-          >
-            Quick Help
-          </span>
-        </div>
-      </motion.div>
-
-      {/* Chat panel — Gemini-like, expands on hover */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: PANEL_WIDTH }}
-            exit={{ opacity: 0, width: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex-shrink-0 h-full overflow-hidden"
-            onMouseEnter={handlePanelMouseEnter}
-            onMouseLeave={handlePanelMouseLeave}
+          <div
+            className="h-full w-12 flex flex-col items-center justify-between py-4 flex-shrink-0"
+            style={{
+              backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
+              borderLeft: `1px solid ${neutralBorder}`,
+              borderTop: `1px solid ${neutralBorder}`,
+              borderBottom: `1px solid ${neutralBorder}`,
+              borderTopLeftRadius: 12,
+              borderBottomLeftRadius: 12,
+              boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
+            }}
           >
             <div
-              className="flex flex-col h-full overflow-hidden"
-              style={{
-                backgroundColor: neutralSurface,
-                borderLeft: `1px solid ${neutralBorder}`,
-                borderTop: `1px solid ${neutralBorder}`,
-                borderBottom: `1px solid ${neutralBorder}`,
-                borderTopLeftRadius: 12,
-                borderBottomLeftRadius: 12,
-                boxShadow: "-8px 0 24px rgba(0,0,0,0.08)"
-              }}
+              className="w-7 h-7 rounded-full flex items-center justify-center animate-pulse"
+              style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}` }}
             >
+              <Bot className="h-4 w-4" style={{ color: accent }} />
+            </div>
+            <span
+              className="text-[10px] font-medium whitespace-nowrap"
+              style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
+            >
+              Quick Help
+            </span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Chat panel — centered modal in the middle of the screen */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            >
+              <div
+                className="absolute inset-0 bg-black/20"
+                aria-hidden
+                onClick={closeChatbot}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.2 }}
+                className="relative w-full max-w-[min(100%,400px)] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+                style={{
+                  maxHeight: PANEL_MAX_H,
+                  backgroundColor: neutralSurface,
+                  border: `1px solid ${neutralBorder}`,
+                  boxShadow: "0 24px 48px rgba(0,0,0,0.18)"
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
               {/* Header — Gemini-like compact */}
               <div
                 className="flex items-center justify-between px-4 py-3 border-b"
@@ -674,7 +682,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                   </div>
 
                   {/* Input */}
-                  <div className="p-3 border-t" style={{ borderColor: neutralBorder }}>
+                  <div className="p-3 border-t flex-shrink-0" style={{ borderColor: neutralBorder }}>
                     <div className="flex gap-2">
                       <Textarea
                         value={input}
@@ -702,10 +710,11 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                     </div>
                   </div>
               </>
-            </div>
-          </motion.div>
+              </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
-    </div>
+    </>
   )
 }

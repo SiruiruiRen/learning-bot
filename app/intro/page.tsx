@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const phaseInfo = [
   {
@@ -385,28 +386,33 @@ export default function IntroPage() {
 
                     <div className="space-y-2">
                       <Label className="text-base font-medium text-foreground">How should SoLBot communicate with you?</Label>
-                      <p className="text-sm" style={{ color: mutedText }}>
-                        You can view feedback in both styles after each assessment.
-                      </p>
                       <div className="flex gap-2">
-                        {[
-                          { value: "warm", label: "Warm & encouraging" },
-                          { value: "direct", label: "Concise & direct" },
-                        ].map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setCoachTone(option.value)}
-                            className="flex-1 px-3 py-2 rounded-lg text-base font-medium border transition-all"
-                            style={{
-                              backgroundColor: coachTone === option.value ? accent : "hsl(var(--card))",
-                              borderColor: coachTone === option.value ? accent : neutralBorder,
-                              color: coachTone === option.value ? "#1f1408" : "hsl(var(--foreground))",
-                            }}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
+                        <TooltipProvider>
+                          {[
+                            { value: "warm" as const, label: "Warm & encouraging", tip: "Supportive and encouraging tone." },
+                            { value: "direct" as const, label: "Concise & direct", tip: "Brief and to-the-point feedback." },
+                          ].map((option) => (
+                            <Tooltip key={option.value}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => setCoachTone(option.value)}
+                                  className="flex-1 px-3 py-2 rounded-lg text-base font-medium border transition-all"
+                                  style={{
+                                    backgroundColor: coachTone === option.value ? accent : "hsl(var(--card))",
+                                    borderColor: coachTone === option.value ? accent : neutralBorder,
+                                    color: coachTone === option.value ? "#1f1408" : "hsl(var(--foreground))",
+                                  }}
+                                >
+                                  {option.label}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[220px] text-sm">
+                                <p>{option.tip}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </TooltipProvider>
                       </div>
                     </div>
 

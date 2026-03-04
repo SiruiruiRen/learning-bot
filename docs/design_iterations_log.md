@@ -16,6 +16,16 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 26: Quick Help Centered Modal + Lighter Tour Overlay
+**Date**: 2026-03-04 | **Status**: ✅ Complete
+**User Need**: Quick Help should be more prominent and in the middle; left transparent overlay should not block/obscure main content text.
+**Key Changes**:
+- Quick Help panel now opens as a **centered modal** (middle of screen) with light backdrop (bg-black/20); click backdrop or X to close. Trigger remains the right-edge tab; panel is 400px max width, 85vh max height, rounded and prominent.
+- Tour backdrop opacity reduced from 0.15 to **0.06** so the left-side main content text stays readable and is not obscured by the transparent overlay.
+- Tour step copy updated to mention that the Quick Help panel opens in the center.
+**Files Modified**: `components/floating-chatbot.tsx`, `components/guided-tour.tsx`
+**Research Impact**: Clearer affordance for help-seeking; less visual interference during onboarding.
+
 ### Iteration 25: Tour UX Fixes — Display, Clicks, Auto-Collapse, Sidebar Clearance
 **Date**: 2026-03-04 | **Status**: ✅ Complete
 **User Need**: Tour content cut off in Quick Help panel; avatar and "Quick Help" text overlapping; left sidebar blocking main content; allow user to click during tour; Quick Help panel should auto-collapse when leaving that step.

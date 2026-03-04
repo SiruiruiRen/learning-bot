@@ -25,7 +25,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     title: "💬 Try the Quick Help chatbot",
-    description: "On the right edge, you'll see the vertical 'Quick Help' tab with the bot icon. I've opened it for you. Click ONE of the practice questions at the bottom of the panel to see how the chatbot responds. When you're done, close the panel (or leave it open) and click Continue below.",
+    description: "The Quick Help panel has opened in the center. Click one of the practice questions below to see how the chatbot responds. You can reopen it anytime from the tab on the right edge. When you're done, close the panel and click Continue.",
     icon: <MessageCircle className="w-5 h-5" />,
     target: "[data-tour='quick-help']",
     placement: "left",
@@ -291,10 +291,10 @@ export default function GuidedTour() {
 
       {visible && (
           <>
-            {/* Clickable overlay to close tour when clicking outside; target elements have higher z so they stay clickable */}
+            {/* Light overlay so main content text stays readable; click outside to close */}
             <div
               className="fixed inset-0 z-[9996] transition-opacity duration-300"
-              style={{ backgroundColor: "rgba(0,0,0,0.15)" }}
+              style={{ backgroundColor: "rgba(0,0,0,0.06)" }}
               onClick={close}
               aria-hidden
             />
