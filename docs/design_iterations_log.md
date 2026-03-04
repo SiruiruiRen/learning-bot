@@ -16,6 +16,16 @@ Track design changes based on user feedback for research documentation and futur
 
 ## Recent Iterations (Last 6 Major Changes)
 
+### Iteration 25: Tour UX Fixes — Display, Clicks, Auto-Collapse, Sidebar Clearance
+**Date**: 2026-03-04 | **Status**: ✅ Complete
+**User Need**: Tour content cut off in Quick Help panel; avatar and "Quick Help" text overlapping; left sidebar blocking main content; allow user to click during tour; Quick Help panel should auto-collapse when leaving that step.
+**Key Changes**:
+- Quick Help panel: message area `px-4`, `overflow-x-hidden`, `min-w-0`, `break-words` so intro text and suggested questions display fully; collapsed tab uses `justify-between` so avatar and vertical "Quick Help" text no longer overlap.
+- Intro page: container `lg:pl-20` so JOURNEY sidebar does not overlap main content on large screens.
+- Tour: target elements keep z-index above backdrop so user can click Quick Help and suggested questions; when leaving Quick Help step (Next/Back) or closing tour, dispatch `solbot-close-quick-help` so panel auto-collapses.
+**Files Modified**: `components/floating-chatbot.tsx`, `components/guided-tour.tsx`, `app/intro/page.tsx`
+**Research Impact**: Clearer onboarding and fewer layout issues improve task completion and help-seeking behavior tracking.
+
 ### Iteration 24: Shunki-Selected Quiz Questions + Gemini-Like Help Bot
 **Date**: 2026-03-03 | **Status**: ✅ Complete
 **User Need**: Add Shunki-selected questions (Carrie mental contrasting, Phase 6 scale items); redesign help-seeking bot to Gemini-like right sidebar with hover-to-expand.

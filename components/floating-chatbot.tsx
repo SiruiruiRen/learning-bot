@@ -328,7 +328,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     setIsOpen(false)
   }
 
-  // Allow guided tour to programmatically open Quick Help so users see a greeting
+  // Allow guided tour to programmatically open/close Quick Help
   useEffect(() => {
     const handleOpenFromTour = () => {
       if (isOpen) return
@@ -337,8 +337,15 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
       setIsOpen(true)
       logChatbotEvent('floating_chatbot_opened', { trigger: 'tour', message_count: messages.length })
     }
+    const handleCloseFromTour = () => {
+      if (isOpen) closeChatbot()
+    }
     window.addEventListener('solbot-open-quick-help', handleOpenFromTour)
-    return () => window.removeEventListener('solbot-open-quick-help', handleOpenFromTour)
+    window.addEventListener('solbot-close-quick-help', handleCloseFromTour)
+    return () => {
+      window.removeEventListener('solbot-open-quick-help', handleOpenFromTour)
+      window.removeEventListener('solbot-close-quick-help', handleCloseFromTour)
+    }
   }, [isOpen, messages.length])
 
   // Collapse panel when mouse leaves the chatbot area (on-demand: open by hover/click, close on leave)
@@ -514,7 +521,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
         </div>
         <div
-          className="h-full w-12 flex flex-col items-center justify-center gap-2 py-4 flex-shrink-0"
+          className="h-full w-12 flex flex-col items-center justify-between py-4 flex-shrink-0"
           style={{
             backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
             borderLeft: `1px solid ${neutralBorder}`,
@@ -583,16 +590,16 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
               </div>
 
               <>
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                  {/* Messages — enough padding so content is not cut off */}
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 min-w-0">
                     {messages.length === 0 && (
-                      <div className="space-y-4">
+                      <div className="space-y-4 min-w-0">
                         {/* Gemini-style greeting */}
-                        <div>
+                        <div className="min-w-0 break-words">
                           <p className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
                             Hello{userName ? `, ${userName}` : ""} — I'm your Quick Help chatbot.
                           </p>
-                          <p className="text-xs mt-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+                          <p className="text-xs mt-1 break-words" style={{ color: "hsl(var(--muted-foreground))" }}>
                             {pageConfig.greeting || HELP_SEEKING_INTRO}
                           </p>
                         </div>
@@ -601,9 +608,9 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                           {pageConfig.questions.map((question, index) => (
                             <button
                               key={index}
-                              className="w-full text-left text-xs px-3 py-2.5 rounded-lg border transition-colors hover:bg-opacity-100"
+                              className="w-full text-left text-xs px-3 py-2.5 rounded-lg border transition-colors hover:bg-opacity-100 break-words min-w-0"
                               style={{ borderColor: neutralBorder, color: accent, backgroundColor: `${accent}0a` }}
-                              onClick={() => handleSuggestedQuestion(question)}
+                              onClick={(e) => { e.stopPropagation(); handleSuggestedQuestion(question) }}
                             >
                               {question}
                             </button>

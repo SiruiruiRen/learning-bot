@@ -115,6 +115,9 @@ export default function GuidedTour() {
 
   const close = () => {
     setVisible(false)
+    try {
+      window.dispatchEvent(new CustomEvent("solbot-close-quick-help"))
+    } catch {}
     // Reset z-indexes on all tour targets
     TOUR_STEPS.forEach(ts => {
       if (ts.target) {
@@ -136,8 +139,19 @@ export default function GuidedTour() {
     } catch {}
   }
 
-  const next = () => { if (step < TOUR_STEPS.length - 1) setStep(s => s + 1); else close() }
-  const prev = () => { if (step > 0) setStep(s => s - 1) }
+  const isQuickHelpStep = (i: number) => TOUR_STEPS[i]?.target === "[data-tour='quick-help']"
+  const next = () => {
+    if (isQuickHelpStep(step)) {
+      try { window.dispatchEvent(new CustomEvent("solbot-close-quick-help")) } catch {}
+    }
+    if (step < TOUR_STEPS.length - 1) setStep(s => s + 1); else close()
+  }
+  const prev = () => {
+    if (isQuickHelpStep(step)) {
+      try { window.dispatchEvent(new CustomEvent("solbot-close-quick-help")) } catch {}
+    }
+    if (step > 0) setStep(s => s - 1)
+  }
 
   if (!visible) return null
 
@@ -277,11 +291,12 @@ export default function GuidedTour() {
 
       {visible && (
           <>
-            {/* Light semi-transparent backdrop — still see the page */}
+            {/* Clickable overlay to close tour when clicking outside; target elements have higher z so they stay clickable */}
             <div
               className="fixed inset-0 z-[9996] transition-opacity duration-300"
               style={{ backgroundColor: "rgba(0,0,0,0.15)" }}
               onClick={close}
+              aria-hidden
             />
 
             {/* Highlight ring around target */}
