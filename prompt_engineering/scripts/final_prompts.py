@@ -235,6 +235,42 @@ Resource_Specificity: [LOW/MEDIUM/HIGH]
 2. **Assessment**: Max 10 words per criterion.
 3. **Guidance**: Only essential instructions. ONE template, no elaboration."""
 
+    # Phase-specific scoring calibration examples
+    if prompt_name == "phase4_mcii":
+        calibration_examples = """
+# SCORING CALIBRATION EXAMPLES (Goal Clarity & Relevance)
+- "Do better in class" → 0/2 (vague, no specific topic)
+- "Master calculus" → 1/2 (course-related but lacks specific focus)
+- "Master integration techniques to solve complex calculus problems confidently" → 2/2 (specific with measurable criteria)
+
+# SCORING CALIBRATION EXAMPLES (Implementation Intention Quality)
+- "Study harder" → 0/2 (vague, no If-Then structure)
+- "If I get distracted, then I will stop" → 1/2 (If-Then but vague action)
+- "If I feel the urge to check my phone, then I will put it in another room and set a 25-min timer" → 2/2 (specific situation + specific action)"""
+    elif prompt_name == "phase5_monitoring_adaptation":
+        calibration_examples = """
+# SCORING CALIBRATION EXAMPLES (Progress Checks)
+- "I'll check my progress occasionally" → 0/2 (no schedule or metrics)
+- "I'll check weekly" → 1/2 (schedule but no specific metrics)
+- "Every Sunday, I'll complete 5 practice problems and track percentage correct" → 2/2 (schedule + metrics)
+
+# SCORING CALIBRATION EXAMPLES (Adaptation Triggers)
+- "I'll adjust if needed" → 0/2 (no clear trigger)
+- "If I'm struggling with problems" → 1/2 (general, not measurable)
+- "If I score below 70% on self-tests for two consecutive weeks" → 2/2 (measurable threshold)"""
+    else:
+        # Phase 2 default - keep existing examples
+        calibration_examples = """
+# SCORING CALIBRATION EXAMPLES (Task Identification)
+- "Learn Python" → 0/2 (too vague, no specific topics)
+- "Learn Python pandas library" → 1/2 (specific library but lacks scope details)
+- "Master Python pandas: data loading, cleaning, aggregation for DS101" → 2/2 (specific with clear scope)
+
+# SCORING CALIBRATION EXAMPLES (Resource Specificity)
+- "Textbook and videos" → 0/2 (completely generic)
+- "Stewart Calculus Ch3, Khan Academy videos" → 1/2 (named but no strategic usage)
+- "Stewart Ch3 for derivative theory, Khan for visual chain rule examples" → 2/2 (named with strategic purposes)"""
+
     return f"""
 {word_limit}
 
@@ -246,23 +282,14 @@ Resource_Specificity: [LOW/MEDIUM/HIGH]
 # CATEGORIZATION GUIDELINES
 Assess each criterion with an integer score and category:
 - Score 0 = LOW (⚠️)
-- Score 1 = MEDIUM (💡) 
+- Score 1 = MEDIUM (💡)
 - Score 2 = HIGH (✅)
 - OVERALL score is the SUM of all individual criteria scores
 - Scaffolding level based on the LOWEST category across all criteria:
   • ANY criterion LOW = Template + example
   • LOWEST criteria MEDIUM (no LOW) = 2-3 targeted suggestions + Template
   • ALL criteria HIGH = 2-3 reflection question
-
-# SCORING CALIBRATION EXAMPLES (Task Identification)
-- "Learn Python" → 0/2 (too vague, no specific topics)
-- "Learn Python pandas library" → 1/2 (specific library but lacks scope details)
-- "Master Python pandas: data loading, cleaning, aggregation for DS101" → 2/2 (specific with clear scope)
-
-# SCORING CALIBRATION EXAMPLES (Resource Specificity)
-- "Textbook and videos" → 0/2 (completely generic)
-- "Stewart Calculus Ch3, Khan Academy videos" → 1/2 (named but no strategic usage)
-- "Stewart Ch3 for derivative theory, Khan for visual chain rule examples" → 2/2 (named with strategic purposes)
+{calibration_examples}
 
 {style_guide}
 
