@@ -500,7 +500,8 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   return (
     <div
       data-tour="quick-help"
-      className="fixed right-0 top-24 bottom-4 z-50 flex"
+      className="fixed top-24 bottom-4 z-50 flex flex-row"
+      style={{ left: "auto", right: 0 }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
