@@ -521,25 +521,25 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
         </div>
         <div
-          className="h-full w-12 flex flex-col items-center justify-between py-4 flex-shrink-0"
+          className="h-full w-14 flex flex-col items-center justify-center gap-3 py-4 flex-shrink-0"
           style={{
             backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
-            borderLeft: `1px solid ${neutralBorder}`,
+            borderLeft: `2px solid ${accent}`,
             borderTop: `1px solid ${neutralBorder}`,
             borderBottom: `1px solid ${neutralBorder}`,
             borderTopLeftRadius: 12,
             borderBottomLeftRadius: 12,
-            boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
+            boxShadow: "-4px 0 12px rgba(0,0,0,0.08)"
           }}
         >
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center animate-pulse"
-            style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}` }}
+            className="w-9 h-9 rounded-full flex items-center justify-center animate-pulse"
+            style={{ backgroundColor: `${accent}25`, border: `2px solid ${accent}` }}
           >
-            <Bot className="h-4 w-4" style={{ color: accent }} />
+            <Bot className="h-5 w-5" style={{ color: accent }} />
           </div>
           <span
-            className="text-xs font-medium whitespace-nowrap"
+            className="text-xs font-semibold whitespace-nowrap"
             style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
           >
             Quick Help

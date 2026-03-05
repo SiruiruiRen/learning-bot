@@ -23,7 +23,9 @@ const FeedbackDisplay = ({
   sessionId,
   currentStyle = "warm"
 }: FeedbackDisplayProps) => {
-  const sections = content.split("## ").filter(s => s.trim() !== "")
+  // Strip standalone horizontal rules (---) that LLM sometimes outputs as section separators
+  const cleanedContent = content.replace(/^-{3,}$/gm, '').replace(/\n{3,}/g, '\n\n')
+  const sections = cleanedContent.split("## ").filter(s => s.trim() !== "")
 
   return (
     <div className="space-y-4 w-full">
