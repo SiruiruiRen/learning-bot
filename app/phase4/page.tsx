@@ -167,7 +167,7 @@ export default function Phase4IntroPage() {
                         </div>
                         <div className="flex items-start gap-2">
                           <div className="mt-0.5" style={{ color: accent }}>📝</div>
-                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>3 Strategic Tasks:</span> Long-term goals, SMART objectives, and contingency plans</p>
+                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>MCII Exercise:</span> Set a goal, visualize success, identify obstacles, and create if-then plans</p>
                         </div>
                         <div className="flex items-start gap-2">
                           <div className="mt-0.5" style={{ color: accent }}>🤖</div>
