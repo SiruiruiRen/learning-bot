@@ -25,7 +25,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     title: "💬 Try the Quick Help chatbot",
-    description: "The Quick Help panel has opened in the center. Click one of the practice questions below to see how the chatbot responds. You can reopen it anytime from the tab on the right edge. When you're done, close the panel and click Continue.",
+    description: "On the right edge, hover or click the 'Quick Help' tab to open it. Click one of the practice questions to see how the chatbot responds. When you're done, close the panel and click Continue.",
     icon: <MessageCircle className="w-5 h-5" />,
     target: "[data-tour='quick-help']",
     placement: "left",

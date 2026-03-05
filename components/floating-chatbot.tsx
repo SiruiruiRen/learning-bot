@@ -494,94 +494,84 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const neutralSurface = "hsl(var(--card))"
   const neutralBorder = "hsl(var(--border))"
 
-  // Centered modal: Quick Help opens in the middle of the screen, more prominent
-  const PANEL_WIDTH = 400
-  const PANEL_MAX_H = "85vh"
+  // Right-edge sidebar: panel expands from the right; collapsed tab hides when open so it doesn't block panel text
+  const PANEL_WIDTH = 360
 
   return (
-    <>
-      {/* Trigger: right-edge tab, hover or click to open */}
-      <div
-        data-tour="quick-help"
-        className="fixed right-0 top-24 bottom-4 z-50 flex items-center"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+    <div
+      data-tour="quick-help"
+      className="fixed right-0 top-24 bottom-4 z-50 flex"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Collapsed tab — hides when open so left side never blocks bot text */}
+      <motion.div
+        animate={{ width: isOpen ? 0 : 64 }}
+        transition={{ duration: 0.2 }}
+        className="flex-shrink-0 h-full overflow-hidden cursor-pointer flex items-center"
+        style={{ minWidth: isOpen ? 0 : 64 }}
+        onClick={() => !isOpen && openChatbot('click')}
       >
-        <motion.div
-          animate={{ width: isOpen ? 0 : 64 }}
-          transition={{ duration: 0.2 }}
-          className="flex-shrink-0 h-full overflow-visible cursor-pointer flex items-center relative"
-          style={{ minWidth: isOpen ? 0 : 64 }}
-          onClick={() => !isOpen && openChatbot('click')}
+        <div
+          className="absolute flex items-center justify-center w-10 h-full left-0 -translate-x-full pointer-events-none"
+          style={{ color: accent }}
+          title="Hover or click to open Quick Help"
+        >
+          <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
+        </div>
+        <div
+          className="h-full w-12 flex flex-col items-center justify-between py-4 flex-shrink-0"
+          style={{
+            backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
+            borderLeft: `1px solid ${neutralBorder}`,
+            borderTop: `1px solid ${neutralBorder}`,
+            borderBottom: `1px solid ${neutralBorder}`,
+            borderTopLeftRadius: 12,
+            borderBottomLeftRadius: 12,
+            boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
+          }}
         >
           <div
-            className="absolute flex items-center justify-center w-10 h-full left-0 -translate-x-full"
-            style={{ color: accent }}
-            title="Hover or click to open Quick Help"
+            className="w-7 h-7 rounded-full flex items-center justify-center animate-pulse"
+            style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}` }}
           >
-            <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
+            <Bot className="h-4 w-4" style={{ color: accent }} />
           </div>
-          <div
-            className="h-full w-12 flex flex-col items-center justify-between py-4 flex-shrink-0"
-            style={{
-              backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
-              borderLeft: `1px solid ${neutralBorder}`,
-              borderTop: `1px solid ${neutralBorder}`,
-              borderBottom: `1px solid ${neutralBorder}`,
-              borderTopLeftRadius: 12,
-              borderBottomLeftRadius: 12,
-              boxShadow: "-4px 0 12px rgba(0,0,0,0.06)"
-            }}
+          <span
+            className="text-[10px] font-medium whitespace-nowrap"
+            style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
           >
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center animate-pulse"
-              style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}` }}
-            >
-              <Bot className="h-4 w-4" style={{ color: accent }} />
-            </div>
-            <span
-              className="text-[10px] font-medium whitespace-nowrap"
-              style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
-            >
-              Quick Help
-            </span>
-          </div>
-        </motion.div>
-      </div>
+            Quick Help
+          </span>
+        </div>
+      </motion.div>
 
-      {/* Chat panel — centered modal in the middle of the screen */}
+      {/* Chat panel — right-edge sidebar, full opacity so bot text is never obscured */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          <motion.div
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: PANEL_WIDTH }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex-shrink-0 h-full overflow-hidden flex flex-col"
+            onMouseEnter={handlePanelMouseEnter}
+            onMouseLeave={handlePanelMouseLeave}
+          >
+            <div
+              className="h-full flex flex-col overflow-hidden"
+              style={{
+                backgroundColor: neutralSurface,
+                borderLeft: `1px solid ${neutralBorder}`,
+                borderTop: `1px solid ${neutralBorder}`,
+                borderBottom: `1px solid ${neutralBorder}`,
+                borderTopLeftRadius: 12,
+                borderBottomLeftRadius: 12,
+                boxShadow: "-8px 0 24px rgba(0,0,0,0.08)"
+              }}
             >
               <div
-                className="absolute inset-0 bg-black/20"
-                aria-hidden
-                onClick={closeChatbot}
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.2 }}
-                className="relative w-full max-w-[min(100%,400px)] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
-                style={{
-                  maxHeight: PANEL_MAX_H,
-                  backgroundColor: neutralSurface,
-                  border: `1px solid ${neutralBorder}`,
-                  boxShadow: "0 24px 48px rgba(0,0,0,0.18)"
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-              {/* Header — Gemini-like compact */}
-              <div
-                className="flex items-center justify-between px-4 py-3 border-b"
+                className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
                 style={{ borderColor: neutralBorder }}
               >
                 <div className="flex items-center gap-2">
@@ -598,7 +588,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
               </div>
 
               <>
-                  {/* Messages — enough padding so content is not cut off */}
+                  {/* Messages — padding so left never clips bot text */}
                   <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 min-w-0">
                     {messages.length === 0 && (
                       <div className="space-y-4 min-w-0">
@@ -710,11 +700,10 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                     </div>
                   </div>
               </>
-              </motion.div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   )
 }
