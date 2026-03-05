@@ -500,7 +500,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   return (
     <div
       data-tour="quick-help"
-      className="fixed top-24 bottom-4 z-50 flex flex-row"
+      className="fixed top-16 bottom-4 z-50 flex flex-row"
       style={{ left: "auto", right: 0 }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -539,7 +539,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             <Bot className="h-4 w-4" style={{ color: accent }} />
           </div>
           <span
-            className="text-[10px] font-medium whitespace-nowrap"
+            className="text-xs font-medium whitespace-nowrap"
             style={{ color: accent, transform: "rotate(-90deg)", letterSpacing: "0.5px" }}
           >
             Quick Help
@@ -595,10 +595,10 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                       <div className="space-y-4 min-w-0">
                         {/* Gemini-style greeting */}
                         <div className="min-w-0 break-words">
-                          <p className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                          <p className="text-base font-medium" style={{ color: "hsl(var(--foreground))" }}>
                             Hello{userName ? `, ${userName}` : ""} — I'm your Quick Help chatbot.
                           </p>
-                          <p className="text-xs mt-1 break-words" style={{ color: "hsl(var(--muted-foreground))" }}>
+                          <p className="text-sm mt-1 break-words" style={{ color: "hsl(var(--muted-foreground))" }}>
                             {pageConfig.greeting || HELP_SEEKING_INTRO}
                           </p>
                         </div>
@@ -607,7 +607,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                           {pageConfig.questions.map((question, index) => (
                             <button
                               key={index}
-                              className="w-full text-left text-xs px-3 py-2.5 rounded-lg border transition-colors hover:bg-opacity-100 break-words min-w-0"
+                              className="w-full text-left text-sm px-3 py-2.5 rounded-lg border transition-colors hover:bg-opacity-100 break-words min-w-0"
                               style={{ borderColor: neutralBorder, color: accent, backgroundColor: `${accent}0a` }}
                               onClick={(e) => { e.stopPropagation(); handleSuggestedQuestion(question) }}
                             >
@@ -641,13 +641,13 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                     {/* Follow-up suggested questions after AI response */}
                     {followUpQuestions.length > 0 && !isLoading && messages.length > 0 && (
                       <div className="space-y-1.5 pl-8">
-                        <div className="text-[10px] font-medium mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>
+                        <div className="text-xs font-medium mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>
                           You might also want to ask:
                         </div>
                         {followUpQuestions.map((q, idx) => (
                           <button
                             key={idx}
-                            className="w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors hover:border-current"
+                            className="w-full text-left text-sm px-3 py-2 rounded-lg border transition-colors hover:border-current"
                             style={{ borderColor: neutralBorder, color: accent, backgroundColor: `${accent}08` }}
                             onClick={() => handleSuggestedQuestion(q)}
                           >

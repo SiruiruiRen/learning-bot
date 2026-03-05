@@ -52,6 +52,7 @@ type Message = {
   sender: "bot" | "user"
   content: MessageContent
   type: "question" | "response" | "confirmation" | "evaluation";
+  evaluation?: any;
 }
 
 export default function GuidedLearningObjective({
@@ -193,7 +194,7 @@ export default function GuidedLearningObjective({
         throw new Error("Invalid response format from server")
       }
 
-      const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation" };
+      const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation", evaluation: data.data.evaluation };
       setMessages(prev => [...prev, botFeedback]);
 
       // Enable continue button
