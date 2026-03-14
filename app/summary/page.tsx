@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
   CheckCircle,
   Download,
@@ -22,7 +21,6 @@ import {
   ArrowRight,
   Home,
   Medal,
-  Zap,
   RotateCw,
   MessageSquare,
   ChevronRight,
@@ -412,34 +410,9 @@ export default function SummaryPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {/* Personalized Insights Section */}
-              {insights && (insights.keywords?.some(k => k?.trim()) || insights.learningStrategies?.some(s => s?.trim()) || insights.goals?.some(g => g?.trim()) || insights.strengths?.some(s => s?.trim()) || insights.recommendations?.some(r => r?.trim())) && (
+              {/* Personalized Insights Section - Learning Strategies & Goals only */}
+              {insights && (insights.learningStrategies?.some(s => s?.trim()) || insights.goals?.some(g => g?.trim())) && (
                 <div className="mb-8 space-y-6">
-                  {/* Key Learning Topics */}
-                  {insights.keywords && insights.keywords.filter(k => k?.trim()).length > 0 && (
-                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
-                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
-                        <Target className="h-5 w-5" />
-                        Key Learning Topics
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {insights.keywords.filter(k => k?.trim()).map((keyword, idx) => (
-                          <Badge 
-                            key={idx}
-                            className="px-3 py-1"
-                            style={{ 
-                              backgroundColor: "hsl(var(--primary) / 0.15)",
-                              color: foreground,
-                              borderColor: neutralBorder
-                            }}
-                          >
-                            {keyword}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Learning Strategies */}
                   {insights.learningStrategies && insights.learningStrategies.filter(s => s?.trim()).length > 0 && (
                     <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
@@ -475,48 +448,6 @@ export default function SummaryPage() {
                       </ul>
                     </div>
                   )}
-
-                  {/* Strengths */}
-                  {insights.strengths && insights.strengths.filter(s => s?.trim()).length > 0 && (
-                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
-                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
-                        <Medal className="h-5 w-5" />
-                        Your Strengths
-                      </h4>
-                      <ul className="space-y-2">
-                        {insights.strengths.filter(s => s?.trim()).map((strength, idx) => (
-                          <li key={idx} className="flex items-start gap-2" style={{ color: foreground }}>
-                            <span style={{ color: accent }}>✓</span>
-                            <span>{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Recommendations */}
-                  {insights.recommendations && insights.recommendations.filter(r => r?.trim()).length > 0 && (
-                    <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
-                      <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
-                        <Zap className="h-5 w-5" />
-                        Personalized Recommendations
-                      </h4>
-                      <ul className="space-y-3">
-                        {insights.recommendations.filter(r => r?.trim()).map((rec, idx) => (
-                          <li key={idx} className="flex items-start gap-3 p-3 rounded" style={{ backgroundColor: "hsl(var(--card))" }}>
-                            <span className="font-bold" style={{ color: accent }}>{idx + 1}.</span>
-                            <span style={{ color: foreground }}>{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!insights && summaryData.phasesCompleted > 0 && (
-                <div className="mb-8 p-6 rounded-lg border text-center" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
-                  <p style={{ color: mutedText }}>Loading your personalized insights...</p>
                 </div>
               )}
               
