@@ -10,6 +10,8 @@ import MarkdownRenderer from "@/components/markdown-renderer"
 import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
 
+const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
+
 interface GuidedContingencyPlanProps {
   userId: string
   phase: string
@@ -152,7 +154,7 @@ export default function GuidedContingencyPlan({
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${DIRECT_BACKEND_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

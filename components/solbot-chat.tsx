@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import ChatMessageParser from "@/components/chat-message-parser"
 
+const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
+
 const phasePrompts: { [key: string]: string[] } = {
   "phase1": [
     "Understanding self-regulation means knowing when and how to adjust your learning approach...",
@@ -157,7 +159,7 @@ export default function SolBotChat({
     }
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(`${DIRECT_BACKEND_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
