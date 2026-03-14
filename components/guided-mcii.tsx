@@ -400,13 +400,13 @@ export default function GuidedMCII({
     }
   };
   
-   const accent = "#d8b26f"
+   const accent = "var(--accent-text)"
   const neutralSurface = "hsl(var(--card) / 0.96)"
-  const neutralBorder = "hsl(var(--border) / 0.8)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
   const primaryButtonStyle = {
-    backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-    color: "#1f1408",
+    backgroundImage: "linear-gradient(135deg, #b8892e, #96722d)",
+    color: "#fff",
     border: `1px solid ${neutralBorder}`,
     boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
   }
@@ -474,7 +474,7 @@ export default function GuidedMCII({
           {showRetryOption && (
             <div className="flex justify-center mt-2">
               <Button onClick={handleRetryFeedback} variant="outline" style={{ borderColor: accent, color: accent }}>
-                🔄 Try Again for Feedback
+                Try Again for Feedback
               </Button>
             </div>
           )}

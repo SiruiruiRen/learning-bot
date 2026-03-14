@@ -59,7 +59,7 @@ const cleanScoresFromMessage = (message: string): string => {
 
 // Add this component after any existing imports but before the main component
 const SelfTestingGuide = () => {
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const surface = "hsl(var(--card) / 0.9)"
   const border = "hsl(var(--border) / 0.75)"
   const pill = "hsl(var(--muted) / 0.4)"
@@ -72,7 +72,7 @@ const SelfTestingGuide = () => {
       >
         <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
           <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pill }}>
-            <span style={{ color: accent }}>📝</span>
+            <BookMarked className="h-4 w-4" style={{ color: accent }} />
           </div>
           What is Self-Testing (Retrieval Practice)?
         </h3>
@@ -110,13 +110,13 @@ const SelfTestingGuide = () => {
         <h4 className="text-base font-semibold mb-2" style={{ color: accent }}>Why Self-Testing Works Better Than Rereading:</h4>
         <div className="space-y-2 mb-3">
           <div className="flex items-start gap-2">
-            <span className="text-red-500">❌</span>
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-red-500" />
             <p className="text-foreground opacity-90" style={{ color: mutedText }}>
               <strong>Rereading</strong> creates an illusion of mastery - you feel familiar with the material, but this familiarity fades quickly. It's better for short-term cramming but ineffective for long-term learning.
             </p>
           </div>
           <div className="flex items-start gap-2">
-            <span className="text-green-500">✅</span>
+            <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-500" />
             <p className="text-foreground opacity-90" style={{ color: mutedText }}>
               <strong>Self-testing</strong> feels harder initially, but actively retrieving information creates stronger, longer-lasting memories. The struggle you feel during testing actually strengthens your memory.
             </p>
@@ -144,7 +144,7 @@ const SelfTestingGuide = () => {
 };
 
 const SelfExplanationTips = () => {
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const surface = "hsl(var(--card) / 0.9)"
   const border = "hsl(var(--border) / 0.75)"
   const pill = "hsl(var(--muted) / 0.4)"
@@ -157,7 +157,7 @@ const SelfExplanationTips = () => {
       >
         <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
           <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pill }}>
-            <span style={{ color: accent }}>💭</span>
+            <HelpCircle className="h-4 w-4" style={{ color: accent }} />
           </div>
           What is Self-Explanation?
         </h3>
@@ -205,7 +205,7 @@ const SelfExplanationTips = () => {
 };
 
 const SpacingEffectGuide = () => {
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const surface = "hsl(var(--card) / 0.9)"
   const border = "hsl(var(--border) / 0.75)"
   const pill = "hsl(var(--muted) / 0.4)"
@@ -217,7 +217,7 @@ const SpacingEffectGuide = () => {
     >
       <h3 className="text-lg font-medium mb-2 flex items-center gap-2" style={{ color: accent }}>
         <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pill }}>
-          <span style={{ color: accent }}>⏱️</span>
+          <ArrowRight className="h-4 w-4" style={{ color: accent }} />
         </div>
         The Power of Spacing Effect
       </h3>
@@ -228,14 +228,14 @@ const SpacingEffectGuide = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="p-2 rounded-md border" style={{ backgroundColor: surface, borderColor: border }}>
             <h4 className="font-medium mb-1 flex items-center gap-1" style={{ color: accent }}>
-              <span>❌</span> Cramming
+              <AlertCircle className="h-4 w-4 text-red-500" /> Cramming
             </h4>
             <p className="text-foreground opacity-75 text-sm" style={{ color: mutedText }}>Studying all content in a single marathon session</p>
             <p className="text-foreground opacity-75 text-sm" style={{ color: mutedText }}>Result: Short-term retention only</p>
           </div>
           <div className="p-2 rounded-md border" style={{ backgroundColor: surface, borderColor: border }}>
             <h4 className="font-medium mb-1 flex items-center gap-1" style={{ color: accent }}>
-              <span>✅</span> Spacing
+              <CheckCircle className="h-4 w-4 text-green-500" /> Spacing
             </h4>
             <p className="text-foreground opacity-75 text-sm" style={{ color: mutedText }}>Studying the same content across multiple sessions</p>
             <p className="text-foreground opacity-75 text-sm" style={{ color: mutedText }}>Result: Long-term retention and deeper understanding</p>
@@ -284,7 +284,7 @@ const KnowledgeCheckQuestion = ({
   const [submitted, setSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const surface = "hsl(var(--card) / 0.9)"
   const border = "hsl(var(--border) / 0.75)"
   const pill = "hsl(var(--muted) / 0.4)"
@@ -416,7 +416,7 @@ const KnowledgeCheckQuestion = ({
                 onClick={handleSubmit}
                 disabled={!selectedOption}
                 className="shadow-md disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, #f5c09a, #ffd2b4)", color: "#1a1412" }}
+                style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
               >
                 Submit Answer
               </Button>
@@ -438,7 +438,7 @@ const KnowledgeCheckQuestion = ({
               <Button
                 onClick={onNextQuestion}
                 className="flex items-center gap-2 shadow-md"
-                style={{ background: "linear-gradient(135deg, #f5c09a, #ffd2b4)", color: "#1a1412" }}
+                style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
               >
                 Next Question <ArrowRight className="h-4 w-4" />
               </Button>
@@ -593,7 +593,7 @@ export default function Phase3Content() {
     title: "Science of Learning: Key Strategies",
     description:
       "This comprehensive video covers three powerful learning techniques: retrieval practice, spacing effect, and self-explanation. These evidence-based strategies will transform how you study and retain information.",
-    icon: <BookMarked className="h-10 w-10 text-purple-400" />,
+    icon: <BookMarked className="h-10 w-10" style={{ color: "var(--accent-text)" }} />,
   }
 
   const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
@@ -619,12 +619,12 @@ export default function Phase3Content() {
     router.push("/phase4")
   }
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
 
   // Theme-aware neutrals so light/dark share the same structure
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
-  const neutralBorder = "hsl(var(--border) / 0.75)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const headerSurface = "hsl(var(--card) / 0.95)"
   const pillSurface = "hsl(var(--muted) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
@@ -660,7 +660,7 @@ export default function Phase3Content() {
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
             <BookMarked className="h-6 w-6 mr-2" style={{ color: accent }} />
-            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text">
+            <h2 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
               Phase 3: Effective Learning Strategies
             </h2>
           </div>
@@ -677,8 +677,8 @@ export default function Phase3Content() {
             <Card className="backdrop-blur-md border" style={{ borderColor: neutralBorder, backgroundColor: neutralSurface }}>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                <BookMarked className="h-8 w-8" style={{ color: "#d8b26f" }} />
-                <span className="bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text text-transparent">
+                <BookMarked className="h-8 w-8" style={{ color: "var(--accent-text)" }} />
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                   {cards[currentCardIndex].title}
                 </span>
               </CardTitle>
@@ -706,14 +706,14 @@ export default function Phase3Content() {
                         </div>
                         <span className="text-xs font-medium">Learn Strategies</span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                           <Video className="h-6 w-6" style={{ color: accent }} />
                         </div>
                         <span className="text-xs font-medium">Watch Video</span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                           <FileQuestion className="h-6 w-6" style={{ color: accent }} />
@@ -741,15 +741,15 @@ export default function Phase3Content() {
                     <h3 className="text-lg font-medium mb-2" style={{ color: accent }}>In This Phase You'll Learn:</h3>
                     <div className="space-y-2">
                       <div className="flex items-start gap-2">
-                        <div className="mt-0.5" style={{ color: accent }}>📊</div>
+                        <BookOpen className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
                         <p className="text-muted-foreground">How to use evidence-based learning strategies</p>
                       </div>
                       <div className="flex items-start gap-2">
-                        <div className="mt-0.5" style={{ color: accent }}>🔄</div>
+                        <ArrowRight className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
                         <p className="text-muted-foreground">The power of spacing effect and distributed practice</p>
                       </div>
                       <div className="flex items-start gap-2">
-                        <div className="mt-0.5" style={{ color: accent }}>🧠</div>
+                        <Brain className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
                         <p className="text-muted-foreground">Self-explanation techniques for deeper understanding</p>
                       </div>
                     </div>
@@ -832,7 +832,7 @@ export default function Phase3Content() {
                   style={{
                     background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
                     boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                    color: "#1f1408",
+                    color: "#fff",
                   }}
                   onClick={nextCard}
                   disabled={

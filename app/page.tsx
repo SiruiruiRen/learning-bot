@@ -6,10 +6,10 @@ export default function Home() {
       <h1 className="text-4xl font-bold mb-4">SoL2LBot</h1>
       <p className="text-xl mb-8">Self-regulated Learning Bot</p>
       <div className="grid gap-4">
-        <a href="/intro" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        <a href="/intro" className="px-6 py-2.5 rounded-lg text-white font-medium hover:opacity-90 transition-opacity text-center" style={{ background: "linear-gradient(135deg, #b8892e, #96722d)" }}>
           Get Started
         </a>
-        <a href="/api/minimal" className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+        <a href="/api/minimal" className="px-6 py-2.5 rounded-lg border font-medium hover:opacity-80 transition-opacity text-center text-foreground" style={{ borderColor: "hsl(var(--border))" }}>
           Check API Status
         </a>
       </div>

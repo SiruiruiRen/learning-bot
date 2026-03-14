@@ -19,10 +19,11 @@ export default function HomeButton() {
     >
       <Button
         onClick={() => router.push("/landing")}
-        className="rounded-full w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 shadow-lg shadow-indigo-500/30 p-0"
+        className="rounded-full w-12 h-12 shadow-lg p-0 text-white"
+        style={{ background: "linear-gradient(135deg, #d8b26f, #b8892e)", boxShadow: "0 4px 14px rgba(184,137,46,0.3)" }}
         aria-label="Return to home page"
       >
-        <Home className="h-5 w-5 text-white" />
+        <Home className="h-5 w-5" />
       </Button>
     </motion.div>
   )

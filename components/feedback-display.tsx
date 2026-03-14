@@ -35,7 +35,7 @@ const FeedbackDisplay = ({
         const title = firstNewlineIndex !== -1 ? section.substring(0, firstNewlineIndex).trim() : section.trim();
         const body = firstNewlineIndex !== -1 ? section.substring(firstNewlineIndex + 1).trim() : "";
 
-        const accent = "#d8b26f"
+        const accent = "var(--accent-text)"
         const neutralBorder = "hsl(var(--border))"
 
         return (

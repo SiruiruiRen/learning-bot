@@ -17,7 +17,7 @@ export function VerticalNav({
   onNext,
   isNextDisabled = false,
 }: VerticalNavProps) {
-  const neutralSurface = "hsl(var(--card) / 0.9)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
   const neutralBorder = "hsl(var(--border))"
   const neutralMuted = "hsl(var(--muted-foreground))"
 

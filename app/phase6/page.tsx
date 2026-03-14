@@ -23,14 +23,15 @@ export default function Phase6Page() {
   const GRADE_OPTIONS = ["F", "D", "C", "B", "A"]
   const PREP_OPTIONS = ["Very prepared", "Mostly", "Somewhat", "Not very", "Not at all"]
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
+  const accentHex = "#7a5a1e"  // for opacity patterns only
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
   const neutralSurface = "hsl(var(--card) / 0.96)"
-  const neutralBorder = "hsl(var(--border) / 0.8)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
   const primaryButtonStyle = {
-    backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-    color: "#1f1408",
+    backgroundImage: "linear-gradient(135deg, #b8892e, #96722d)",
+    color: "#fff",
     border: `1px solid ${neutralBorder}`,
     boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
   }
@@ -208,7 +209,7 @@ export default function Phase6Page() {
                               className="px-3 py-1.5 text-sm rounded-lg border transition-colors"
                               style={{
                                 borderColor: aimingGrade === g ? accent : neutralBorder,
-                                backgroundColor: aimingGrade === g ? `${accent}20` : "transparent",
+                                backgroundColor: aimingGrade === g ? `${accentHex}20` : "transparent",
                                 color: aimingGrade === g ? accent : "hsl(var(--foreground))"
                               }}
                             >
@@ -228,7 +229,7 @@ export default function Phase6Page() {
                               className="px-3 py-1.5 text-sm rounded-lg border transition-colors"
                               style={{
                                 borderColor: expectedGrade === g ? accent : neutralBorder,
-                                backgroundColor: expectedGrade === g ? `${accent}20` : "transparent",
+                                backgroundColor: expectedGrade === g ? `${accentHex}20` : "transparent",
                                 color: expectedGrade === g ? accent : "hsl(var(--foreground))"
                               }}
                             >
@@ -248,7 +249,7 @@ export default function Phase6Page() {
                               className="px-2.5 py-1.5 text-xs rounded-lg border transition-colors"
                               style={{
                                 borderColor: preparationLevel === p ? accent : neutralBorder,
-                                backgroundColor: preparationLevel === p ? `${accent}20` : "transparent",
+                                backgroundColor: preparationLevel === p ? `${accentHex}20` : "transparent",
                                 color: preparationLevel === p ? accent : "hsl(var(--foreground))"
                               }}
                             >

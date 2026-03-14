@@ -32,9 +32,9 @@ export default function Phase4TasksPage() {
 
   const allTasksCompleted = completedTasks.length === tasks.length;
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
   const neutralBorder = "hsl(var(--border) / 0.75)"
 
   return (
@@ -79,7 +79,7 @@ export default function Phase4TasksPage() {
                         <span>Completed</span>
                       </div>
                     ) : isNext ? (
-                      <Button onClick={() => router.push(task.href)} className="shadow-md" style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}>
+                      <Button onClick={() => router.push(task.href)} className="shadow-md" style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}>
                         Start MCII Exercise
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
@@ -92,7 +92,7 @@ export default function Phase4TasksPage() {
             
           {allTasksCompleted && (
              <div className="mt-8">
-                <Button onClick={() => router.push('/phase5')} className="text-lg px-8 py-6 shadow-md" style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}>
+                <Button onClick={() => router.push('/phase5')} className="text-lg px-8 py-6 shadow-md" style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}>
                     Proceed to Phase 5
                     <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>

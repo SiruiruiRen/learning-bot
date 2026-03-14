@@ -60,10 +60,10 @@ export default function Phase4IntroPage() {
     }
   };
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
-  const neutralBorder = "hsl(var(--border) / 0.75)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const headerSurface = "hsl(var(--card) / 0.95)"
   const pillSurface = "hsl(var(--muted) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
@@ -86,7 +86,7 @@ export default function Phase4IntroPage() {
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
             <Target className="h-6 w-6 mr-2" style={{ color: accent }} />
-            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text">
+            <h2 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
               Phase 4: Strategic Learning Plan
             </h2>
           </div>
@@ -104,7 +104,7 @@ export default function Phase4IntroPage() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
                 <Target className="h-8 w-8" style={{ color: accent }} />
-                <span className="bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text text-transparent">
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                   Introduction to Strategic Planning
                 </span>
               </CardTitle>
@@ -132,14 +132,14 @@ export default function Phase4IntroPage() {
                           </div>
                           <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
                         </div>
-                        <ChevronRightIcon className="h-5 w-5 text-slate-600" />
+                        <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                         <div className="flex flex-col items-center text-center">
                           <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                             <Edit className="h-6 w-6" style={{ color: accent }} />
                           </div>
                           <span className="text-xs font-medium" style={{ color: accent }}>Build Plan</span>
                         </div>
-                        <ChevronRightIcon className="h-5 w-5 text-slate-600" />
+                        <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                         <div className="flex flex-col items-center text-center">
                           <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                             <Bot className="h-6 w-6" style={{ color: accent }} />
@@ -159,18 +159,18 @@ export default function Phase4IntroPage() {
                         borderColor: neutralBorder,
                       }}
                     >
-                      <h3 className="text-lg font-medium mb-3" style={{ color: accent }}>📋 What's in This Phase:</h3>
+                      <h3 className="text-lg font-medium mb-3" style={{ color: accent }}>What's in This Phase:</h3>
                       <div className="grid grid-cols-1 gap-3 text-sm">
                         <div className="flex items-start gap-2">
-                          <div className="mt-0.5" style={{ color: accent }}>🎥</div>
+                          <Video className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
                           <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>Video:</span> Learn the MCII technique (Mental Contrasting with Implementation Intentions)</p>
                         </div>
                         <div className="flex items-start gap-2">
-                          <div className="mt-0.5" style={{ color: accent }}>📝</div>
+                          <Edit className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
                           <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>MCII Exercise:</span> Set a goal, visualize success, identify obstacles, and create if-then plans</p>
                         </div>
                         <div className="flex items-start gap-2">
-                          <div className="mt-0.5" style={{ color: accent }}>🤖</div>
+                          <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
                           <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>AI Coaching:</span> Personalized feedback to refine each task</p>
                         </div>
                       </div>
@@ -222,9 +222,9 @@ export default function Phase4IntroPage() {
                   <Button 
                     className="font-semibold px-8 py-3 rounded-lg text-lg"
                     style={{
-                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                      background: "linear-gradient(135deg, #b8892e, #96722d)",
                       boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                      color: "#1f1408",
+                      color: "#fff",
                     }}
                     onClick={handleNext}
                   >
@@ -235,9 +235,9 @@ export default function Phase4IntroPage() {
                   <Button 
                     className="font-semibold px-8 py-3 rounded-lg text-lg"
                     style={{
-                      background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+                      background: "linear-gradient(135deg, #b8892e, #96722d)",
                       boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                      color: "#1f1408",
+                      color: "#fff",
                     }}
                     onClick={handleNext}
                     disabled={!videoCompleted || !postTestCompleted}

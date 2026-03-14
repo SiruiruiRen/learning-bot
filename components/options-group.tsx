@@ -52,11 +52,12 @@ export default function OptionsGroup({
           <button 
             onClick={handleSubmit}
             disabled={selectedOptions.length === 0}
-            className={`px-4 py-2 rounded-md text-white transition-colors ${
-              selectedOptions.length > 0 
-                ? 'bg-green-600 hover:bg-green-700' 
-                : 'bg-gray-400 cursor-not-allowed'
+            className={`px-4 py-2 rounded-md text-white transition-opacity ${
+              selectedOptions.length > 0
+                ? 'hover:opacity-90'
+                : 'opacity-50 cursor-not-allowed'
             }`}
+            style={{ background: selectedOptions.length > 0 ? "linear-gradient(135deg, #b8892e, #96722d)" : "hsl(35 20% 70%)" }}
           >
             Submit ({selectedOptions.length} selected)
           </button>

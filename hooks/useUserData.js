@@ -70,7 +70,7 @@ export function useUserData() {
       
       return data;
     } catch (err) {
-      console.error('Error saving user data:', err);
+      console.warn('Error saving user data:', err);
       setError(err);
       return { success: false, error: err };
     } finally {
@@ -115,7 +115,7 @@ export function useUserData() {
       
       return await response.json();
     } catch (err) {
-      console.error('Error getting user data:', err);
+      console.warn('Error getting user data:', err);
       setError(err);
       return [];
     } finally {

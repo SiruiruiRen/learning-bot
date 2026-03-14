@@ -86,7 +86,7 @@ export default function NavigationTracker() {
 
           if (!response.ok) {
             const errorText = await response.text()
-            console.error("Failed to log page view:", response.status, errorText)
+            console.warn("Failed to log page view:", response.status)
           }
         }
 
@@ -94,7 +94,7 @@ export default function NavigationTracker() {
         previousPathname.current = pathname
         pageStartTime.current = currentTime
       } catch (error) {
-        console.error("Failed to log page view:", error)
+        console.warn("Failed to log page view:", error)
       }
     }
 

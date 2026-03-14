@@ -121,8 +121,8 @@ export default function PostTaskAssessment({
     })
   }
   
-  const accent = "#d8b26f"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
+  const accent = "var(--accent-text)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
   const neutralBorder = "hsl(var(--border) / 0.75)"
   const foreground = "hsl(var(--foreground))"
   const mutedText = "hsl(var(--muted-foreground))"
@@ -179,7 +179,7 @@ export default function PostTaskAssessment({
           </p>
           {currentQuestion.hint && (
             <p className="text-sm italic" style={{ color: mutedText }}>
-              💡 {currentQuestion.hint}
+              Hint: {currentQuestion.hint}
             </p>
           )}
         </div>
@@ -272,8 +272,8 @@ export default function PostTaskAssessment({
             onClick={handleNext}
             disabled={currentQuestion.required && !answers[currentQuestion.id]?.trim()}
             style={{
-              background: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-              color: "#1f1408",
+              background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
+              color: "#fff",
               opacity: (currentQuestion.required && !answers[currentQuestion.id]?.trim()) ? 0.5 : 1
             }}
             className="flex items-center gap-2"

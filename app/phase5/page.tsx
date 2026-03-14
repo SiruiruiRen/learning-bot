@@ -100,10 +100,10 @@ export default function Phase5Content() {
     router.push("/phase5/chat")
   }
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
-  const neutralBorder = "hsl(var(--border) / 0.75)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const headerSurface = "hsl(var(--card) / 0.95)"
   const pillSurface = "hsl(var(--muted) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
@@ -126,7 +126,7 @@ export default function Phase5Content() {
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
             <Brain className="h-6 w-6 mr-2" style={{ color: accent }} />
-            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text">
+            <h2 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
               Phase 5: Monitor & Adaptation
             </h2>
           </div>
@@ -152,7 +152,7 @@ export default function Phase5Content() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
                 <Brain className="h-8 w-8" style={{ color: accent }} />
-                <span className="bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text text-transparent">
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                   {cards[currentCardIndex].title}
                 </span>
               </CardTitle>
@@ -177,14 +177,14 @@ export default function Phase5Content() {
                         </div>
                         <span className="text-xs font-medium" style={{ color: accent }}>Pre-Assessment</span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                           <Video className="h-6 w-6" style={{ color: accent }} />
                         </div>
                         <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                           <MessageCircle className="h-6 w-6" style={{ color: accent }} />
@@ -255,7 +255,7 @@ export default function Phase5Content() {
                 {currentCardIndex < cards.length - 1 ? (
                   <Button 
                     className="shadow-md"
-                    style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
+                    style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                     onClick={nextCard}
                     disabled={(currentCardIndex === 1 && !videoCompleted) || (currentCardIndex === 2 && !postTestCompleted)}
                   >
@@ -264,7 +264,7 @@ export default function Phase5Content() {
                 ) : currentCardIndex === 2 && postTestCompleted ? (
                   <Button 
                     className="px-6 py-2 rounded-lg shadow-md"
-                    style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
+                    style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                     onClick={handleComplete}
                   >
                     Continue to Chat <ChevronRight className="h-4 w-4 ml-2" />
@@ -272,7 +272,7 @@ export default function Phase5Content() {
                 ) : currentCardIndex === 2 && !postTestCompleted ? (
                   <Button 
                     className="px-6 py-2 rounded-lg shadow-md opacity-60 cursor-not-allowed"
-                    style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
+                    style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                     disabled
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />

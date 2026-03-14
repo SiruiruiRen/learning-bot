@@ -156,7 +156,7 @@ export function SrlFeedback() {
               onClick={handleFeedbackSubmit} 
               disabled={Object.values(ratings).some(r => r === 0)}
               style={Object.values(ratings).some(r => r === 0) ? {} : {
-                background: `linear-gradient(135deg, ${accent}, #e6c98c)`,
+                background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
                 color: "hsl(var(--primary-foreground))"
               }}
             >

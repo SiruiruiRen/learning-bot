@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Bot, X, Send, MessageCircle } from "lucide-react"
+import { Bot, X, Send, MessageCircle, ChevronsLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import ChatMessageParser from "@/components/chat-message-parser"
@@ -507,44 +507,47 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     >
       {/* Collapsed tab — hides when open so left side never blocks bot text */}
       <motion.div
-        animate={{ width: isOpen ? 0 : 64 }}
+        animate={{ width: isOpen ? 0 : 72 }}
         transition={{ duration: 0.2 }}
         className="flex-shrink-0 h-full overflow-hidden cursor-pointer flex items-center"
-        style={{ minWidth: isOpen ? 0 : 64 }}
+        style={{ minWidth: isOpen ? 0 : 72 }}
         onClick={() => !isOpen && openChatbot('click')}
       >
-        <div
-          className="absolute flex items-center justify-center w-10 h-full left-0 -translate-x-full pointer-events-none"
-          style={{ color: accent }}
-          title="Hover or click to open Quick Help"
-        >
-          <span className="text-xl font-bold animate-pulse drop-shadow-sm">▶</span>
-        </div>
-        <div
-          className="h-full w-12 flex flex-col items-center justify-center gap-4 py-4 flex-shrink-0"
+        <motion.div
+          className="h-full w-[72px] flex flex-col items-center justify-center gap-3 py-4 flex-shrink-0"
+          initial={{ x: 20 }}
+          animate={{ x: [20, 0, 4, 0] }}
+          transition={{ duration: 1.2, delay: 1, ease: "easeOut" }}
           style={{
-            backgroundImage: `linear-gradient(180deg, ${neutralSurface}, hsl(var(--muted) / 0.7))`,
-            borderLeft: `2px solid ${accent}`,
+            backgroundImage: "linear-gradient(180deg, #d8b26f, #b8892e)",
+            borderLeft: "3px solid #b8892e",
             borderTop: `1px solid ${neutralBorder}`,
             borderBottom: `1px solid ${neutralBorder}`,
-            borderTopLeftRadius: 12,
-            borderBottomLeftRadius: 12,
-            boxShadow: "-4px 0 12px rgba(0,0,0,0.08)"
+            borderTopLeftRadius: 14,
+            borderBottomLeftRadius: 14,
+            boxShadow: "-6px 0 24px rgba(216,178,111,0.4), -2px 0 8px rgba(216,178,111,0.2)"
           }}
         >
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center animate-pulse"
-            style={{ backgroundColor: `${accent}25`, border: `2px solid ${accent}` }}
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: "rgba(255,255,255,0.95)", border: "2px solid rgba(255,255,255,0.7)", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
           >
-            <Bot className="h-4 w-4" style={{ color: accent }} />
+            <Bot className="h-5 w-5" style={{ color: "#3b2a1c" }} />
           </div>
           <span
-            className="text-xs font-semibold"
-            style={{ color: accent, writingMode: "vertical-rl", letterSpacing: "1px" }}
+            className="text-[13px] font-extrabold tracking-widest"
+            style={{ color: "#fff", writingMode: "vertical-rl", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
           >
             Quick Help
           </span>
-        </div>
+          <motion.div
+            className="flex items-center justify-center"
+            animate={{ x: [0, -4, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronsLeft className="h-5 w-5 text-white/80" />
+          </motion.div>
+        </motion.div>
       </motion.div>
 
       {/* Chat panel — right-edge sidebar, full opacity so bot text is never obscured */}
@@ -562,13 +565,15 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             <div
               className="h-full flex flex-col overflow-hidden"
               style={{
-                backgroundColor: neutralSurface,
-                borderLeft: `1px solid ${neutralBorder}`,
-                borderTop: `1px solid ${neutralBorder}`,
-                borderBottom: `1px solid ${neutralBorder}`,
+                backgroundColor: "hsl(var(--card) / 0.6)",
+                backdropFilter: "blur(24px) saturate(1.4)",
+                WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+                borderLeft: `1px solid hsl(var(--border) / 0.35)`,
+                borderTop: `1px solid hsl(var(--border) / 0.35)`,
+                borderBottom: `1px solid hsl(var(--border) / 0.35)`,
                 borderTopLeftRadius: 12,
                 borderBottomLeftRadius: 12,
-                boxShadow: "-8px 0 24px rgba(0,0,0,0.08)"
+                boxShadow: "-8px 0 32px rgba(0,0,0,0.1), inset 0 1px 0 hsl(var(--card) / 0.3)"
               }}
             >
               <div
@@ -694,7 +699,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                         onClick={() => handleSend()}
                         disabled={isLoading || !input.trim()}
                         className="h-auto px-3"
-                        style={{ backgroundColor: accent, color: "#1f1408" }}
+                        style={{ backgroundColor: "#b8892e", color: "#fff" }}
                       >
                         <Send className="w-4 h-4" />
                       </Button>

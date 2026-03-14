@@ -34,15 +34,15 @@ import { phase2KnowledgeChecks } from "@/lib/knowledge-check-questions"
 import InstructionGuide from "@/components/instruction-guide"
 import { phaseInstructions } from "@/lib/post-task-questions"
 
-const accent = "#d8b26f"
-const neutralSurface = "hsl(var(--card) / 0.9)"
-const neutralBorder = "hsl(var(--border) / 0.75)"
+const accent = "var(--accent-text)"
+const neutralSurface = "hsl(var(--card) / 0.78)"
+const neutralBorder = "hsl(var(--border) / 0.4)"
 const headerSurface = "hsl(var(--card) / 0.95)"
 const pillSurface = "hsl(var(--muted) / 0.4)"
 const mutedText = "hsl(var(--muted-foreground))"
 const primaryButtonStyle = {
-  backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-  color: "#1f1408",
+  backgroundImage: "linear-gradient(135deg, #b8892e, #96722d)",
+  color: "#fff",
   border: `1px solid ${neutralBorder}`,
   boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
 }
@@ -55,7 +55,7 @@ const LearningObjectiveAnalysis = () => {
     >
       <h3 className="text-lg font-medium mb-2 flex items-center gap-2" style={{ color: accent }}>
         <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pillSurface }}>
-          <span style={{ color: accent }}>🎯</span>
+          <Target className="h-4 w-4" style={{ color: accent }} />
         </div>
         Cognitive Levels of Understanding
       </h3>
@@ -113,7 +113,7 @@ const PriorKnowledgeResourceAnalysis = () => {
     <div className="p-4 rounded-lg border mb-4 max-w-4xl mx-auto" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
       <h3 className="text-lg font-medium mb-2 flex items-center gap-2" style={{ color: accent }}>
         <div className="h-7 w-7 rounded-full flex items-center justify-center" style={{ backgroundColor: pillSurface }}>
-          <span style={{ color: accent }}>📚</span>
+          <BookOpen className="h-4 w-4" style={{ color: accent }} />
         </div>
         Why Prior Knowledge & Resources Matter
       </h3>
@@ -429,7 +429,7 @@ export default function Phase2Page() {
           <div className="container mx-auto">
           <div className="flex items-center justify-center">
             <Target className="h-6 w-6 mr-2" style={{ color: accent }} />
-            <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text">
+            <h2 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
               Phase 2: Understand Your Tasks
             </h2>
           </div>
@@ -459,7 +459,7 @@ export default function Phase2Page() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
                 <Target className="h-8 w-8" style={{ color: accent }} />
-                <span className="bg-gradient-to-r from-[#d8b26f] to-[#e6c98c] bg-clip-text text-transparent">
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                   {cards[currentCardIndex].title}
                 </span>
               </CardTitle>
@@ -483,21 +483,21 @@ export default function Phase2Page() {
                         </div>
                         <span className="text-xs font-medium" style={{ color: accent }}>Analyze Tasks</span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                           <FileQuestion className="h-6 w-6" style={{ color: accent }} />
                         </div>
                         <span className="text-xs font-medium" style={{ color: accent }}>Knowledge Check</span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                           <Video className="h-6 w-6" style={{ color: accent }} />
                         </div>
                         <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
                       </div>
-                      <ChevronRight className="h-5 w-5 text-slate-500" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                           <MessageCircle className="h-6 w-6" style={{ color: accent }} />
@@ -578,9 +578,9 @@ export default function Phase2Page() {
                   <Button 
                     className="font-semibold px-6 py-2 rounded-lg"
             style={{
-              background: "linear-gradient(135deg, #d8b26f, #c89b51)",
+              background: "linear-gradient(135deg, #b8892e, #96722d)",
               boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
-              color: "#1f1408",
+              color: "#fff",
             }}
                     onClick={nextCard}
                     disabled={
@@ -594,9 +594,9 @@ export default function Phase2Page() {
                   <Button 
                     className="font-semibold px-6 py-3 rounded-full shadow-lg"
                     style={{
-                      background: "linear-gradient(135deg, #d8b26f, #c89b51)",
+                      background: "linear-gradient(135deg, #b8892e, #96722d)",
                       boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
-                      color: "#1f1408",
+                      color: "#fff",
                     }}
                     onClick={nextCard}
                   >
@@ -606,9 +606,9 @@ export default function Phase2Page() {
                   <Button 
                     className="font-semibold px-6 py-2 rounded-lg opacity-60 cursor-not-allowed"
                     style={{
-                      background: "linear-gradient(135deg, #d8b26f, #c89b51)",
+                      background: "linear-gradient(135deg, #b8892e, #96722d)",
                       boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
-                      color: "#1f1408",
+                      color: "#fff",
                     }}
                     disabled
                   >

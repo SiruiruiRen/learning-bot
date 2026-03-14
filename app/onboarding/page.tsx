@@ -44,7 +44,7 @@ export default function OnboardingPage() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Welcome to SoL2LBot</h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Create your profile to personalize your learning experience. 
             Only your email is required; other fields are optional.
           </p>
@@ -57,7 +57,7 @@ export default function OnboardingPage() {
         
         <UserProfile onSubmit={handleSubmitProfile} />
         
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>
             By creating a profile, you agree to our Terms of Service and Privacy Policy.
             We collect only the data you provide to personalize your learning experience.

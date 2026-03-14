@@ -86,16 +86,16 @@ export default function IntroPage() {
   const [isClient, setIsClient] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
-  const neutralSurface = "hsl(var(--card) / 0.96)"
-  const neutralBorder = "hsl(var(--border) / 0.8)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const headerSurface = "hsl(var(--card))"
   const mutedText = "hsl(var(--muted-foreground))"
   const pillSurface = "hsl(var(--muted) / 0.4)"
   const primaryButtonStyle = {
-    backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-    color: "#1f1408",
+    backgroundImage: "linear-gradient(135deg, #b8892e, #96722d)",
+    color: "#fff",
     border: `1px solid ${neutralBorder}`,
     boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
   }
@@ -399,9 +399,9 @@ export default function IntroPage() {
                                   onClick={() => setCoachTone(option.value)}
                                   className="flex-1 px-3 py-2 rounded-lg text-base font-medium border transition-all"
                                   style={{
-                                    backgroundColor: coachTone === option.value ? accent : "hsl(var(--card))",
-                                    borderColor: coachTone === option.value ? accent : neutralBorder,
-                                    color: coachTone === option.value ? "#1f1408" : "hsl(var(--foreground))",
+                                    backgroundColor: coachTone === option.value ? "#b8892e" : "hsl(var(--card))",
+                                    borderColor: coachTone === option.value ? "#b8892e" : neutralBorder,
+                                    color: coachTone === option.value ? "#fff" : "hsl(var(--foreground))",
                                   }}
                                 >
                                   {option.label}

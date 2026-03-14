@@ -18,8 +18,8 @@ export default function InstructionGuide({
   examples,
   phase
 }: InstructionGuideProps) {
-  const accent = "#d8b26f"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
+  const accent = "var(--accent-text)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
   const neutralBorder = "hsl(var(--border) / 0.75)"
   const foreground = "hsl(var(--foreground))"
   const mutedText = "hsl(var(--muted-foreground))"

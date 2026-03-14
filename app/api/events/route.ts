@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
   try {
     if (!supabase) {
       return NextResponse.json(
-        { error: 'Supabase is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_KEY.' },
-        { status: 500 }
+        { success: false, skipped: true, reason: 'Supabase not configured' },
+        { status: 200 }
       );
     }
 
@@ -129,9 +129,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(responseData);
   } catch (error) {
+    console.warn('Events API error:', (error as Error).message);
     return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
+      { success: false, error: (error as Error).message },
+      { status: 200 }
     );
   }
 }
@@ -592,7 +593,7 @@ async function handleFeedbackStyleView(sessionId: string, userId: string, phase:
         timestamp: metadata.timestamp || new Date().toISOString()
       }), 'Insert user_inputs (feedback_style_choice fallback)');
     } catch (fallbackError) {
-      console.error('Error logging feedback style view to user_inputs:', fallbackError);
+      console.warn('Error logging feedback style view to user_inputs:', fallbackError);
     }
   }
 }

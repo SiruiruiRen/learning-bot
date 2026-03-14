@@ -285,7 +285,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#d8b26f] to-[#e6c98c] flex items-center justify-center">
                 <Compass className="h-4 w-4 text-white" />
               </div>
-              <h2 className="text-base font-bold text-white">SoL2LBot</h2>
+              <h2 className="text-base font-bold text-foreground">SoL2LBot</h2>
             </div>
 
             {displayPhase > 0 && currentModule ? (
@@ -318,30 +318,29 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
           </div>
 
           {expandedSidebar && (
-            <div className="mt-3 pt-3 border-t border-slate-700/50">
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: "hsl(var(--border) / 0.4)" }}>
               {/* Mini roadmap indicators at the top */}
                   <div className="flex items-center justify-between mb-3 px-2">
-                <div className="h-1.5 bg-slate-800 rounded-full flex-1 overflow-hidden relative">
+                <div className="h-1.5 rounded-full flex-1 overflow-hidden relative" style={{ backgroundColor: "hsl(var(--muted))" }}>
                   {/* Phase marker dots */}
                   <div className="absolute top-0 left-0 right-0 bottom-0 flex justify-between items-center px-0.5">
                     {[0, 1, 2, 3, 4, 5, 6, 7].map((phase) => (
-                      <div 
+                      <div
                         key={phase}
-                        className={`w-2 h-2 rounded-full ${
-                          phase <= displayPhase ? "bg-white" : "bg-slate-700"
-                        }`}
+                        className={`w-2 h-2 rounded-full`}
+                        style={{ backgroundColor: phase <= displayPhase ? "#d8b26f" : "hsl(var(--muted-foreground) / 0.3)" }}
                         onClick={() => phase > 0 && navigateToPhase(phase)}
                       ></div>
                     ))}
                   </div>
-                  
+
                   {/* Progress filled bar */}
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-[#d8b26f] via-[#e6c98c] to-[#f3dfaa]"
                     style={{ width: `${progressPercentage}%` }}
                   ></div>
                 </div>
-                <div className="text-xs text-white/70 ml-2">
+                <div className="text-xs ml-2" style={{ color: "hsl(var(--muted-foreground))" }}>
                   {Math.round(progressPercentage)}%
                 </div>
               </div>
@@ -350,13 +349,13 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                 {modules.map((module, moduleIndex) => (
                   <div key={moduleIndex} className="w-full">
                     <div className={`flex items-center py-2 px-3 rounded-md mb-1
-                      ${moduleIndex === currentModuleIndex ? 
-                        `${colorMap[module.color].bgLight} ${colorMap[module.color].text}` : 
-                        'hover:bg-slate-800/50'}`}>
+                      ${moduleIndex === currentModuleIndex ?
+                        `${colorMap[module.color].bgLight} ${colorMap[module.color].text}` :
+                        'hover:bg-[hsl(var(--muted)_/_0.4)]'}`}>
                       <div className="mr-2">{module.icon}</div>
                       <span className="text-sm font-medium">{module.name}</span>
                     </div>
-                    
+
                     <div className="ml-6 space-y-1 mb-2">
                       {module.phases.map((phase, phaseIndex) => {
                         const isActive = phase === displayPhase;
@@ -366,11 +365,11 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                             key={phase}
                             onClick={() => phase === 5 ? navigateToPhase5() : navigateToPhase(phase)}
                             className={`flex items-center py-1.5 px-3 rounded-md cursor-pointer text-sm
-                              ${isActive ? 
-                                `${colorMap[module.color].bgLight} ${colorMap[module.color].text}` : 
-                                isCompleted ? 
-                                  'text-emerald-400 hover:bg-slate-800/50' : 
-                                  'text-white/50 hover:bg-slate-800/30'}`}
+                              ${isActive ?
+                                `${colorMap[module.color].bgLight} ${colorMap[module.color].text}` :
+                                isCompleted ?
+                                  'text-emerald-500 hover:bg-[hsl(var(--muted)_/_0.4)]' :
+                                  'text-muted-foreground hover:bg-[hsl(var(--muted)_/_0.3)]'}`}
                           >
                             <div className="w-5 h-5 mr-2 flex-shrink-0 flex items-center justify-center">
                               {isCompleted ? (
@@ -404,15 +403,22 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
   }
 
   // Desktop sidebar - theme-aware neutrals with phase accents
-  const neutralSurface = "hsl(var(--card) / 0.9)"
-  const neutralBorder = "hsl(var(--border) / 0.9)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
+  const neutralBorder = "hsl(var(--border) / 0.35)"
   const neutralMuted = "hsl(var(--foreground) / 0.75)"
 
   return (
     <div data-tour="sidebar" className="fixed left-3 top-1/2 transform -translate-y-1/2 z-30 hidden lg:block">
       <div
-        className="backdrop-blur-md rounded-2xl p-3 shadow-xl w-auto border"
-        style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
+        className="rounded-2xl p-3 w-auto"
+        style={{
+          backgroundColor: "hsl(var(--card) / 0.55)",
+          backdropFilter: "blur(24px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+          border: `1px solid hsl(var(--border) / 0.35)`,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 hsl(var(--card) / 0.3)",
+          borderRadius: "1.25rem",
+        }}
       >
         <div className="flex flex-col items-center">
           {/* Title */}
@@ -447,7 +453,7 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                       <Compass className="h-5 w-5" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs">
+                  <TooltipContent side="right" className="bg-[hsl(var(--card))] border-[hsl(var(--border))] text-xs text-foreground">
                     <p>Introduction</p>
                   </TooltipContent>
                 </Tooltip>
@@ -492,8 +498,8 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
                           {phase.icon}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="bg-slate-800 border-slate-700 text-xs text-white">
-                        <p className="text-white">{phase.label}</p>
+                      <TooltipContent side="right" className="bg-[hsl(var(--card))] border-[hsl(var(--border))] text-xs text-foreground">
+                        <p>{phase.label}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -513,12 +519,13 @@ export default function ModuleBar({ currentPhase = 0 }: ModuleBarProps) {
             })}
             
             {/* Progress line overlay */}
-            <div 
-              className="absolute top-[60px] left-1/2 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-rose-500 rounded-full transform -translate-x-1/2 z-0"
-              style={{ 
+            <div
+              className="absolute top-[60px] left-1/2 w-0.5 rounded-full transform -translate-x-1/2 z-0"
+              style={{
                 height: `calc(${Math.min((currentPhaseOverall / totalPhases) * 100, 100)}% * 0.84)`,
                 maxHeight: 'calc(100% - 120px)',
-                transition: 'height 0.5s ease-in-out'
+                transition: 'height 0.5s ease-in-out',
+                background: 'linear-gradient(to bottom, #d8b26f, #b8892e, #96722d)'
               }}
             ></div>
           </div>

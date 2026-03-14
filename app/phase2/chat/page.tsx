@@ -17,14 +17,14 @@ export default function Phase2ChatPage() {
   const [chatComplete, setChatComplete] = useState(false)
   // const [showPostTask, setShowPostTask] = useState(false) - Removed
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
   const neutralSurface = "hsl(var(--card) / 0.96)"
-  const neutralBorder = "hsl(var(--border) / 0.8)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
   const primaryButtonStyle = {
-    backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-    color: "#1f1408",
+    backgroundImage: "linear-gradient(135deg, #b8892e, #96722d)",
+    color: "#fff",
     border: `1px solid ${neutralBorder}`,
     boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
   }
@@ -64,7 +64,7 @@ export default function Phase2ChatPage() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
                 <Target className="h-8 w-8" style={{ color: accent }} />
-                <span className="bg-gradient-to-r from-[#d8b26f] to-[#e6c98c] bg-clip-text text-transparent">
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                   Define Your Learning Objective
                 </span>
               </CardTitle>

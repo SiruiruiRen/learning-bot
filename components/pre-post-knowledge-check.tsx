@@ -251,8 +251,8 @@ export default function PrePostKnowledgeCheck({
   const selectedAnswerString = !isSelectAll && typeof selectedAnswer === 'string' ? selectedAnswer : ''
   const wrongAnswerFeedback = currentQuestion.feedbackForWrongAnswers?.[selectedAnswerString || '']
   
-  const accent = "#d8b26f"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
+  const accent = "var(--accent-text)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
   const neutralBorder = "hsl(var(--border) / 0.75)"
   const foreground = "hsl(var(--foreground))"
   const mutedText = "hsl(var(--muted-foreground))"
@@ -469,7 +469,7 @@ export default function PrePostKnowledgeCheck({
                 className="font-medium"
                 style={{
                   background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                  color: "#1f1408",
+                  color: "#fff",
                   opacity: (!selectedAnswer || (isSelectAll && selectedAnswerArray.length === 0)) ? 0.5 : 1
                 }}
               >
@@ -482,7 +482,7 @@ export default function PrePostKnowledgeCheck({
                   className="font-medium"
                   style={{
                     background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                    color: "#1f1408"
+                    color: "#fff"
                   }}
                 >
                   Next Question <ArrowRight className="ml-2 h-4 w-4" />

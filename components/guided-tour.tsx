@@ -5,7 +5,8 @@ import { useState, useEffect, useCallback } from "react"
 import { X, ChevronRight, ChevronLeft, MessageCircle, BarChart2, BookOpen, BrainCircuit, PenLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-const accent = "#d8b26f"
+const accent = "var(--accent-text)"
+const accentHex = "#7a5a1e"  // for opacity patterns
 
 interface TourStep {
   title: string
@@ -17,28 +18,28 @@ interface TourStep {
 
 const TOUR_STEPS: TourStep[] = [
   {
-    title: "Welcome to SoL2LBot! 👋",
+    title: "Welcome to SoL2LBot!",
     description: "Welcome to the Science of Learning to Learn Bot! This 90-minute training teaches you evidence-based study strategies with AI coaching. Before we start, you'll try a short Quick Help demo so you know where to get support at any time.",
     icon: <BrainCircuit className="w-5 h-5" />,
     target: null,
     placement: "center",
   },
   {
-    title: "💬 Try the Quick Help chatbot",
+    title: "Try the Quick Help chatbot",
     description: "On the right edge, hover or click the 'Quick Help' tab to open it. Click one of the practice questions to see how the chatbot responds. When you're done, close the panel and click Continue.",
     icon: <MessageCircle className="w-5 h-5" />,
     target: "[data-tour='quick-help']",
     placement: "left",
   },
   {
-    title: "🤖 Your main AI Learning Coach",
+    title: "Your main AI Learning Coach",
     description: "SoL2LBot is your personal AI coach. In each phase, it guides you through interactive lessons, evaluates your answers based on research-backed rubrics, and gives you specific feedback to improve your learning skills.",
     icon: <BrainCircuit className="w-5 h-5" />,
     target: "[data-tour='main-ai']",
     placement: "bottom",
   },
   {
-    title: "📊 JOURNEY Sidebar",
+    title: "JOURNEY Sidebar",
     description: "On the left side is your progress tracker. It shows 6 phases — the active phase is highlighted so you always know where you are. You'll go from Phase 1 to Phase 6.",
     icon: <BarChart2 className="w-5 h-5" />,
     target: "[data-tour='sidebar']",
@@ -272,7 +273,7 @@ export default function GuidedTour() {
           width: width + pad * 2,
           height: height + pad * 2,
           border: `3px solid ${accent}`,
-          boxShadow: `0 0 0 4px ${accent}30, 0 0 20px ${accent}40`,
+          boxShadow: `0 0 0 4px ${accentHex}30, 0 0 20px ${accentHex}40`,
           animation: "tour-pulse 1.5s ease-in-out infinite",
         }}
       />
@@ -321,9 +322,9 @@ export default function GuidedTour() {
                 }}
               >
                 {/* Header */}
-                <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${accent}30, ${accent}10)` }}>
+                <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${accentHex}30, ${accentHex}10)` }}>
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: accent, color: "#1f1408" }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: "#b8892e", color: "#fff" }}>
                       {s.icon}
                     </div>
                     <span className="text-xs font-bold" style={{ color: accent }}>
@@ -370,8 +371,8 @@ export default function GuidedTour() {
                         <ChevronLeft className="w-3.5 h-3.5 mr-0.5" /> Back
                       </Button>
                     )}
-                    <Button size="sm" onClick={next} className="h-7 px-3 text-[11px] font-bold" style={{ backgroundColor: accent, color: "#1f1408" }}>
-                      {step === TOUR_STEPS.length - 1 ? "Let's go! 🚀" : "Next"}
+                    <Button size="sm" onClick={next} className="h-7 px-3 text-[11px] font-bold" style={{ backgroundColor: accent, color: "#fff" }}>
+                      {step === TOUR_STEPS.length - 1 ? "Let's go!" : "Next"}
                       {step < TOUR_STEPS.length - 1 && <ChevronRight className="w-3.5 h-3.5 ml-0.5" />}
                     </Button>
                   </div>

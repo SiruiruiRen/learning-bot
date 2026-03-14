@@ -128,15 +128,15 @@ export default function SummaryPage() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
 
-  const accent = "#d8b26f"
+  const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
   const neutralSurface = "hsl(var(--card) / 0.96)"
-  const neutralBorder = "hsl(var(--border) / 0.8)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
   const foreground = "hsl(var(--foreground))"
   const primaryButtonStyle = {
-    backgroundImage: `linear-gradient(135deg, ${accent}, #e6c98c)`,
-    color: "#1f1408",
+    backgroundImage: "linear-gradient(135deg, #b8892e, #96722d)",
+    color: "#fff",
     border: `1px solid ${neutralBorder}`,
     boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
   }
@@ -406,24 +406,24 @@ export default function SummaryPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-center text-3xl font-bold">
                 <Medal className="mr-3 h-8 w-8" style={{ color: accent }} />
-                <span className="bg-gradient-to-r from-[#d8b26f] to-[#e6c98c] bg-clip-text text-transparent">
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                   Learning Journey Summary
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               {/* Personalized Insights Section */}
-              {insights && (
+              {insights && (insights.keywords?.some(k => k?.trim()) || insights.learningStrategies?.some(s => s?.trim()) || insights.goals?.some(g => g?.trim()) || insights.strengths?.some(s => s?.trim()) || insights.recommendations?.some(r => r?.trim())) && (
                 <div className="mb-8 space-y-6">
                   {/* Key Learning Topics */}
-                  {insights.keywords && insights.keywords.length > 0 && (
+                  {insights.keywords && insights.keywords.filter(k => k?.trim()).length > 0 && (
                     <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
                       <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
                         <Target className="h-5 w-5" />
                         Key Learning Topics
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {insights.keywords.map((keyword, idx) => (
+                        {insights.keywords.filter(k => k?.trim()).map((keyword, idx) => (
                           <Badge 
                             key={idx}
                             className="px-3 py-1"
@@ -441,14 +441,14 @@ export default function SummaryPage() {
                   )}
 
                   {/* Learning Strategies */}
-                  {insights.learningStrategies && insights.learningStrategies.length > 0 && (
+                  {insights.learningStrategies && insights.learningStrategies.filter(s => s?.trim()).length > 0 && (
                     <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
                       <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
                         <Lightbulb className="h-5 w-5" />
                         Your Learning Strategies
                       </h4>
                       <ul className="space-y-2">
-                        {insights.learningStrategies.map((strategy, idx) => (
+                        {insights.learningStrategies.filter(s => s?.trim()).map((strategy, idx) => (
                           <li key={idx} className="flex items-start gap-2" style={{ color: foreground }}>
                             <span style={{ color: accent }}>•</span>
                             <span>{strategy}</span>
@@ -459,14 +459,14 @@ export default function SummaryPage() {
                   )}
 
                   {/* Goals */}
-                  {insights.goals && insights.goals.length > 0 && (
+                  {insights.goals && insights.goals.filter(g => g?.trim()).length > 0 && (
                     <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
                       <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
                         <Target className="h-5 w-5" />
                         Your Learning Goals
                       </h4>
                       <ul className="space-y-2">
-                        {insights.goals.map((goal, idx) => (
+                        {insights.goals.filter(g => g?.trim()).map((goal, idx) => (
                           <li key={idx} className="flex items-start gap-2" style={{ color: foreground }}>
                             <span style={{ color: accent }}>•</span>
                             <span>{goal}</span>
@@ -477,14 +477,14 @@ export default function SummaryPage() {
                   )}
 
                   {/* Strengths */}
-                  {insights.strengths && insights.strengths.length > 0 && (
+                  {insights.strengths && insights.strengths.filter(s => s?.trim()).length > 0 && (
                     <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
                       <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
                         <Medal className="h-5 w-5" />
                         Your Strengths
                       </h4>
                       <ul className="space-y-2">
-                        {insights.strengths.map((strength, idx) => (
+                        {insights.strengths.filter(s => s?.trim()).map((strength, idx) => (
                           <li key={idx} className="flex items-start gap-2" style={{ color: foreground }}>
                             <span style={{ color: accent }}>✓</span>
                             <span>{strength}</span>
@@ -495,14 +495,14 @@ export default function SummaryPage() {
                   )}
 
                   {/* Recommendations */}
-                  {insights.recommendations && insights.recommendations.length > 0 && (
+                  {insights.recommendations && insights.recommendations.filter(r => r?.trim()).length > 0 && (
                     <div className="p-6 rounded-lg border" style={{ backgroundColor: "hsl(var(--muted))", borderColor: neutralBorder }}>
                       <h4 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: accent }}>
                         <Zap className="h-5 w-5" />
                         Personalized Recommendations
                       </h4>
                       <ul className="space-y-3">
-                        {insights.recommendations.map((rec, idx) => (
+                        {insights.recommendations.filter(r => r?.trim()).map((rec, idx) => (
                           <li key={idx} className="flex items-start gap-3 p-3 rounded" style={{ backgroundColor: "hsl(var(--card))" }}>
                             <span className="font-bold" style={{ color: accent }}>{idx + 1}.</span>
                             <span style={{ color: foreground }}>{rec}</span>
@@ -521,6 +521,205 @@ export default function SummaryPage() {
               )}
               
               <SrlSummary />
+
+              {/* Personal Learning Plan Section */}
+              {(() => {
+                const hasLongTermGoal = !!learningPlan.longTermGoal?.trim();
+                const hasShortTermGoals = learningPlan.shortTermGoals.some(g => g.goal?.trim());
+                const hasIfThen = learningPlan.ifThenStrategies.some(s => s.challenge?.trim() && s.response?.trim());
+                const hasProgressIndicators = monitoringSystem.progressIndicators.some(i => i.indicator?.trim());
+                const hasAdaptationTriggers = monitoringSystem.adaptationTriggers.some(t => t.trigger?.trim());
+                const hasAnyPlanData = hasLongTermGoal || hasShortTermGoals || hasIfThen || hasProgressIndicators || hasAdaptationTriggers;
+
+                if (!hasAnyPlanData) return null;
+
+                return (
+                <div className="mt-8 space-y-6">
+                  <h3 className="text-2xl font-bold text-center" style={{ color: accent }}>
+                    Your Learning Plan
+                  </h3>
+                  <p className="text-center text-sm" style={{ color: mutedText }}>
+                    Here's the plan you built throughout the training.
+                  </p>
+
+                  {/* Long-term Goal */}
+                  {hasLongTermGoal && (
+                    <div
+                      className="p-5 rounded-xl border"
+                      style={{ backgroundColor: "hsl(var(--card) / 0.7)", borderColor: neutralBorder }}
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: "hsl(var(--primary) / 0.12)" }}
+                        >
+                          <Target className="h-4 w-4" style={{ color: accent }} />
+                        </div>
+                        <h4 className="font-semibold" style={{ color: foreground }}>Long-term Goal</h4>
+                      </div>
+                      <p className="text-sm pl-10" style={{ color: foreground }}>{learningPlan.longTermGoal}</p>
+                    </div>
+                  )}
+
+                  {/* Short-term Goals */}
+                  {hasShortTermGoals && (
+                    <div
+                      className="p-5 rounded-xl border"
+                      style={{ backgroundColor: "hsl(var(--card) / 0.7)", borderColor: neutralBorder }}
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: "hsl(var(--primary) / 0.12)" }}
+                        >
+                          <CheckCircle className="h-4 w-4" style={{ color: accent }} />
+                        </div>
+                        <h4 className="font-semibold" style={{ color: foreground }}>Short-term Objectives</h4>
+                      </div>
+                      <div className="space-y-4 pl-10">
+                        {learningPlan.shortTermGoals.filter(g => g.goal?.trim()).map((goal, idx) => (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex items-start gap-2">
+                              <span
+                                className="text-xs font-bold px-2 py-0.5 rounded-full mt-0.5 flex-shrink-0"
+                                style={{ backgroundColor: "hsl(var(--primary) / 0.12)", color: accent }}
+                              >
+                                {idx + 1}
+                              </span>
+                              <div>
+                                <p className="text-sm font-medium" style={{ color: foreground }}>{goal.goal}</p>
+                                {goal.timeframe && (
+                                  <p className="text-xs mt-0.5" style={{ color: mutedText }}>Timeframe: {goal.timeframe}</p>
+                                )}
+                                {goal.strategies && goal.strategies.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {goal.strategies.map((s, sIdx) => s && (
+                                      <span
+                                        key={sIdx}
+                                        className="text-xs px-2 py-0.5 rounded-full"
+                                        style={{ backgroundColor: "hsl(var(--primary) / 0.08)", color: accent }}
+                                      >
+                                        {s.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* If-Then Contingency Plans */}
+                  {hasIfThen && (
+                    <div
+                      className="p-5 rounded-xl border"
+                      style={{ backgroundColor: "hsl(var(--card) / 0.7)", borderColor: neutralBorder }}
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: "hsl(var(--primary) / 0.12)" }}
+                        >
+                          <RefreshCw className="h-4 w-4" style={{ color: accent }} />
+                        </div>
+                        <h4 className="font-semibold" style={{ color: foreground }}>Contingency Plans</h4>
+                      </div>
+                      <div className="space-y-3 pl-10">
+                        {learningPlan.ifThenStrategies.filter(s => s.challenge?.trim() && s.response?.trim()).map((strategy, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-lg text-sm"
+                            style={{ backgroundColor: "hsl(var(--muted) / 0.4)" }}
+                          >
+                            <p style={{ color: foreground }}>
+                              <span className="font-semibold" style={{ color: accent }}>IF </span>
+                              {strategy.challenge}
+                            </p>
+                            <p className="mt-1" style={{ color: foreground }}>
+                              <span className="font-semibold" style={{ color: accent }}>THEN </span>
+                              {strategy.response}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Monitoring Highlights */}
+                  {(hasProgressIndicators || hasAdaptationTriggers) && (
+                    <div
+                      className="p-5 rounded-xl border"
+                      style={{ backgroundColor: "hsl(var(--card) / 0.7)", borderColor: neutralBorder }}
+                    >
+                      <div className="flex items-center gap-2 mb-4">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: "hsl(var(--primary) / 0.12)" }}
+                        >
+                          <LineChart className="h-4 w-4" style={{ color: accent }} />
+                        </div>
+                        <h4 className="font-semibold" style={{ color: foreground }}>Monitoring System</h4>
+                      </div>
+                      <div className="space-y-3 pl-10">
+                        {monitoringSystem.progressIndicators.filter(i => i.indicator).length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: accent }}>
+                              Progress Indicators
+                            </p>
+                            {monitoringSystem.progressIndicators.filter(i => i.indicator).map((item, idx) => (
+                              <div key={idx} className="flex items-start gap-2 text-sm mb-1">
+                                <span style={{ color: accent }}>•</span>
+                                <span style={{ color: foreground }}>{item.indicator}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {monitoringSystem.adaptationTriggers.filter(t => t.trigger).length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: accent }}>
+                              Adaptation Triggers
+                            </p>
+                            {monitoringSystem.adaptationTriggers.filter(t => t.trigger).map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="p-3 rounded-lg text-sm mb-2"
+                                style={{ backgroundColor: "hsl(var(--muted) / 0.4)" }}
+                              >
+                                <p style={{ color: foreground }}>
+                                  <span className="font-semibold" style={{ color: accent }}>IF </span>
+                                  {item.trigger}
+                                </p>
+                                <p className="mt-1" style={{ color: foreground }}>
+                                  <span className="font-semibold" style={{ color: accent }}>THEN </span>
+                                  {item.response}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Download Button */}
+                  <div className="flex justify-center pt-2">
+                    <Button
+                      variant="outline"
+                      className="text-foreground"
+                      style={{ borderColor: neutralBorder }}
+                      onClick={handleDownloadSummary}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Full Plan
+                    </Button>
+                  </div>
+                </div>
+                );
+              })()}
+
               <SrlFeedback />
             </CardContent>
           </Card>

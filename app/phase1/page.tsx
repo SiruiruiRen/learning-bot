@@ -17,9 +17,9 @@ import { useSessionManager } from "@/lib/session-manager"
 export default function Phase1Content() {
   const router = useRouter()
   const { getOrCreateSession, isFallbackSession } = useSessionManager()
-  const accent = "#d8b26f"
-  const neutralSurface = "hsl(var(--card) / 0.9)"
-  const neutralBorder = "hsl(var(--border) / 0.75)"
+  const accent = "var(--accent-text)"
+  const neutralSurface = "hsl(var(--card) / 0.78)"
+  const neutralBorder = "hsl(var(--border) / 0.4)"
   const headerSurface = "hsl(var(--card) / 0.95)"
   const pillSurface = "hsl(var(--muted) / 0.4)"
   const mutedText = "hsl(var(--muted-foreground))"
@@ -133,7 +133,7 @@ export default function Phase1Content() {
     setSelectedOption(option)
     
     if (option === "Planning, Monitoring, Controlling, Reflecting") {
-      setFeedback("🎉 Correct! These four stages form the complete self-regulated learning cycle that expert learners use to master complex material.")
+      setFeedback("Correct! These four stages form the complete self-regulated learning cycle that expert learners use to master complex material.")
       setQuizCompleted(true)
     } else {
       setFeedback("Not quite. Review the stages of the self-regulated learning cycle and try again.")
@@ -200,11 +200,11 @@ export default function Phase1Content() {
           <p className="text-muted-foreground mb-3">List all stages of the four-stage model of self-regulated learning:</p>
           <div className="p-4 rounded-lg border mb-4" style={{ backgroundColor: "hsl(var(--card) / 0.78)", borderColor: neutralBorder }}>
             <div className="flex items-start gap-2 mb-2">
-              <div className="mt-0.5" style={{ color: accent }}>💡</div>
+              <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
               <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>Remember:</span> Self-testing helps you remember information longer, find gaps in your knowledge, and improves future studying.</p>
             </div>
             <div className="flex items-start gap-2">
-              <div className="mt-0.5" style={{ color: accent }}>🧠</div>
+              <BrainCircuit className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
               <p className="text-muted-foreground">Actively recalling information now creates stronger neural connections that make it easier to retrieve later!</p>
             </div>
           </div>
@@ -258,7 +258,7 @@ export default function Phase1Content() {
             onClick={handleSubmit}
             disabled={localAnswers.some(answer => !answer.trim())}
             className="mt-6 font-medium py-2 px-6 rounded-md flex items-center gap-2 shadow-md"
-            style={{ background: "linear-gradient(135deg, #9fc5ff, #b7d6ff)", color: "#0f172a" }}
+            style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
           >
             Submit Answers
             <ArrowRight className="h-4 w-4" />
@@ -296,7 +296,7 @@ export default function Phase1Content() {
         {!sessionReady ? (
           <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: "#b8892e" }}></div>
                 <p className="text-muted-foreground">Initializing session...</p>
             </div>
           </div>
@@ -310,7 +310,7 @@ export default function Phase1Content() {
               <div className="container mx-auto">
                 <div className="flex items-center justify-center">
                   <BrainCircuit className="h-6 w-6 mr-2" style={{ color: accent }} />
-                  <h2 className="text-xl md:text-2xl font-bold text-transparent bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text">
+                  <h2 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                     Phase 1: What's SRL
                   </h2>
                 </div>
@@ -360,7 +360,7 @@ export default function Phase1Content() {
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
                     <BrainCircuit className="h-8 w-8" style={{ color: accent }} />
-                    <span className="bg-gradient-to-r from-[rgba(216,178,111,1)] to-[rgba(216,178,111,0.9)] bg-clip-text text-transparent">
+                    <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
                       {cards[currentCardIndex].title}
                     </span>
                   </CardTitle>
@@ -382,7 +382,7 @@ export default function Phase1Content() {
                             </div>
                             <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
                           </div>
-                          <ChevronRight className="h-5 w-5 text-slate-600" />
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
                           <div className="flex flex-col items-center text-center">
                             <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
                               <FileQuestion className="h-6 w-6" style={{ color: accent }} />
@@ -421,7 +421,7 @@ export default function Phase1Content() {
                           <Button
                             onClick={handleStartQuiz}
                             className="px-6 py-3 rounded-md shadow-md"
-                            style={{ background: "linear-gradient(135deg, #d8b26f, #c89b51)", color: "#3b2a1c" }}
+                            style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                           >
                             Start Knowledge Check
                           </Button>
@@ -446,9 +446,9 @@ export default function Phase1Content() {
                   <Button 
                     onClick={nextCard}
                     className="font-semibold"
-                    style={{ color: "#1f1408" }}
+                    style={{ color: "#fff" }}
                     style={{
-                      background: "linear-gradient(135deg, #d8b26f, #c89b51)",
+                      background: "linear-gradient(135deg, #b8892e, #96722d)",
                       boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
                     }}
                     disabled={currentCardIndex === 1 && !quizCompleted}

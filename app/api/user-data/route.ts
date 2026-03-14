@@ -41,7 +41,7 @@ try {
     console.log('Database functionality is explicitly disabled in user data API by DATABASE_ENABLED=false');
   }
 } catch (error) {
-  console.error('Failed to initialize Supabase client in user data API:', error);
+  console.warn('Failed to initialize Supabase client in user data API:', error);
 }
 
 // Maximum number of retries for backend API calls
@@ -130,13 +130,13 @@ export async function POST(request: NextRequest) {
           });
         
         if (error) {
-          console.error('Error saving to Supabase:', error);
+          console.warn('Error saving to Supabase:', error);
           // Fall through to backend attempt
         } else {
           return NextResponse.json({ success: true, data });
         }
       } catch (error) {
-        console.error('Supabase error:', error);
+        console.warn('Supabase error:', error);
         // Fall through to backend attempt
       }
     }
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       
       if (!backendResponse.ok) {
         const errorText = await backendResponse.text();
-        console.error(`Backend error: ${backendResponse.status} - ${errorText}`);
+        console.warn(`Backend error: ${backendResponse.status} - ${errorText}`);
         
         // Return a 200 response to the client to avoid errors, but include error details
         return NextResponse.json({
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data });
       
     } catch (error: any) {
-      console.error('Error communicating with backend:', error);
+      console.warn('Error communicating with backend:', error);
       
       // Store in memory as last resort
       return NextResponse.json({
@@ -191,10 +191,10 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error: any) {
-    console.error('Unexpected error in user-data API:', error);
+    console.warn('Error in user-data API:', error?.message);
     return NextResponse.json(
-      { error: 'An unexpected error occurred', details: error.message },
-      { status: 500 }
+      { success: false, error: 'An unexpected error occurred' },
+      { status: 200 }
     );
   }
 }
@@ -232,13 +232,13 @@ export async function GET(request: NextRequest) {
         const { data, error } = await query.order('created_at', { ascending: false });
         
         if (error) {
-          console.error('Supabase error:', error);
+          console.warn('Supabase error:', error);
           // Fall through to backend attempt
         } else {
           return NextResponse.json(data || []);
         }
       } catch (error) {
-        console.error('Error querying Supabase:', error);
+        console.warn('Error querying Supabase:', error);
         // Fall through to backend attempt
       }
     }
@@ -266,7 +266,7 @@ export async function GET(request: NextRequest) {
       
       if (!backendResponse.ok) {
         const errorText = await backendResponse.text();
-        console.error(`Backend error: ${backendResponse.status} - ${errorText}`);
+        console.warn(`Backend error: ${backendResponse.status} - ${errorText}`);
         return NextResponse.json([], { status: 200 }); // Return empty array
       }
       
@@ -274,14 +274,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data);
       
     } catch (error) {
-      console.error('Error communicating with backend:', error);
+      console.warn('Error communicating with backend:', error);
       return NextResponse.json([]); // Return empty array as fallback
     }
   } catch (error: any) {
-    console.error('Unexpected error in user-data GET API:', error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred', details: error.message },
-      { status: 500 }
-    );
+    console.warn('Error in user-data GET API:', error?.message);
+    return NextResponse.json([]);
   }
 } 

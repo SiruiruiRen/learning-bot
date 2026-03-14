@@ -33,6 +33,7 @@ export default function KnowledgeCheck({
   const [isCorrect, setIsCorrect] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const pathname = usePathname()
+  const isFinalQuestion = questionNumber === totalQuestions
   const questionStartTime = useRef<number>(Date.now())
   const firstInteractionTime = useRef<number | null>(null)
   const answerChanges = useRef<Array<{timestamp: string, answer: string}>>([])
@@ -158,21 +159,21 @@ export default function KnowledgeCheck({
   }, [questionNumber])
 
   return (
-    <Card className="bg-slate-800/50 border border-indigo-500/30">
+    <Card className="bg-[hsl(var(--card)_/_0.7)] border border-[hsl(var(--border))]">
       <CardContent className="pt-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
-              <HelpCircle className="h-5 w-5 text-indigo-400" />
+            <div className="h-10 w-10 rounded-full bg-[hsl(var(--primary)_/_0.15)] flex items-center justify-center">
+              <HelpCircle className="h-5 w-5 text-[var(--accent-text)]" />
             </div>
-            <h3 className="text-lg font-bold text-white">Knowledge Check {questionNumber}</h3>
+            <h3 className="text-lg font-bold text-foreground">Knowledge Check {questionNumber}</h3>
           </div>
-          <span className="text-sm text-white/60">
+          <span className="text-sm text-muted-foreground">
             Question {questionNumber} of {totalQuestions}
           </span>
         </div>
 
-        <p className="text-white/90 mb-6">{question}</p>
+        <p className="text-foreground mb-6">{question}</p>
 
         <RadioGroup
           value={selectedOption || ""}
@@ -188,7 +189,7 @@ export default function KnowledgeCheck({
                   ? "border-emerald-500/50 bg-emerald-500/10"
                   : submitted && option === selectedOption
                     ? "border-red-500/50 bg-red-500/10"
-                    : "border-slate-700 hover:border-indigo-500/50 hover:bg-indigo-500/10"
+                    : "border-[hsl(var(--border))] hover:border-[#b8892e80] hover:bg-[hsl(var(--primary)_/_0.08)]"
               }`}
             >
               <RadioGroupItem value={option} id={`option-${index}`} className="mt-1" />
@@ -200,7 +201,7 @@ export default function KnowledgeCheck({
                       ? "text-emerald-400"
                       : submitted && option === selectedOption
                         ? "text-red-400"
-                        : "text-white/80"
+                        : "text-foreground/80"
                   }`}
                 >
                   {option}
@@ -235,7 +236,7 @@ export default function KnowledgeCheck({
                 <h4 className={`font-bold ${isCorrect ? "text-emerald-400" : "text-red-400"}`}>
                   {isCorrect ? "Correct!" : "Not quite right"}
                 </h4>
-                <p className="text-white/80 mt-1">{explanation}</p>
+                <p className="text-foreground/80 mt-1">{explanation}</p>
               </div>
             </div>
           </motion.div>
@@ -247,7 +248,8 @@ export default function KnowledgeCheck({
               <Button
                 onClick={handleSubmit}
                 disabled={!selectedOption}
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/30 disabled:opacity-50"
+                className="shadow-lg disabled:opacity-50 text-white"
+                style={{ background: "linear-gradient(135deg, #b8892e, #96722d)" }}
               >
                 Submit Answer
               </Button>
@@ -255,18 +257,19 @@ export default function KnowledgeCheck({
               <Button
                 onClick={handleTryAgain}
                 variant="outline"
-                className="border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
+                className="border-[hsl(var(--border))] text-[var(--accent-text)] hover:bg-[hsl(var(--primary)_/_0.1)]"
               >
                 Try Again
               </Button>
             ) : null}
           </div>
-          
+
           {/* Show Continue button for ALL correct answers */}
           {submitted && isCorrect && (
             <Button
               onClick={handleManualComplete}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 shadow-lg"
+              className="text-white flex items-center gap-2 shadow-lg"
+              style={{ background: "linear-gradient(135deg, #b8892e, #96722d)" }}
             >
               {isFinalQuestion ? "Complete & Continue" : "Next Question"} <ArrowRight className="h-4 w-4" />
             </Button>

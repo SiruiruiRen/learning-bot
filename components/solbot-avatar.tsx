@@ -59,11 +59,11 @@ export default function SolBotAvatar({ size = "md", pulseEffect = false }: SolBo
     <Link href="/landing" className="cursor-pointer">
       <div className={`relative ${sizeClasses[size].container} flex-shrink-0`}>
         {/* Main avatar background with gradient */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-600 via-blue-600 to-purple-700 animate-gradient-slow"></div>
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#d8b26f] via-[#b8892e] to-[#96722d] animate-gradient-slow"></div>
 
         {/* Inner circle with tech pattern */}
         <div
-          className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${sizeClasses[size].innerCircle} rounded-full bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center overflow-hidden`}
+          className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${sizeClasses[size].innerCircle} rounded-full bg-gradient-to-br from-[#7a5a1e] to-[#5a420e] flex items-center justify-center overflow-hidden`}
         >
           {/* Tech circuit pattern overlay */}
           <div className="absolute inset-0 opacity-30 circuit-pattern"></div>
@@ -84,7 +84,7 @@ export default function SolBotAvatar({ size = "md", pulseEffect = false }: SolBo
         {/* Pulsing effect */}
         {pulseEffect && (
           <motion.div
-            className={`absolute ${sizeClasses[size].outerRing} rounded-full bg-cyan-500 opacity-0`}
+            className={`absolute ${sizeClasses[size].outerRing} rounded-full bg-[#d8b26f] opacity-0`}
             animate={{
               opacity: [0, 0.2, 0],
               scale: [0.8, 1.2, 0.8],
@@ -103,7 +103,7 @@ export default function SolBotAvatar({ size = "md", pulseEffect = false }: SolBo
             {[...Array(5)].map((_, i) => (
               <motion.div
                 key={i}
-                className="particle bg-blue-300"
+                className="particle bg-[#e6c98c]"
                 initial={{
                   x: Math.random() * 100 - 50,
                   y: Math.random() * 100 - 50,
