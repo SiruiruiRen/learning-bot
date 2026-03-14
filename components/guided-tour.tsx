@@ -19,7 +19,7 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     title: "Welcome to SoL2LBot!",
-    description: "Welcome to the Science of Learning to Learn Bot! This 90-minute training teaches you evidence-based study strategies with AI coaching. Before we start, you'll try a short Quick Help demo so you know where to get support at any time.",
+    description: "Welcome to the Science of Learning to Learn Bot! This training teaches you evidence-based study strategies with AI coaching. Before we start, you'll try a short Quick Help demo so you know where to get support at any time.",
     icon: <BrainCircuit className="w-5 h-5" />,
     target: null,
     placement: "center",

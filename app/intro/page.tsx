@@ -207,7 +207,7 @@ export default function IntroPage() {
                   </CardTitle>
                 </div>
                 <p className="text-center text-lg" style={{ color: mutedText }}>
-                  A 90-minute, evidence-based training to help you study more effectively.
+                  An evidence-based training to help you study more effectively.
                 </p>
               </CardHeader>
             </Card>

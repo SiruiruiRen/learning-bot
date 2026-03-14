@@ -510,7 +510,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
         animate={{ width: isOpen ? 0 : 72 }}
         transition={{ duration: 0.2 }}
         className="flex-shrink-0 h-full overflow-hidden cursor-pointer flex items-center"
-        style={{ minWidth: isOpen ? 0 : 72 }}
+        style={{ minWidth: isOpen ? 0 : 72, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 }}
         onClick={() => !isOpen && openChatbot('click')}
       >
         <motion.div
@@ -521,8 +521,6 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           style={{
             backgroundImage: "linear-gradient(180deg, #d8b26f, #b8892e)",
             borderLeft: "3px solid #b8892e",
-            borderTop: `1px solid ${neutralBorder}`,
-            borderBottom: `1px solid ${neutralBorder}`,
             borderTopLeftRadius: 14,
             borderBottomLeftRadius: 14,
             boxShadow: "-6px 0 24px rgba(216,178,111,0.4), -2px 0 8px rgba(216,178,111,0.2)"
