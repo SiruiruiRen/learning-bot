@@ -84,6 +84,7 @@ export default function GuidedMCII({
   const [chatAnalyticsId, setChatAnalyticsId] = useState<string | null>(null);
   const [lastFailedRequest, setLastFailedRequest] = useState<string | null>(null);
   const [showRetryOption, setShowRetryOption] = useState(false);
+  const [editingSingleQuestion, setEditingSingleQuestion] = useState<number | null>(null);
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -195,7 +196,22 @@ export default function GuidedMCII({
     const userMessage: Message = { id: uuidv4(), sender: "user", content: userInput, type: "response" };
     let botMessages: Message[] = [];
 
-    if (currentQuestionIndex < MCII_QUESTIONS.length - 1) {
+    // If editing a single question, return to confirmation after this answer
+    if (editingSingleQuestion !== null) {
+      setEditingSingleQuestion(null);
+      setInteractionState("confirming");
+      botMessages.push({
+        id: uuidv4(),
+        sender: "bot",
+        content: {
+          pick_goal: newResponses["pick_goal"],
+          indulge: newResponses["indulge"],
+          consider_obstacles: newResponses["consider_obstacles"],
+          implementation_intention: newResponses["implementation_intention"],
+        },
+        type: "confirmation",
+      });
+    } else if (currentQuestionIndex < MCII_QUESTIONS.length - 1) {
       const nextQuestionIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextQuestionIndex);
       botMessages.push({ id: uuidv4(), sender: "bot", content: MCII_QUESTIONS[nextQuestionIndex].question, type: "question" });
@@ -374,6 +390,19 @@ export default function GuidedMCII({
     }
   };
   
+  const handleEditSingleQuestion = (questionIndex: number) => {
+    setEditingSingleQuestion(questionIndex);
+    setInteractionState("guiding");
+    setCurrentQuestionIndex(questionIndex);
+    const questionId = MCII_QUESTIONS[questionIndex].id;
+    setMessages(prev => [
+      ...prev,
+      { id: uuidv4(), sender: "bot", content: `Editing your response for: **${["Goal", "Indulge (Visualization)", "Consider Obstacles", "Implementation Intention"][questionIndex]}**`, type: "question" },
+      { id: uuidv4(), sender: "bot", content: MCII_QUESTIONS[questionIndex].question, type: "question" }
+    ]);
+    setUserInput(responses[questionId] || "");
+  };
+
   const handleCompleteChat = () => {
     if (chatAnalyticsId && sessionId) {
       fetch('/api/events', {
@@ -515,23 +544,25 @@ export default function GuidedMCII({
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                  {message.type === 'confirmation' && typeof message.content === 'object' ? (
                     <div className="space-y-3">
-                      <p>Thank you for your thoughtful responses! Here is your complete MCII plan. Please review it.</p>
-                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>1. Goal:</h4>
-                        <p className="whitespace-pre-wrap">{message.content.pick_goal}</p>
-                      </div>
-                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>2. Indulge (Visualization):</h4>
-                        <p className="whitespace-pre-wrap">{message.content.indulge}</p>
-                      </div>
-                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>3. Consider Obstacles:</h4>
-                        <p className="whitespace-pre-wrap">{message.content.consider_obstacles}</p>
-                      </div>
-                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>4. Implementation Intention:</h4>
-                        <p className="whitespace-pre-wrap">{message.content.implementation_intention}</p>
-                      </div>
+                      <p>Thank you for your thoughtful responses! Here is your complete MCII plan. Please review it. <span style={{ color: mutedText, fontSize: "0.85em" }}>Click any section to edit it.</span></p>
+                      {[
+                        { key: "pick_goal" as const, label: "1. Goal:", index: 0 },
+                        { key: "indulge" as const, label: "2. Indulge (Visualization):", index: 1 },
+                        { key: "consider_obstacles" as const, label: "3. Consider Obstacles:", index: 2 },
+                        { key: "implementation_intention" as const, label: "4. Implementation Intention:", index: 3 },
+                      ].map(({ key, label, index }) => (
+                        <div
+                          key={key}
+                          className="p-3 rounded-md border transition-colors"
+                          style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder, cursor: interactionState === "confirming" ? "pointer" : "default" }}
+                          onClick={() => { if (interactionState === "confirming") handleEditSingleQuestion(index); }}
+                          onMouseEnter={(e) => { if (interactionState === "confirming") { e.currentTarget.style.borderColor = accent; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.7)"; }}}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = neutralBorder; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.4)"; }}
+                        >
+                          <h4 className="font-semibold mb-1" style={{ color: accent }}>{label}</h4>
+                          <p className="whitespace-pre-wrap">{(message.content as Record<string, string>)[key]}</p>
+                        </div>
+                      ))}
                     </div>
                   ) : message.type === 'evaluation' ? (
                   <FeedbackDisplay content={message.content as string} />

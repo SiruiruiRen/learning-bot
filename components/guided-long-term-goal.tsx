@@ -74,6 +74,7 @@ export default function GuidedLongTermGoal({
   const [chatAnalyticsId, setChatAnalyticsId] = useState<string | null>(null);
   const [lastFailedRequest, setLastFailedRequest] = useState<string | null>(null);
   const [showRetryOption, setShowRetryOption] = useState(false);
+  const [editingSingleQuestion, setEditingSingleQuestion] = useState<number | null>(null);
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -185,7 +186,20 @@ export default function GuidedLongTermGoal({
     const userMessage: Message = { id: uuidv4(), sender: "user", content: userInput, type: "response" };
     let botMessages: Message[] = [];
 
-    if (currentQuestionIndex < LONGTERM_QUESTIONS.length - 1) {
+    if (editingSingleQuestion !== null) {
+      setEditingSingleQuestion(null);
+      setInteractionState("confirming");
+      botMessages.push({
+        id: uuidv4(),
+        sender: "bot",
+        content: {
+          specific_goal: newResponses["specific_goal"],
+          goal_orientation: newResponses["goal_orientation"],
+          visualization: newResponses["visualization"],
+        },
+        type: "confirmation",
+      });
+    } else if (currentQuestionIndex < LONGTERM_QUESTIONS.length - 1) {
       const nextQuestionIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextQuestionIndex);
       botMessages.push({ id: uuidv4(), sender: "bot", content: LONGTERM_QUESTIONS[nextQuestionIndex].question, type: "question" });
@@ -337,6 +351,19 @@ export default function GuidedLongTermGoal({
     }
   };
   
+  const handleEditSingleQuestion = (questionIndex: number) => {
+    setEditingSingleQuestion(questionIndex);
+    setInteractionState("guiding");
+    setCurrentQuestionIndex(questionIndex);
+    const questionId = LONGTERM_QUESTIONS[questionIndex].id;
+    setMessages(prev => [
+      ...prev,
+      { id: uuidv4(), sender: "bot", content: `Editing your response for: **${["Specific Goal", "Goal Orientation", "Visualization"][questionIndex]}**`, type: "question" },
+      { id: uuidv4(), sender: "bot", content: LONGTERM_QUESTIONS[questionIndex].question, type: "question" }
+    ]);
+    setUserInput(responses[questionId] || "");
+  };
+
   const handleCompleteChat = () => {
     if (chatAnalyticsId && sessionId) {
       fetch('/api/events', {
@@ -478,19 +505,24 @@ export default function GuidedLongTermGoal({
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                  {message.type === 'confirmation' && typeof message.content === 'object' ? (
                     <div className="space-y-3">
-                      <p>Thank you for your thoughtful responses! Here is your complete long-term goal. Please review it.</p>
-                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>Specific Goal:</h4>
-                        <p className="whitespace-pre-wrap">{message.content.specific_goal}</p>
-                      </div>
-                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>Goal Orientation:</h4>
-                        <p className="whitespace-pre-wrap">{message.content.goal_orientation}</p>
-                      </div>
-                      <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder }}>
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>Visualization:</h4>
-                        <p className="whitespace-pre-wrap">{message.content.visualization}</p>
-                      </div>
+                      <p>Thank you for your thoughtful responses! Here is your complete long-term goal. Please review it. <span style={{ color: mutedText, fontSize: "0.85em" }}>Click any section to edit it.</span></p>
+                      {[
+                        { key: "specific_goal" as const, label: "Specific Goal:", index: 0 },
+                        { key: "goal_orientation" as const, label: "Goal Orientation:", index: 1 },
+                        { key: "visualization" as const, label: "Visualization:", index: 2 },
+                      ].map(({ key, label, index }) => (
+                        <div
+                          key={key}
+                          className="p-3 rounded-md border transition-colors"
+                          style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder, cursor: interactionState === "confirming" ? "pointer" : "default" }}
+                          onClick={() => { if (interactionState === "confirming") handleEditSingleQuestion(index); }}
+                          onMouseEnter={(e) => { if (interactionState === "confirming") { e.currentTarget.style.borderColor = accent; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.7)"; }}}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = neutralBorder; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.4)"; }}
+                        >
+                          <h4 className="font-semibold mb-1" style={{ color: accent }}>{label}</h4>
+                          <p className="whitespace-pre-wrap">{(message.content as Record<string, string>)[key]}</p>
+                        </div>
+                      ))}
                     </div>
                   ) : message.type === 'evaluation' ? (
                   <FeedbackDisplay content={message.content as string} />

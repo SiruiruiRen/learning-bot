@@ -65,6 +65,7 @@ export default function GuidedShortTermGoal({
   const [isLoading, setIsLoading] = useState(false)
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0)
   const [feedbackReceived, setFeedbackReceived] = useState(false);
+  const [editingSingleQuestion, setEditingSingleQuestion] = useState<number | null>(null);
 
   useEffect(() => {
     const storedSessionId = localStorage.getItem("session_id");
@@ -132,17 +133,22 @@ export default function GuidedShortTermGoal({
     const userMessage: Message = { id: uuidv4(), sender: "user", content: userInput, type: "response" };
     let botMessages: Message[] = [];
 
-    if (currentQuestionIndex < SHORT_TERM_QUESTIONS.length - 1) {
+    const confirmationContent = {
+      specific_goal: newResponses["specific_goal"],
+      action_plan: newResponses["action_plan"],
+      timeline: newResponses["timeline"]
+    };
+
+    if (editingSingleQuestion !== null) {
+      setEditingSingleQuestion(null);
+      setInteractionState("confirming");
+      botMessages.push({ id: uuidv4(), sender: "bot", content: confirmationContent, type: "confirmation" });
+    } else if (currentQuestionIndex < SHORT_TERM_QUESTIONS.length - 1) {
       const nextQuestionIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextQuestionIndex);
       botMessages.push({ id: uuidv4(), sender: "bot", content: SHORT_TERM_QUESTIONS[nextQuestionIndex].question, type: "question" });
     } else {
       setInteractionState("confirming");
-      const confirmationContent = {
-        specific_goal: newResponses["specific_goal"],
-        action_plan: newResponses["action_plan"],
-        timeline: newResponses["timeline"]
-      };
       botMessages.push({ id: uuidv4(), sender: "bot", content: confirmationContent, type: "confirmation" });
     }
     setMessages(prev => [...prev, userMessage, ...botMessages]);
@@ -189,6 +195,19 @@ export default function GuidedShortTermGoal({
       setUserInput("");
       submitToApi(messageToSend);
   }
+
+  const handleEditSingleQuestion = (questionIndex: number) => {
+    setEditingSingleQuestion(questionIndex);
+    setInteractionState("guiding");
+    setCurrentQuestionIndex(questionIndex);
+    const questionId = SHORT_TERM_QUESTIONS[questionIndex].id;
+    setMessages(prev => [
+      ...prev,
+      { id: uuidv4(), sender: "bot", content: `Editing your response for: **${["Specific Goal", "Action Plan", "Timeline"][questionIndex]}**`, type: "question" },
+      { id: uuidv4(), sender: "bot", content: SHORT_TERM_QUESTIONS[questionIndex].question, type: "question" }
+    ]);
+    setUserInput(responses[questionId] || "");
+  };
 
   const handleEditResponses = () => {
     setInteractionState("guiding");
@@ -279,19 +298,24 @@ export default function GuidedShortTermGoal({
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                 {message.type === 'confirmation' && typeof message.content === 'object' ? (
                   <div className="space-y-3">
-                    <p>Thank you! Here is your complete SMART goal. Please review it.</p>
-                    <div className="p-3 bg-[hsl(var(--muted)_/_0.4)] rounded-md border border-[hsl(var(--border))]">
-                      <h4 className="font-semibold text-[var(--accent-text)] mb-1">Specific Goal:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.specific_goal}</p>
-                    </div>
-                    <div className="p-3 bg-[hsl(var(--muted)_/_0.4)] rounded-md border border-[hsl(var(--border))]">
-                      <h4 className="font-semibold text-[var(--accent-text)] mb-1">Action Plan:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.action_plan}</p>
-                    </div>
-                    <div className="p-3 bg-[hsl(var(--muted)_/_0.4)] rounded-md border border-[hsl(var(--border))]">
-                      <h4 className="font-semibold text-[var(--accent-text)] mb-1">Timeline:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.timeline}</p>
-                    </div>
+                    <p>Thank you! Here is your complete SMART goal. Please review it. <span className="text-muted-foreground text-[0.85em]">Click any section to edit it.</span></p>
+                    {[
+                      { key: "specific_goal" as const, label: "Specific Goal:", index: 0 },
+                      { key: "action_plan" as const, label: "Action Plan:", index: 1 },
+                      { key: "timeline" as const, label: "Timeline:", index: 2 },
+                    ].map(({ key, label, index }) => (
+                      <div
+                        key={key}
+                        className="p-3 bg-[hsl(var(--muted)_/_0.4)] rounded-md border border-[hsl(var(--border))] transition-colors hover:bg-[hsl(var(--muted)_/_0.7)]"
+                        style={{ cursor: interactionState === "confirming" ? "pointer" : "default" }}
+                        onClick={() => { if (interactionState === "confirming") handleEditSingleQuestion(index); }}
+                        onMouseEnter={(e) => { if (interactionState === "confirming") { e.currentTarget.style.borderColor = "var(--accent-text)"; }}}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = ""; }}
+                      >
+                        <h4 className="font-semibold text-[var(--accent-text)] mb-1">{label}</h4>
+                        <p className="whitespace-pre-wrap">{(message.content as Record<string, string>)[key]}</p>
+                      </div>
+                    ))}
                   </div>
                 ) : message.type === 'evaluation' ? (
                   <FeedbackDisplay content={message.content as string} />

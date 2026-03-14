@@ -64,6 +64,7 @@ export default function GuidedMonitoringAdaptation({
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0)
+  const [editingSingleQuestion, setEditingSingleQuestion] = useState<number | null>(null);
 
   useEffect(() => {
     const storedSessionId = localStorage.getItem("session_id");
@@ -106,17 +107,22 @@ export default function GuidedMonitoringAdaptation({
     const userMessage: Message = { id: uuidv4(), sender: "user", content: userInput, type: "response" };
     let botMessages: Message[] = [];
 
-    if (currentQuestionIndex < MONITORING_QUESTIONS.length - 1) {
+    const confirmationContent = {
+      progress_metrics: newResponses["progress_metrics"],
+      reflection_schedule: newResponses["reflection_schedule"],
+      adaptation_approach: newResponses["adaptation_approach"]
+    };
+
+    if (editingSingleQuestion !== null) {
+      setEditingSingleQuestion(null);
+      setInteractionState("confirming");
+      botMessages.push({ id: uuidv4(), sender: "bot", content: confirmationContent, type: "confirmation" });
+    } else if (currentQuestionIndex < MONITORING_QUESTIONS.length - 1) {
       const nextQuestionIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextQuestionIndex);
       botMessages.push({ id: uuidv4(), sender: "bot", content: MONITORING_QUESTIONS[nextQuestionIndex].question, type: "question" });
     } else {
       setInteractionState("confirming");
-      const confirmationContent = {
-        progress_metrics: newResponses["progress_metrics"],
-        reflection_schedule: newResponses["reflection_schedule"],
-        adaptation_approach: newResponses["adaptation_approach"]
-      };
       botMessages.push({ id: uuidv4(), sender: "bot", content: confirmationContent, type: "confirmation" });
     }
     setMessages(prev => [...prev, userMessage, ...botMessages]);
@@ -212,6 +218,19 @@ export default function GuidedMonitoringAdaptation({
       setUserInput("");
       submitToApi(messageToSend);
   }
+
+  const handleEditSingleQuestion = (questionIndex: number) => {
+    setEditingSingleQuestion(questionIndex);
+    setInteractionState("guiding");
+    setCurrentQuestionIndex(questionIndex);
+    const questionId = MONITORING_QUESTIONS[questionIndex].id;
+    setMessages(prev => [
+      ...prev,
+      { id: uuidv4(), sender: "bot", content: `Editing your response for: **${["Progress Metrics", "Reflection Schedule", "Adaptation Approach"][questionIndex]}**`, type: "question" },
+      { id: uuidv4(), sender: "bot", content: MONITORING_QUESTIONS[questionIndex].question, type: "question" }
+    ]);
+    setUserInput(responses[questionId] || "");
+  };
 
   const handleEditResponses = () => {
     setInteractionState("guiding");
@@ -327,19 +346,24 @@ export default function GuidedMonitoringAdaptation({
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                 {message.type === 'confirmation' && typeof message.content === 'object' ? (
                   <div className="space-y-3">
-                    <p>Thank you! Here is your complete monitoring and adaptation plan. Please review it.</p>
-                    <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder }}>
-                      <h4 className="font-semibold mb-1" style={{ color: accent }}>Progress Metrics:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.progress_metrics}</p>
-                    </div>
-                    <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder }}>
-                      <h4 className="font-semibold mb-1" style={{ color: accent }}>Reflection Schedule:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.reflection_schedule}</p>
-                    </div>
-                    <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder }}>
-                      <h4 className="font-semibold mb-1" style={{ color: accent }}>Adaptation Approach:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.adaptation_approach}</p>
-                    </div>
+                    <p>Thank you! Here is your complete monitoring and adaptation plan. Please review it. <span style={{ color: mutedText, fontSize: "0.85em" }}>Click any section to edit it.</span></p>
+                    {[
+                      { key: "progress_metrics" as const, label: "Progress Metrics:", index: 0 },
+                      { key: "reflection_schedule" as const, label: "Reflection Schedule:", index: 1 },
+                      { key: "adaptation_approach" as const, label: "Adaptation Approach:", index: 2 },
+                    ].map(({ key, label, index }) => (
+                      <div
+                        key={key}
+                        className="p-3 rounded-md border transition-colors"
+                        style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder, cursor: interactionState === "confirming" ? "pointer" : "default" }}
+                        onClick={() => { if (interactionState === "confirming") handleEditSingleQuestion(index); }}
+                        onMouseEnter={(e) => { if (interactionState === "confirming") { e.currentTarget.style.borderColor = accent; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.7)"; }}}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = neutralBorder; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.5)"; }}
+                      >
+                        <h4 className="font-semibold mb-1" style={{ color: accent }}>{label}</h4>
+                        <p className="whitespace-pre-wrap">{(message.content as Record<string, string>)[key]}</p>
+                      </div>
+                    ))}
                   </div>
                 ) : message.type === 'evaluation' ? (
                   <FeedbackDisplay content={message.content as string} />
