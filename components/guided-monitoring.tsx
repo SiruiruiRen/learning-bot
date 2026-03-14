@@ -24,17 +24,17 @@ const MONITORING_QUESTIONS = [
   {
     id: "progress_checks",
     question: "How will you check your progress to know if you're on track?",
-    hint: "Hint: Include what you'll measure, how often, and what score or threshold counts as 'on track.'"
+    hint: "How will you know if your studying is actually working?"
   },
   {
     id: "adaptation_triggers",
     question: "What specific signals will tell you that you need to change your learning strategy?",
-    hint: "Hint: Set a measurable threshold — a specific score, number of attempts, or time limit."
+    hint: "What would tell you it's time to try something different?"
   },
   {
     id: "strategy_alternatives",
     question: "What alternative learning strategies will you use if your first approach isn't effective? Give specific examples.",
-    hint: "Hint: Name 2-3 specific backup approaches with clear steps for each."
+    hint: "What would you switch to if your current approach isn't working?"
   }
 ]
 

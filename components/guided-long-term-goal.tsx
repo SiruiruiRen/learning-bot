@@ -24,17 +24,17 @@ const LONGTERM_QUESTIONS = [
   {
     id: "specific_goal",
     question: "What is a meaningful long-term goal you want to accomplish using the knowledge or skills from this course/project?",
-    hint: "Hint: Think about what you want to do with these skills beyond this course."
+    hint: "What would you like to achieve with what you're learning?"
   },
   {
     id: "goal_orientation",
     question: "How does this goal connect to your personal story and future aspirations?",
-    hint: "Hint: Why does this matter to you personally? Connect it to your values or career plans."
+    hint: "Why is this goal meaningful to you?"
   },
   {
     id: "visualization",
     question: "Take a moment to imagine achieving this goal. What would it feel like? What would be different?",
-    hint: "Hint: Describe how success looks and feels — be vivid and personal."
+    hint: "Picture yourself having achieved this goal."
   }
 ]
 

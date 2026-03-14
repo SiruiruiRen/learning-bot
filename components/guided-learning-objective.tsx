@@ -24,17 +24,17 @@ const OBJECTIVE_QUESTIONS = [
   {
     id: "goal_clarity",
     question: "For your chosen course/task: What are you learning right now? Describe the key topics, skills, and objectives involved.",
-    hint: "Hint: Name your course, the specific topics, and what skills you need to build."
+    hint: "Think about what topics you're covering right now in your course."
   },
   {
     id: "background_connection",
     question: "What learning materials and resources do you have access to?",
-    hint: "Hint: List specific resources by name — textbook chapters, lecture slides, videos, etc."
+    hint: "What do you use when you study for this course?"
   },
   {
     id: "study_resources",
     question: "How will you use these resources to maximize your learning?",
-    hint: "Hint: Describe which resource you'll use for what purpose and in what order."
+    hint: "How do you plan to use these materials?"
   }
 ];
 

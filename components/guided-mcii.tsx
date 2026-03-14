@@ -24,22 +24,22 @@ const MCII_QUESTIONS = [
   {
     id: "pick_goal",
     question: "Pick a goal you would like to achieve. For the purposes of this module, please choose a goal related to the course containing this module. State the goal you selected below.",
-    hint: "Hint: Pick a specific, challenging yet achievable goal related to your course."
+    hint: "Pick something specific you want to achieve in this course."
   },
   {
     id: "indulge",
     question: "Take a moment and consider how it would feel to achieve the goal – Why would achieving this goal be so satisfying? Imagine the relevant events and experiences as vividly as possible – really let your mind go! Elaborate in writing on what it would feel like to achieve the goal.",
-    hint: "Hint: Describe the scene vividly — what you'd feel, what you'd be able to do, why it matters to you."
+    hint: "Let your imagination go — what would success feel like?"
   },
   {
     id: "consider_obstacles",
     question: "Sometimes things do not work out as well as we would have liked. Think about the obstacles that might prevent you from achieving your goal. What is the most challenging obstacle that stands in your way? What other obstacles might make it hard for you to achieve your goal? Consider your own thoughts and habits – what obstacles of your own creation might make it harder to achieve your goal? Spend some time reflecting on these obstacles. In the space provided, name the central obstacle. Think about it deeply and imagine the relevant events and experiences as vividly as possible, then elaborate in writing on what could prevent you from achieving your goal.",
-    hint: "Hint: Focus on internal habits or thought patterns (e.g., procrastination, anxiety) — not just external factors."
+    hint: "What personal habits or tendencies could get in your way?"
   },
   {
     id: "implementation_intention",
     question: "Now please make an implementation intention that will help you to approach your goal. You may find it useful to think of the main obstacle that you identified and create an implementation intention that can help you overcome this obstacle in particular. To remind you, an implementation intention should have the following format: \"If (I am in a situation X), then (I will do Y).\" Please complete your implementation intention below. Once you're done writing, remember to repeat the implementation intention to yourself a few times and visualize performing it.",
-    hint: "Hint: Use the format 'If [specific situation], then I will [specific action]' — be as concrete as possible."
+    hint: "Write a concrete 'If __, then I will __' plan."
   }
 ]
 

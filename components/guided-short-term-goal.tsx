@@ -24,17 +24,17 @@ const SHORT_TERM_QUESTIONS = [
   {
     id: "specific_goal",
     question: "What's your next milestone/short-term goal, and how will you know when you've reached it?",
-    hint: "Hint: State what you'll accomplish, by when, and how you'll measure success."
+    hint: "What do you want to accomplish in the next week or two?"
   },
   {
     id: "action_plan",
     question: "What are the key steps you'll take to reach this short-term goal?",
-    hint: "Hint: Break it into daily or weekly actions with specific methods."
+    hint: "What will you do each day to get there?"
   },
   {
     id: "timeline",
     question: "What is your precise schedule for completing this goal, including any checkpoints?",
-    hint: "Hint: Include specific dates, daily tasks, and at least one progress checkpoint."
+    hint: "When exactly will you work on each step?"
   }
 ]
 

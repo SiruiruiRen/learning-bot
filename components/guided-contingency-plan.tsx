@@ -24,17 +24,17 @@ const CONTINGENCY_QUESTIONS = [
   {
     id: "obstacle_identification",
     question: "What's a potential obstacle that could get in the way of your learning plan?",
-    hint: "Hint: Think about distractions, bad habits, or situations that derail your study time."
+    hint: "What tends to go wrong when you try to study?"
   },
   {
     id: "if_then_plan",
     question: "Now, create an 'if-then' plan to overcome that obstacle.",
-    hint: "Hint: Use the format 'IF [obstacle happens], THEN I will [specific action].'"
+    hint: "Use the format: IF [obstacle], THEN I will [action]."
   },
   {
     id: "proactive_strategy",
     question: "What's one proactive step you can take to make this obstacle less likely to happen in the first place?",
-    hint: "Hint: What can you set up before studying to prevent the obstacle?"
+    hint: "What could you do beforehand to avoid this problem?"
   }
 ]
 
