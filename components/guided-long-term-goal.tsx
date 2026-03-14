@@ -24,17 +24,17 @@ const LONGTERM_QUESTIONS = [
   {
     id: "specific_goal",
     question: "What is a meaningful long-term goal you want to accomplish using the knowledge or skills from this course/project?",
-    hint: "Example: 'I want to use my new Python skills to build a web app that helps people track their expenses.'"
+    hint: "Hint: Think about what you want to do with these skills beyond this course."
   },
   {
     id: "goal_orientation",
     question: "How does this goal connect to your personal story and future aspirations?",
-    hint: "Example: 'This matters to me because I want to start my own business one day, and this is a great first step.'"
+    hint: "Hint: Why does this matter to you personally? Connect it to your values or career plans."
   },
   {
     id: "visualization",
     question: "Take a moment to imagine achieving this goal. What would it feel like? What would be different?",
-    hint: "Example: 'I would feel proud and accomplished. I'd be able to show my friends the app I built.'"
+    hint: "Hint: Describe how success looks and feels — be vivid and personal."
   }
 ]
 
@@ -464,7 +464,7 @@ export default function GuidedLongTermGoal({
           >
             {message.sender === "bot" && (
               <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
             <Card 
@@ -512,7 +512,7 @@ export default function GuidedLongTermGoal({
             className="flex items-center gap-2"
           >
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
             </div>
             <div className="typing-indicator">
               <div className="typing-indicator-dots">

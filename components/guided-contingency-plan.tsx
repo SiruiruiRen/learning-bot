@@ -24,17 +24,17 @@ const CONTINGENCY_QUESTIONS = [
   {
     id: "obstacle_identification",
     question: "What's a potential obstacle that could get in the way of your learning plan?",
-    hint: "Example: 'I might get distracted by my phone when I'm trying to study.'"
+    hint: "Hint: Think about distractions, bad habits, or situations that derail your study time."
   },
   {
     id: "if_then_plan",
     question: "Now, create an 'if-then' plan to overcome that obstacle.",
-    hint: "Example: 'IF I get distracted by my phone, THEN I will put it in another room.'"
+    hint: "Hint: Use the format 'IF [obstacle happens], THEN I will [specific action].'"
   },
   {
     id: "proactive_strategy",
     question: "What's one proactive step you can take to make this obstacle less likely to happen in the first place?",
-    hint: "Example: 'I will turn off my phone's notifications before I start studying.'"
+    hint: "Hint: What can you set up before studying to prevent the obstacle?"
   }
 ]
 
@@ -272,7 +272,7 @@ export default function GuidedContingencyPlan({
           >
             {message.sender === "bot" && (
               <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-[#b8892e]">
-                <Bot size={16} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
             <Card className={`${message.type === 'evaluation' ? 'w-full' : 'max-w-[85%]'} ${message.sender === "bot" ? "bg-[hsl(var(--card)_/_0.7)]" : "bg-[hsl(var(--primary)_/_0.15)]"} border-[hsl(var(--border))]`}>
@@ -313,7 +313,7 @@ export default function GuidedContingencyPlan({
             className="flex items-center gap-2"
           >
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-[#b8892e]">
-                <Bot size={16} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
             </div>
             <div className="typing-indicator">
               <div className="typing-indicator-dots">

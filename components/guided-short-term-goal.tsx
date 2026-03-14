@@ -24,17 +24,17 @@ const SHORT_TERM_QUESTIONS = [
   {
     id: "specific_goal",
     question: "What's your next milestone/short-term goal, and how will you know when you've reached it?",
-    hint: "Example: 'My goal is to finish Chapter 5 of my textbook by Friday. I'll know I'm done when I can complete all the practice problems.'"
+    hint: "Hint: State what you'll accomplish, by when, and how you'll measure success."
   },
   {
     id: "action_plan",
     question: "What are the key steps you'll take to reach this short-term goal?",
-    hint: "Example: 'I will read one section every day and do the practice problems for that section each night.'"
+    hint: "Hint: Break it into daily or weekly actions with specific methods."
   },
   {
     id: "timeline",
     question: "What is your precise schedule for completing this goal, including any checkpoints?",
-    hint: "Example: 'Mon-Thurs: Read one section. Fri: Review and do all practice problems. Sat: Take a day off.'"
+    hint: "Hint: Include specific dates, daily tasks, and at least one progress checkpoint."
   }
 ]
 
@@ -272,7 +272,7 @@ export default function GuidedShortTermGoal({
           >
             {message.sender === "bot" && (
               <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-[#b8892e]">
-                <Bot size={16} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
             <Card className={`${message.type === 'evaluation' ? 'w-full' : 'max-w-[85%]'} ${message.sender === "bot" ? "bg-[hsl(var(--card)_/_0.7)]" : "bg-[hsl(var(--primary)_/_0.15)]"} border-[hsl(var(--border))]`}>
@@ -313,7 +313,7 @@ export default function GuidedShortTermGoal({
             className="flex items-center gap-2"
           >
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center bg-[#b8892e]">
-                <Bot size={16} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
             </div>
             <div className="typing-indicator">
               <div className="typing-indicator-dots">

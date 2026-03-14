@@ -24,17 +24,17 @@ const MONITORING_QUESTIONS = [
   {
     id: "progress_checks",
     question: "How will you check your progress to know if you're on track?",
-    hint: "Example: 'I will do the practice quiz at the end of each chapter and aim for a score of 80% or higher.'"
+    hint: "Hint: Include what you'll measure, how often, and what score or threshold counts as 'on track.'"
   },
   {
     id: "adaptation_triggers",
     question: "What specific signals will tell you that you need to change your learning strategy?",
-    hint: "Example: 'If I fail the practice quiz twice, I'll know I need to try a different approach.'"
+    hint: "Hint: Set a measurable threshold — a specific score, number of attempts, or time limit."
   },
   {
     id: "strategy_alternatives",
     question: "What alternative learning strategies will you use if your first approach isn't effective? Give specific examples.",
-    hint: "Example: 'If reading the textbook isn't working, I'll try watching a video on the topic or working with a study group.'"
+    hint: "Hint: Name 2-3 specific backup approaches with clear steps for each."
   }
 ]
 
@@ -321,7 +321,7 @@ export default function GuidedMonitoring({
           >
             {message.sender === "bot" && (
               <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
             <Card 
@@ -369,7 +369,7 @@ export default function GuidedMonitoring({
             className="flex items-center gap-2"
           >
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
             </div>
             <div className="typing-indicator">
               <div className="typing-indicator-dots">

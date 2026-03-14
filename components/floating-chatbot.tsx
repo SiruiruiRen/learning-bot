@@ -625,7 +625,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                       <div key={index} className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                         {msg.role === 'assistant' && (
                           <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
-                            <Bot className="w-4 h-4" style={{ color: "#1f1408" }} />
+                            <Bot className="w-4 h-4" style={{ color: "#ffffff" }} />
                           </div>
                         )}
                         <div
@@ -663,7 +663,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                     {isLoading && (
                       <div className="flex items-center gap-2">
                         <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: accent }}>
-                          <Bot className="w-4 h-4" style={{ color: "#1f1408" }} />
+                          <Bot className="w-4 h-4" style={{ color: "#ffffff" }} />
                         </div>
                         <div className="flex gap-1 p-2">
                           <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: accent, animationDelay: "0ms" }} />

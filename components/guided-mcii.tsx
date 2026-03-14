@@ -24,22 +24,22 @@ const MCII_QUESTIONS = [
   {
     id: "pick_goal",
     question: "Pick a goal you would like to achieve. For the purposes of this module, please choose a goal related to the course containing this module. State the goal you selected below.",
-    hint: "Hint: Choose a goal that is challenging yet feasible for you to succeed at. Example: 'I want to master the key concepts in data structures and algorithms so I can solve complex programming problems confidently.'"
+    hint: "Hint: Pick a specific, challenging yet achievable goal related to your course."
   },
   {
     id: "indulge",
     question: "Take a moment and consider how it would feel to achieve the goal – Why would achieving this goal be so satisfying? Imagine the relevant events and experiences as vividly as possible – really let your mind go! Elaborate in writing on what it would feel like to achieve the goal.",
-    hint: "Example: 'Achieving this goal would make me feel confident and capable. I would be able to tackle challenging coding interviews and contribute meaningfully to technical projects. I can imagine myself solving problems that once seemed impossible, feeling proud of my growth.'"
+    hint: "Hint: Describe the scene vividly — what you'd feel, what you'd be able to do, why it matters to you."
   },
   {
     id: "consider_obstacles",
     question: "Sometimes things do not work out as well as we would have liked. Think about the obstacles that might prevent you from achieving your goal. What is the most challenging obstacle that stands in your way? What other obstacles might make it hard for you to achieve your goal? Consider your own thoughts and habits – what obstacles of your own creation might make it harder to achieve your goal? Spend some time reflecting on these obstacles. In the space provided, name the central obstacle. Think about it deeply and imagine the relevant events and experiences as vividly as possible, then elaborate in writing on what could prevent you from achieving your goal.",
-    hint: "Example: 'The central obstacle is my tendency to procrastinate when facing difficult problems. When I encounter a challenging concept, I often put off studying it and instead focus on easier tasks. This creates a cycle where difficult topics pile up and become overwhelming.'"
+    hint: "Hint: Focus on internal habits or thought patterns (e.g., procrastination, anxiety) — not just external factors."
   },
   {
     id: "implementation_intention",
     question: "Now please make an implementation intention that will help you to approach your goal. You may find it useful to think of the main obstacle that you identified and create an implementation intention that can help you overcome this obstacle in particular. To remind you, an implementation intention should have the following format: \"If (I am in a situation X), then (I will do Y).\" Please complete your implementation intention below. Once you're done writing, remember to repeat the implementation intention to yourself a few times and visualize performing it.",
-    hint: "Example: 'If I encounter a difficult concept that I don't understand after reading it twice, then I will immediately schedule a 30-minute focused study session within the next 24 hours to break it down into smaller parts and work through examples.'"
+    hint: "Hint: Use the format 'If [specific situation], then I will [specific action]' — be as concrete as possible."
   }
 ]
 
@@ -501,7 +501,7 @@ export default function GuidedMCII({
           >
             {message.sender === "bot" && (
               <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
             <Card 
@@ -553,7 +553,7 @@ export default function GuidedMCII({
             className="flex items-center gap-2"
           >
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
             </div>
             <div className="typing-indicator">
               <div className="typing-indicator-dots">

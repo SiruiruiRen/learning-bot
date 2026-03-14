@@ -24,17 +24,17 @@ const OBJECTIVE_QUESTIONS = [
   {
     id: "goal_clarity",
     question: "For your chosen course/task: What are you learning right now? Describe the key topics, skills, and objectives involved.",
-    hint: "Example: 'In my algebra course, I'm learning to solve quadratic equations. I need to master factoring and the quadratic formula.'"
+    hint: "Hint: Name your course, the specific topics, and what skills you need to build."
   },
   {
     id: "background_connection",
     question: "What learning materials and resources do you have access to?",
-    hint: "Example: 'My textbook (Chapter 5), the professor's lecture slides, and Khan Academy videos on this topic.'"
+    hint: "Hint: List specific resources by name — textbook chapters, lecture slides, videos, etc."
   },
   {
     id: "study_resources",
     question: "How will you use these resources to maximize your learning?",
-    hint: "Example: 'I'll read the textbook chapter first, then watch the videos for any concepts that are still unclear.'"
+    hint: "Hint: Describe which resource you'll use for what purpose and in what order."
   }
 ];
 
@@ -359,7 +359,7 @@ export default function GuidedLearningObjective({
           >
             {message.sender === "bot" && (
               <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
             <Card 
@@ -415,7 +415,7 @@ export default function GuidedLearningObjective({
                 className="flex items-center gap-2"
             >
                 <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                    <Bot size={16} style={{ color: "#1f1408" }} />
+                    <Bot size={16} style={{ color: "#ffffff" }} />
                 </div>
                 <div className="typing-indicator">
                     <div className="typing-indicator-dots">

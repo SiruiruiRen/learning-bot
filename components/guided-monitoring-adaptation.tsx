@@ -313,7 +313,7 @@ export default function GuidedMonitoringAdaptation({
           >
             {message.sender === "bot" && (
               <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
             <Card 
@@ -361,7 +361,7 @@ export default function GuidedMonitoringAdaptation({
             className="flex items-center gap-2"
           >
             <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: accent }}>
-                <Bot size={16} style={{ color: "#1f1408" }} />
+                <Bot size={16} style={{ color: "#ffffff" }} />
             </div>
             <div className="typing-indicator">
               <div className="typing-indicator-dots">
