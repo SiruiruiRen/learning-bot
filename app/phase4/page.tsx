@@ -5,9 +5,10 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Target, ArrowRight, CheckCircle, Map, Video, Edit, Bot, ChevronRight as ChevronRightIcon } from "lucide-react"
+import { Target, ChevronRight, ChevronLeft, Map, Video, FileQuestion, MessageCircle } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import VideoPlayer from "@/components/video-player"
+import { VerticalNav } from "@/components/vertical-nav"
 import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
 import { phase4KnowledgeChecks } from "@/lib/knowledge-check-questions"
 
@@ -16,14 +17,19 @@ export default function Phase4IntroPage() {
   const [userName, setUserName] = useState("")
   const [videoCompleted, setVideoCompleted] = useState(false)
   const [postTestCompleted, setPostTestCompleted] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
+  const [currentCardIndex, setCurrentCardIndex] = useState(0)
+
+  const cards = [
+    { id: "intro", title: "Introduction to Strategic Planning" },
+    { id: "video", title: "Watch: MCII Framework for Strategic Planning" },
+    { id: "post-test", title: "Knowledge Check: After Video" },
+  ]
 
   useEffect(() => {
     try {
       const storedName = localStorage.getItem("solbot_user_name");
       if (storedName) setUserName(storedName);
-      
-      // We still check for session_id to maintain flow integrity
+
       const storedSessionId = localStorage.getItem("session_id");
       if (!storedSessionId) {
         console.warn("No session_id found, redirecting to intro.");
@@ -35,8 +41,16 @@ export default function Phase4IntroPage() {
     }
   }, [router]);
 
-  const handleComplete = () => {
-    router.push("/phase4/tasks")
+  const nextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1)
+    }
+  }
+
+  const prevCard = () => {
+    if (currentCardIndex > 0) {
+      setCurrentCardIndex(currentCardIndex - 1)
+    }
   }
 
   const handleVideoComplete = () => {
@@ -47,18 +61,9 @@ export default function Phase4IntroPage() {
     setPostTestCompleted(true)
   }
 
-  const handleNext = () => {
-    if (currentStep === 0) {
-      // Move from instruction to video
-      setCurrentStep(1);
-    } else if (currentStep === 1 && !videoCompleted) {
-      // Can't proceed from video step until video is watched
-      return;
-    } else if (currentStep === 1 && videoCompleted) {
-      // Move directly to tasks (skipping post-test as requested)
-      handleComplete();
-    }
-  };
+  const handleContinueToChat = () => {
+    router.push("/phase4/mcii")
+  }
 
   const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -94,6 +99,17 @@ export default function Phase4IntroPage() {
       </div>
 
       <div className="container mx-auto px-4 relative z-10 pt-16">
+        <VerticalNav
+          currentCardIndex={currentCardIndex}
+          totalCards={cards.length}
+          onPrev={prevCard}
+          onNext={nextCard}
+          isNextDisabled={
+            (currentCardIndex === 1 && !videoCompleted) ||
+            (currentCardIndex === 2 && !postTestCompleted)
+          }
+        />
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -105,85 +121,59 @@ export default function Phase4IntroPage() {
               <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
                 <Target className="h-8 w-8" style={{ color: accent }} />
                 <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(to right, var(--accent-text), var(--accent-text))" }}>
-                  Introduction to Strategic Planning
+                  {cards[currentCardIndex].title}
                 </span>
               </CardTitle>
             </CardHeader>
 
             <CardContent>
-              {currentStep === 0 && (
+              {/* Introduction Card */}
+              {currentCardIndex === 0 && (
                 <div className="space-y-6">
+                  <div
+                    className="p-4 rounded-lg border mb-6 text-left"
+                    style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
+                  >
+                    <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
+                      <Map className="h-5 w-5" />
+                      Phase 4 Workflow
+                    </h3>
+                    <div className="flex items-center justify-center space-x-4 text-foreground">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
+                          <Video className="h-6 w-6" style={{ color: accent }} />
+                        </div>
+                        <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex flex-col items-center text-center">
+                        <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
+                          <FileQuestion className="h-6 w-6" style={{ color: accent }} />
+                        </div>
+                        <span className="text-xs font-medium" style={{ color: accent }}>Knowledge Check</span>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex flex-col items-center text-center">
+                        <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
+                          <MessageCircle className="h-6 w-6" style={{ color: accent }} />
+                        </div>
+                        <span className="text-xs font-medium" style={{ color: accent }}>Chat w/ SoL2LBot</span>
+                      </div>
+                    </div>
+                  </div>
                   <div className="text-muted-foreground space-y-4">
-                    <div
-                      className="p-4 rounded-lg border mb-6 text-left"
-                      style={{
-                        backgroundColor: neutralSurface,
-                        borderColor: neutralBorder,
-                      }}
-                    >
-                      <h3 className="text-lg font-medium mb-3 flex items-center gap-2" style={{ color: accent }}>
-                        <Map className="h-5 w-5" />
-                        Phase 4 Workflow
-                      </h3>
-                      <div className="flex items-center justify-center space-x-4 text-foreground">
-                        <div className="flex flex-col items-center text-center">
-                          <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                            <Video className="h-6 w-6" style={{ color: accent }} />
-                          </div>
-                          <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
-                        </div>
-                        <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex flex-col items-center text-center">
-                          <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                            <Edit className="h-6 w-6" style={{ color: accent }} />
-                          </div>
-                          <span className="text-xs font-medium" style={{ color: accent }}>Build Plan</span>
-                        </div>
-                        <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex flex-col items-center text-center">
-                          <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                            <Bot className="h-6 w-6" style={{ color: accent }} />
-                          </div>
-                          <span className="text-xs font-medium" style={{ color: accent }}>AI Coaching</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-center text-muted-foreground">
-                      Welcome {userName}! In this phase, we'll turn your learning intentions into a concrete strategic plan.
+                    <p className="text-center">
+                      Welcome {userName ? `${userName}` : ""}! In this phase, we'll turn your learning intentions into a concrete strategic plan.
                     </p>
-
-                    <div
-                      className="p-4 rounded-lg border"
-                      style={{
-                        backgroundColor: neutralSurface,
-                        borderColor: neutralBorder,
-                      }}
-                    >
-                      <h3 className="text-lg font-medium mb-3" style={{ color: accent }}>What's in This Phase:</h3>
-                      <div className="grid grid-cols-1 gap-3 text-sm">
-                        <div className="flex items-start gap-2">
-                          <Video className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
-                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>Video:</span> Learn the MCII technique (Mental Contrasting with Implementation Intentions)</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Edit className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
-                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>MCII Exercise:</span> Set a goal, visualize success, identify obstacles, and create if-then plans</p>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: accent }} />
-                          <p className="text-muted-foreground"><span className="font-medium" style={{ color: accent }}>AI Coaching:</span> Personalized feedback to refine each task</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <p className="text-center text-muted-foreground">
-                      Set effective goals and plan for challenges using the MCII technique.
+                    <p className="text-center">
+                      Set effective goals and plan for challenges using the MCII technique (Mental Contrasting with Implementation Intentions).
                     </p>
                   </div>
                 </div>
               )}
 
-              {currentStep === 1 && (
+              {/* Video Card */}
+              {currentCardIndex === 1 && (
                 <div className="space-y-4">
                   <p className="text-center text-muted-foreground">
                     Learn the MCII framework (Mental Contrasting with Implementation Intentions) to build an effective study plan.
@@ -195,56 +185,72 @@ export default function Phase4IntroPage() {
                     videoTitle="MCII Framework for Strategic Planning"
                   />
                   <div
-                    className="mt-4 p-3 rounded-lg text-center"
-                    style={{
-                      backgroundColor: neutralSurface,
-                      border: `1px solid ${neutralBorder}`,
-                    }}
+                    className="mt-4 p-3 rounded-lg text-center border"
+                    style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
                   >
                     <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will complete a quick 2-question knowledge check, then move to the MCII exercise.</p>
+                    <p className="text-muted-foreground text-sm">You will complete a knowledge check, then proceed to the MCII exercise with SoL2LBot.</p>
                   </div>
-
-                  {videoCompleted && (
-                    <div className="mt-6">
-                      <PrePostKnowledgeCheck
-                        questions={phase4KnowledgeChecks.postTest}
-                        testType="post"
-                        onComplete={handlePostTestComplete}
-                      />
-                    </div>
-                  )}
                 </div>
               )}
 
-              <div className="flex justify-end mt-8">
-                {currentStep === 0 && (
-                  <Button 
-                    className="font-semibold px-8 py-3 rounded-lg text-lg"
-                    style={{
-                      background: "linear-gradient(135deg, #b8892e, #96722d)",
-                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                      color: "#fff",
-                    }}
-                    onClick={handleNext}
+              {/* Post-Test Card */}
+              {currentCardIndex === 2 && (
+                <div>
+                  <div className="text-muted-foreground mb-4">
+                    <p>
+                      <strong style={{ color: accent }}>After the video:</strong> Let's check your understanding of the MCII framework.
+                    </p>
+                  </div>
+                  <PrePostKnowledgeCheck
+                    questions={phase4KnowledgeChecks.postTest}
+                    testType="post"
+                    onComplete={handlePostTestComplete}
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-between mt-8">
+                {currentCardIndex > 0 ? (
+                  <Button
+                    variant="outline"
+                    className="border"
+                    style={{ borderColor: neutralBorder, color: mutedText }}
+                    onClick={prevCard}
                   >
-                    Continue to Video <ArrowRight className="h-4 w-4 ml-2" />
+                    <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                   </Button>
-                )}
-                {currentStep === 1 && (
-                  <Button 
-                    className="font-semibold px-8 py-3 rounded-lg text-lg"
-                    style={{
-                      background: "linear-gradient(135deg, #b8892e, #96722d)",
-                      boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
-                      color: "#fff",
-                    }}
-                    onClick={handleNext}
-                    disabled={!videoCompleted || !postTestCompleted}
+                ) : <div></div>}
+
+                {currentCardIndex < cards.length - 1 ? (
+                  <Button
+                    className="shadow-md"
+                    style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
+                    onClick={nextCard}
+                    disabled={
+                      (currentCardIndex === 1 && !videoCompleted) ||
+                      (currentCardIndex === 2 && !postTestCompleted)
+                    }
                   >
-                    Continue to MCII Exercise <ArrowRight className="h-4 w-4 ml-2" />
+                    Next <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
-                )}
+                ) : currentCardIndex === 2 && postTestCompleted ? (
+                  <Button
+                    className="px-6 py-2 rounded-lg shadow-md"
+                    style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
+                    onClick={handleContinueToChat}
+                  >
+                    Continue to MCII Exercise <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : currentCardIndex === 2 && !postTestCompleted ? (
+                  <Button
+                    className="px-6 py-2 rounded-lg shadow-md opacity-60 cursor-not-allowed"
+                    style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
+                    disabled
+                  >
+                    Next <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -252,4 +258,4 @@ export default function Phase4IntroPage() {
       </div>
     </div>
   )
-} 
+}
