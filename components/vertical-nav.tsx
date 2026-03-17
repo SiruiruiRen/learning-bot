@@ -22,7 +22,7 @@ export function VerticalNav({
   const neutralMuted = "hsl(var(--muted-foreground))"
 
   return (
-    <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-30 flex flex-col gap-2">
+    <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-30 hidden md:flex flex-col gap-2">
       <button
         onClick={onPrev}
         disabled={currentCardIndex === 0}

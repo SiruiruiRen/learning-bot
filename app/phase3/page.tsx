@@ -817,21 +817,21 @@ export default function Phase3Content() {
               {/* Navigation buttons at the bottom of each card */}
               <div className="flex justify-between mt-8">
                 {currentCardIndex > 0 ? (
-                  <Button 
+                  <Button
                     variant="outline"
                     className="border"
                     style={{ borderColor: neutralBorder, color: mutedText }}
                     onClick={prevCard}
+                    title="Go to previous step"
                   >
                     <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                   </Button>
-                ) : null}
-                
-                <Button 
-                  className="font-semibold px-6 py-2 rounded-lg"
+                ) : <div></div>}
+
+                <Button
+                  className="shadow-md"
                   style={{
-                    background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
-                    boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
+                    background: "linear-gradient(135deg, #b8892e, #96722d)",
                     color: "#fff",
                   }}
                   onClick={nextCard}
@@ -839,6 +839,7 @@ export default function Phase3Content() {
                     (currentCardIndex === 4 && !videoCompleted) ||
                     (currentCardIndex === 5 && !postTestCompleted)
                   }
+                  title={currentCardIndex < cards.length - 1 ? "Go to next step" : "Continue to the next activity"}
                 >
                   {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>

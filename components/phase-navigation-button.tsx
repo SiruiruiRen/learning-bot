@@ -20,6 +20,7 @@ interface PhaseNavigationButtonProps {
   nextPhase: number
   className?: string
   style?: React.CSSProperties
+  title?: string
 }
 
 export function PhaseNavigationButton({
@@ -27,6 +28,7 @@ export function PhaseNavigationButton({
   nextPhase,
   className,
   style,
+  title,
 }: PhaseNavigationButtonProps) {
   return (
     <AlertDialog>
@@ -34,6 +36,7 @@ export function PhaseNavigationButton({
         <Button
           className={className || "font-semibold"}
           style={style}
+          title={title || `Continue to Phase ${nextPhase}`}
         >
           Continue to Phase {nextPhase}
           <ChevronRight className="h-4 w-4 ml-2" />

@@ -173,16 +173,16 @@ export default function Phase5Content() {
                     <div className="flex items-center justify-center space-x-4 text-foreground">
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                          <FileQuestion className="h-6 w-6" style={{ color: accent }} />
+                          <Video className="h-6 w-6" style={{ color: accent }} />
                         </div>
-                        <span className="text-xs font-medium" style={{ color: accent }}>Pre-Assessment</span>
+                        <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                          <Video className="h-6 w-6" style={{ color: accent }} />
+                          <FileQuestion className="h-6 w-6" style={{ color: accent }} />
                         </div>
-                        <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
+                        <span className="text-xs font-medium" style={{ color: accent }}>Knowledge Check</span>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
@@ -198,7 +198,7 @@ export default function Phase5Content() {
                       {userName ? `Welcome, ${userName}!` : "Welcome!"} This phase is about monitoring your learning and adapting your strategies.
                     </p>
                     <p>
-                      Let's first check what you already know about this topic.
+                      Watch a short video, complete a knowledge check, then build your monitoring system with SoL2LBot.
                     </p>
                   </div>
                 </div>
@@ -242,30 +242,33 @@ export default function Phase5Content() {
               
               <div className="flex justify-between mt-8">
                 {currentCardIndex > 0 ? (
-                  <Button 
+                  <Button
                     variant="outline"
                     className="border"
                     style={{ borderColor: neutralBorder, color: mutedText }}
                     onClick={prevCard}
+                    title="Go to previous step"
                   >
                     <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                   </Button>
                 ) : <div></div>}
-                
+
                 {currentCardIndex < cards.length - 1 ? (
-                  <Button 
+                  <Button
                     className="shadow-md"
                     style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                     onClick={nextCard}
                     disabled={(currentCardIndex === 1 && !videoCompleted) || (currentCardIndex === 2 && !postTestCompleted)}
+                    title="Go to next step"
                   >
                     Next <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 ) : currentCardIndex === 2 && postTestCompleted ? (
-                  <Button 
+                  <Button
                     className="px-6 py-2 rounded-lg shadow-md"
                     style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                     onClick={handleComplete}
+                    title="Continue to the next activity"
                   >
                     Continue to Chat <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>

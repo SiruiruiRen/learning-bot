@@ -92,6 +92,7 @@ export default function Phase2ChatPage() {
               className="border"
               style={{ borderColor: neutralBorder, color: mutedText }}
               onClick={() => { if (window.confirm('Go back? Any unsaved progress will be lost.')) router.push('/phase2'); }}
+              title="Return to the instructions page"
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Instructions

@@ -217,6 +217,7 @@ export default function Phase4IntroPage() {
                     className="border"
                     style={{ borderColor: neutralBorder, color: mutedText }}
                     onClick={prevCard}
+                    title="Go to previous step"
                   >
                     <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                   </Button>
@@ -231,6 +232,7 @@ export default function Phase4IntroPage() {
                       (currentCardIndex === 1 && !videoCompleted) ||
                       (currentCardIndex === 2 && !postTestCompleted)
                     }
+                    title="Go to next step"
                   >
                     Next <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
@@ -239,6 +241,7 @@ export default function Phase4IntroPage() {
                     className="px-6 py-2 rounded-lg shadow-md"
                     style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                     onClick={handleContinueToChat}
+                    title="Continue to the next activity"
                   >
                     Continue to MCII Exercise <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>

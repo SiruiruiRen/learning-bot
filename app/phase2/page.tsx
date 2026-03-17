@@ -564,18 +564,19 @@ export default function Phase2Page() {
               
               <div className="flex justify-between mt-8">
                 {currentCardIndex > 0 ? (
-                  <Button 
+                  <Button
                     variant="outline"
                     className="border"
                     style={{ borderColor: neutralBorder, color: mutedText }}
                     onClick={prevCard}
+                    title="Go to previous step"
                   >
                     <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                   </Button>
                 ) : <div/>}
-                
+
                 {currentCardIndex < cards.length - 1 ? (
-                  <Button 
+                  <Button
                     className="font-semibold px-6 py-2 rounded-lg"
             style={{
               background: "linear-gradient(135deg, #b8892e, #96722d)",
@@ -587,11 +588,12 @@ export default function Phase2Page() {
                       (currentCardIndex === 3 && !videoWatched) ||
                       (currentCardIndex === 4 && !postTestCompleted)
                     }
+                    title="Go to next step"
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : currentCardIndex === cards.length - 1 && (currentCardIndex !== 4 || postTestCompleted) ? (
-                  <Button 
+                  <Button
                     className="font-semibold px-6 py-3 rounded-full shadow-lg"
                     style={{
                       background: "linear-gradient(135deg, #b8892e, #96722d)",
@@ -599,6 +601,7 @@ export default function Phase2Page() {
                       color: "#fff",
                     }}
                     onClick={nextCard}
+                    title="Continue to the next activity"
                   >
                     Continue to Chat <ChevronRight className="h-5 w-5 ml-2" />
                   </Button>

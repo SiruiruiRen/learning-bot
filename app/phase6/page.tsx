@@ -287,6 +287,7 @@ export default function Phase6Page() {
                       disabled={!answer.trim()}
                       className="font-semibold"
                       style={primaryButtonStyle}
+                      title="Submit your assessment"
                     >
                       Submit Assessment
                       <ChevronRight className="h-4 w-4 ml-2" />

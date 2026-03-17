@@ -4,9 +4,10 @@ import { useState, useEffect, ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BrainCircuit, PlayCircle, VideoIcon, MoveRight, CheckCircle, Bot, Sparkles, MessageSquare, User, ArrowRight, Send, Youtube, FileQuestion, CheckCircle2, ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Map, Video } from "lucide-react"
+import { BrainCircuit, PlayCircle, VideoIcon, MoveRight, CheckCircle, Bot, Sparkles, MessageSquare, User, ArrowRight, Send, Youtube, FileQuestion, CheckCircle2, ChevronRight, ChevronLeft, Map, Video } from "lucide-react"
 import { motion } from "framer-motion"
 import ModuleBar from "@/components/module-bar"
+import { VerticalNav } from "@/components/vertical-nav"
 import VideoPlayer from "@/components/video-player"
 import SolBotChat from "@/components/solbot-chat"
 import { Textarea } from "@/components/ui/textarea"
@@ -317,37 +318,13 @@ export default function Phase1Content() {
               </div>
             </div>
 
-            {/* Card navigation indicators */}
-            <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-30 flex flex-col gap-2">
-              <button 
-                onClick={prevCard}
-                disabled={currentCardIndex === 0}
-                className={`rounded-full p-2 transition-all border ${currentCardIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'}`}
-                style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
-              >
-                <ChevronUp className="h-4 w-4" />
-              </button>
-              
-              {/* Card indicators */}
-              <div className="flex flex-col items-center gap-1.5">
-                {cards.map((_, i) => (
-                  <div 
-                    key={i}
-                    className={`rounded-full transition-all ${i === currentCardIndex ? 'w-2 h-2 bg-foreground' : 'w-1.5 h-1.5 bg-foreground/50'}`}
-                    onClick={() => setCurrentCardIndex(i)}
-                  ></div>
-                ))}
-              </div>
-              
-              <button 
-                onClick={nextCard}
-                disabled={currentCardIndex === cards.length - 1}
-                className={`rounded-full p-2 transition-all border ${currentCardIndex === cards.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-80 hover:opacity-100'}`}
-                style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
-              >
-                <ChevronDown className="h-4 w-4" />
-              </button>
-            </div>
+            <VerticalNav
+              currentCardIndex={currentCardIndex}
+              totalCards={cards.length}
+              onPrev={prevCard}
+              onNext={nextCard}
+              isNextDisabled={currentCardIndex === 1 && !quizCompleted}
+            />
 
             {/* Content */}
             <motion.div
@@ -433,25 +410,26 @@ export default function Phase1Content() {
 
                 <CardFooter className="flex justify-between pt-2">
                   {currentCardIndex > 0 ? (
-                  <Button 
+                  <Button
                     onClick={prevCard}
-                    variant="outline" 
+                    variant="outline"
                     className="border"
                     style={{ borderColor: neutralBorder, color: mutedText }}
+                    title="Go to previous step"
                   >
-                      <ChevronLeft className="mr-1 h-4 w-4" /> Back
+                      <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                     </Button>
                   ) : <div></div>} {/* Empty div for spacing */}
                   
-                  <Button 
+                  <Button
                     onClick={nextCard}
-                    className="font-semibold"
-                    style={{ color: "#fff" }}
+                    className="shadow-md"
                     style={{
                       background: "linear-gradient(135deg, #b8892e, #96722d)",
-                      boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+                      color: "#fff",
                     }}
                     disabled={currentCardIndex === 1 && !quizCompleted}
+                    title={currentCardIndex < cards.length - 1 ? "Go to next step" : "Continue to the next activity"}
                   >
                     {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>

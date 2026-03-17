@@ -205,6 +205,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const [isHovering, setIsHovering] = useState(false)
   const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([])
   const [userName, setUserName] = useState<string>("")
+  const [isMobile, setIsMobile] = useState(false)
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)  // Close panel when mouse leaves
   const openTimestampRef = useRef<string | null>(null)  // Track when chatbot was opened
@@ -252,6 +253,14 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
 
     return { cleanText, followUps }
   }
+
+  // Detect mobile screen for responsive layout
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Reset chat when navigating to a new page — show fresh suggested questions
   useEffect(() => {
@@ -495,7 +504,8 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   const neutralBorder = "hsl(var(--border))"
 
   // Right-edge sidebar: panel expands from the right; collapsed tab hides when open so it doesn't block panel text
-  const PANEL_WIDTH = 360
+  const COLLAPSED_WIDTH = isMobile ? 36 : 72
+  const PANEL_WIDTH = isMobile ? 320 : 360
 
   return (
     <div
@@ -507,14 +517,14 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     >
       {/* Collapsed tab — hides when open so left side never blocks bot text */}
       <motion.div
-        animate={{ width: isOpen ? 0 : 72 }}
+        animate={{ width: isOpen ? 0 : COLLAPSED_WIDTH }}
         transition={{ duration: 0.2 }}
         className="flex-shrink-0 h-full overflow-hidden cursor-pointer flex items-center"
-        style={{ minWidth: isOpen ? 0 : 72, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 }}
+        style={{ minWidth: isOpen ? 0 : COLLAPSED_WIDTH, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 }}
         onClick={() => !isOpen && openChatbot('click')}
       >
         <motion.div
-          className="h-full w-[72px] flex flex-col items-center justify-center gap-3 py-4 flex-shrink-0"
+          className={`h-full ${isMobile ? 'w-[36px]' : 'w-[72px]'} flex flex-col items-center justify-center gap-3 py-4 flex-shrink-0`}
           initial={{ x: 20 }}
           animate={{ x: [20, 0, 4, 0] }}
           transition={{ duration: 1.2, delay: 1, ease: "easeOut" }}
@@ -527,24 +537,28 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           }}
         >
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center"
+            className={`${isMobile ? 'w-7 h-7' : 'w-10 h-10'} rounded-full flex items-center justify-center`}
             style={{ backgroundColor: "rgba(255,255,255,0.95)", border: "2px solid rgba(255,255,255,0.7)", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
           >
-            <Bot className="h-5 w-5" style={{ color: "#3b2a1c" }} />
+            <Bot className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} style={{ color: "#3b2a1c" }} />
           </div>
-          <span
-            className="text-[13px] font-extrabold tracking-widest"
-            style={{ color: "#fff", writingMode: "vertical-rl", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
-          >
-            Quick Help
-          </span>
-          <motion.div
-            className="flex items-center justify-center"
-            animate={{ x: [0, -4, 0] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronsLeft className="h-5 w-5 text-white/80" />
-          </motion.div>
+          {!isMobile && (
+            <>
+              <span
+                className="text-[13px] font-extrabold tracking-widest"
+                style={{ color: "#fff", writingMode: "vertical-rl", textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
+              >
+                Quick Help
+              </span>
+              <motion.div
+                className="flex items-center justify-center"
+                animate={{ x: [0, -4, 0] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <ChevronsLeft className="h-5 w-5 text-white/80" />
+              </motion.div>
+            </>
+          )}
         </motion.div>
       </motion.div>
 
@@ -557,6 +571,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
             exit={{ opacity: 0, width: 0 }}
             transition={{ duration: 0.2 }}
             className="flex-shrink-0 h-full overflow-hidden flex flex-col"
+            style={{ maxWidth: '90vw' }}
             onMouseEnter={handlePanelMouseEnter}
             onMouseLeave={handlePanelMouseLeave}
           >
