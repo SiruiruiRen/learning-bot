@@ -9,24 +9,14 @@ import { Target, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedMCII from "@/components/guided-mcii"
 import InstructionGuide from "@/components/instruction-guide"
-import FinalSubmissionCard from "@/components/final-submission-card"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import { phaseInstructions } from "@/lib/post-task-questions"
-
-const MCII_QUESTION_LABELS = [
-  { id: "pick_goal", label: "1. Goal" },
-  { id: "indulge", label: "2. Indulge (Visualization)" },
-  { id: "consider_obstacles", label: "3. Consider Obstacles" },
-  { id: "implementation_intention", label: "4. Implementation Intention" },
-]
 
 export default function MCIIPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
-  const [finalSubmitted, setFinalSubmitted] = useState(false)
-  const [editKey, setEditKey] = useState(0)
 
   const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -61,20 +51,6 @@ export default function MCIIPage() {
     setChatComplete(true);
   }
 
-  const handleStartChat = () => {
-    setShowInstruction(false)
-  }
-
-  const handleEdit = () => {
-    setChatComplete(false)
-    setShowInstruction(false) // Go directly to guided component, not instruction
-    setEditKey((prev) => prev + 1)
-  }
-
-  const handleFinalSubmit = () => {
-    setFinalSubmitted(true)
-  }
-
   return (
     <div className="min-h-screen text-foreground" style={{ background: canvasGradient }}>
       <div className="container mx-auto px-4 py-8">
@@ -85,91 +61,74 @@ export default function MCIIPage() {
           transition={{ duration: 0.35 }}
           className="max-w-4xl mx-auto mt-10"
         >
-          {/* Instruction + Guided Component — hidden when showing final submission */}
-          {!chatComplete && (
-            <Card className="shadow-sm" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                  <Target className="h-8 w-8" style={{ color: accent }} />
-                  <span>MCII: Mental Contrasting with Implementation Intentions</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="min-h-[620px] p-3 text-sm" style={{ color: mutedText }}>
-                {userId ? (
-                  <>
-                    {showInstruction && (
-                      <div className="space-y-4">
-                        <InstructionGuide
-                          title={phaseInstructions.phase4.title}
-                          instructions={phaseInstructions.phase4.instructions}
-                          tips={phaseInstructions.phase4.tips}
-                          examples={phaseInstructions.phase4.examples}
-                          phase="phase4"
-                        />
-                        <div className="flex justify-center mt-6">
-                          <Button
-                            onClick={handleStartChat}
-                            style={primaryButtonStyle}
-                            title="Start the MCII exercise"
-                          >
-                            Start MCII Exercise
-                            <ChevronRight className="h-4 w-4 ml-2" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    {!showInstruction && (
-                      <>
-                      <div
-                        className="flex items-start gap-3 p-3 mb-3 rounded-lg border-l-4"
-                        style={{
-                          borderLeftColor: "#d8b26f",
-                          backgroundColor: "hsl(var(--muted) / 0.25)",
-                        }}
-                      >
-                        <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
-                        <p className="text-sm text-muted-foreground">
-                          Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
-                          You can revise your answers and request feedback as many times as you like.
-                          When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
-                        </p>
-                      </div>
-                      <GuidedMCII
-                        key={editKey}
-                        userId={userId}
-                        phase="4"
-                        component="mcii"
-                        onComplete={handleComplete}
-                        height="100%"
+          <Card className="shadow-sm" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
+                <Target className="h-8 w-8" style={{ color: accent }} />
+                <span>MCII: Mental Contrasting with Implementation Intentions</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-[620px] p-3 text-sm" style={{ color: mutedText }}>
+              {userId ? (
+                <>
+                  {showInstruction && (
+                    <div className="space-y-4">
+                      <InstructionGuide
+                        title={phaseInstructions.phase4.title}
+                        instructions={phaseInstructions.phase4.instructions}
+                        tips={phaseInstructions.phase4.tips}
+                        examples={phaseInstructions.phase4.examples}
+                        phase="phase4"
                       />
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p>Loading session...</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Final Submission Card — stays visible to show success state */}
-          {chatComplete && (
-            <div className="mb-6">
-              <FinalSubmissionCard
-                phase="4"
-                phaseNumber={4}
-                componentName="mcii"
-                questionLabels={MCII_QUESTION_LABELS}
-                onEdit={handleEdit}
-                onSubmit={handleFinalSubmit}
-              />
-            </div>
-          )}
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={() => setShowInstruction(false)}
+                          style={primaryButtonStyle}
+                          title="Start the MCII exercise"
+                        >
+                          Start MCII Exercise
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {!showInstruction && (
+                    <>
+                    <div
+                      className="flex items-start gap-3 p-3 mb-3 rounded-lg border-l-4"
+                      style={{
+                        borderLeftColor: "#d8b26f",
+                        backgroundColor: "hsl(var(--muted) / 0.25)",
+                      }}
+                    >
+                      <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
+                      <p className="text-sm text-muted-foreground">
+                        Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
+                        You can revise your answers and request feedback as many times as you like.
+                        When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
+                      </p>
+                    </div>
+                    <GuidedMCII
+                      userId={userId}
+                      phase="4"
+                      phaseNumber={4}
+                      component="mcii"
+                      onComplete={handleComplete}
+                      height="100%"
+                    />
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p>Loading session...</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="flex flex-col gap-3 mt-4">
-            {!chatComplete && (
+            {!chatComplete && !showInstruction && (
               <Button
                 variant="outline"
                 className="border"
@@ -181,7 +140,7 @@ export default function MCIIPage() {
                 Back to Instructions
               </Button>
             )}
-            {finalSubmitted && (
+            {chatComplete && (
               <PhaseNavigationButton
                 nextPhase={5}
                 onNavigate={() => router.push('/phase5')}

@@ -9,25 +9,15 @@ import { Button } from "@/components/ui/button"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoring from "@/components/guided-monitoring"
 import InstructionGuide from "@/components/instruction-guide"
-import FinalSubmissionCard from "@/components/final-submission-card"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import { phaseInstructions } from "@/lib/post-task-questions"
-
-const MONITORING_QUESTION_LABELS = [
-  { id: "progress_checks", label: "Progress Checks" },
-  { id: "adaptation_triggers", label: "Adaptation Triggers" },
-  { id: "strategy_alternatives", label: "Strategy Alternatives" },
-]
 
 export default function Phase5ChatContent() {
   const router = useRouter()
   const [userId, setUserId] = useState<string>("")
   const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
-  const [finalSubmitted, setFinalSubmitted] = useState(false)
-  const [editKey, setEditKey] = useState(0)
 
-  // Load user data on component mount
   useEffect(() => {
     try {
       const storedUserId = localStorage.getItem("user_id")
@@ -46,29 +36,10 @@ export default function Phase5ChatContent() {
     }
   }, [router])
 
-  const handlePhaseComplete = () => {
-    setChatComplete(true)
-  }
-
-  const handleStartChat = () => {
-    setShowInstruction(false)
-  }
-
-  const handleEdit = () => {
-    setChatComplete(false)
-    setShowInstruction(false) // Go directly to guided component
-    setEditKey((prev) => prev + 1)
-  }
-
-  const handleFinalSubmit = () => {
-    setFinalSubmitted(true)
-  }
-
   const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
   const neutralSurface = "hsl(var(--card) / 0.96)"
   const neutralBorder = "hsl(var(--border) / 0.4)"
-  const mutedText = "hsl(var(--muted-foreground))"
   const primaryButtonStyle = {
     backgroundImage: "linear-gradient(135deg, #b8892e, #96722d)",
     color: "#fff",
@@ -85,10 +56,8 @@ export default function Phase5ChatContent() {
         <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_20%_10%,rgba(216,178,111,0.08),transparent),radial-gradient(140%_120%_at_80%_20%,rgba(0,0,0,0.04),transparent),radial-gradient(160%_140%_at_50%_80%,rgba(216,178,111,0.05),transparent)]"></div>
       </div>
 
-      {/* Add Module Bar */}
       <ModuleBar currentPhase={5} />
 
-      {/* Fixed Title Header */}
       <div className="fixed top-0 left-0 right-0 z-20 backdrop-blur-md border-b py-3 px-4" style={{ backgroundColor: "hsl(var(--card) / 0.9)", borderColor: neutralBorder }}>
         <div className="container mx-auto">
           <div className="flex items-center justify-center">
@@ -107,94 +76,77 @@ export default function Phase5ChatContent() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto"
         >
-          {/* Instruction + Guided Component — hidden when showing final submission */}
-          {!chatComplete && (
-            <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                  <LineChart className="h-8 w-8" style={{ color: accent }} />
-                  <span style={{ color: accent }}>
-                    Create Your Monitoring System
-                  </span>
-                </CardTitle>
-              </CardHeader>
+          <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
+                <LineChart className="h-8 w-8" style={{ color: accent }} />
+                <span style={{ color: accent }}>
+                  Create Your Monitoring System
+                </span>
+              </CardTitle>
+            </CardHeader>
 
-              <CardContent className="min-h-[700px] p-2">
-                {userId ? (
-                  <>
-                    {showInstruction && (
-                      <div className="space-y-4">
-                        <InstructionGuide
-                          title={phaseInstructions.phase5.title}
-                          instructions={phaseInstructions.phase5.instructions}
-                          tips={phaseInstructions.phase5.tips}
-                          examples={phaseInstructions.phase5.examples}
-                          phase="phase5"
-                        />
-                        <div className="flex justify-center mt-6">
-                          <Button
-                            onClick={handleStartChat}
-                            style={primaryButtonStyle}
-                            title="Start the monitoring exercise"
-                          >
-                            Start Monitoring Exercise
-                            <ChevronRight className="h-4 w-4 ml-2" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    {!showInstruction && (
-                      <>
-                      <div
-                        className="flex items-start gap-3 p-3 mb-3 rounded-lg border-l-4"
-                        style={{
-                          borderLeftColor: "#d8b26f",
-                          backgroundColor: "hsl(var(--muted) / 0.25)",
-                        }}
-                      >
-                        <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
-                        <p className="text-sm text-muted-foreground">
-                          Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
-                          You can revise your answers and request feedback as many times as you like.
-                          When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
-                        </p>
-                      </div>
-                      <GuidedMonitoring
-                        key={editKey}
-                        userId={userId}
+            <CardContent className="min-h-[700px] p-2">
+              {userId ? (
+                <>
+                  {showInstruction && (
+                    <div className="space-y-4">
+                      <InstructionGuide
+                        title={phaseInstructions.phase5.title}
+                        instructions={phaseInstructions.phase5.instructions}
+                        tips={phaseInstructions.phase5.tips}
+                        examples={phaseInstructions.phase5.examples}
                         phase="phase5"
-                        component="progress_monitoring"
-                        onComplete={handlePhaseComplete}
-                        height="calc(100% - 80px)"
                       />
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p>Loading session...</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Final Submission Card — stays visible to show success state */}
-          {chatComplete && (
-            <div className="mb-6">
-              <FinalSubmissionCard
-                phase="phase5"
-                phaseNumber={5}
-                componentName="progress_monitoring"
-                questionLabels={MONITORING_QUESTION_LABELS}
-                onEdit={handleEdit}
-                onSubmit={handleFinalSubmit}
-              />
-            </div>
-          )}
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={() => setShowInstruction(false)}
+                          style={primaryButtonStyle}
+                          title="Start the monitoring exercise"
+                        >
+                          Start Monitoring Exercise
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {!showInstruction && (
+                    <>
+                    <div
+                      className="flex items-start gap-3 p-3 mb-3 rounded-lg border-l-4"
+                      style={{
+                        borderLeftColor: "#d8b26f",
+                        backgroundColor: "hsl(var(--muted) / 0.25)",
+                      }}
+                    >
+                      <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
+                      <p className="text-sm text-muted-foreground">
+                        Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
+                        You can revise your answers and request feedback as many times as you like.
+                        When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
+                      </p>
+                    </div>
+                    <GuidedMonitoring
+                      userId={userId}
+                      phase="phase5"
+                      phaseNumber={5}
+                      component="progress_monitoring"
+                      onComplete={() => setChatComplete(true)}
+                      height="calc(100% - 80px)"
+                    />
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p>Loading session...</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="flex flex-col gap-3 mt-4">
-            {!chatComplete && (
+            {!chatComplete && !showInstruction && (
               <Button
                 variant="outline"
                 style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
@@ -205,7 +157,7 @@ export default function Phase5ChatContent() {
                 Back to Instructions
               </Button>
             )}
-            {finalSubmitted && (
+            {chatComplete && (
               <PhaseNavigationButton
                 nextPhase={6}
                 onNavigate={() => router.push('/phase6')}

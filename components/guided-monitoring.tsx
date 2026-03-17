@@ -4,7 +4,18 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, ArrowRight, Send, User, Bot } from "lucide-react"
+import { Check, ArrowRight, Send, User, Bot, Loader2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import FeedbackDisplay from "@/components/feedback-display"
@@ -15,6 +26,7 @@ const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbo
 interface GuidedMonitoringProps {
   userId: string
   phase: string
+  phaseNumber?: number
   component?: string
   onComplete?: (nextPhase?: string) => void
   height?: string
@@ -56,6 +68,7 @@ type Message = {
 export default function GuidedMonitoring({
   userId,
   phase,
+  phaseNumber = 5,
   component = "progress_monitoring",
   onComplete,
   height = "600px"
@@ -69,6 +82,8 @@ export default function GuidedMonitoring({
   const [isLoading, setIsLoading] = useState(false)
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0)
   const [editingSingleQuestion, setEditingSingleQuestion] = useState<number | null>(null);
+  const [finalSubmitted, setFinalSubmitted] = useState(false);
+  const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
   const [chatAnalyticsId, setChatAnalyticsId] = useState<string | null>(null);
   const [feedbackReceived, setFeedbackReceived] = useState(false);
   const [lastFailedRequest, setLastFailedRequest] = useState<string | null>(null);
@@ -314,10 +329,7 @@ export default function GuidedMonitoring({
         }
       }
 
-      // Enable continue button
-      if (onComplete) {
-        onComplete();
-      }
+      // Feedback received — user can continue chatting or submit final version
 
       // Log AI response
       try {
@@ -380,6 +392,54 @@ export default function GuidedMonitoring({
       setUserInput("");
       submitToApi(messageToSend);
   }
+
+  const handleFinalSubmit = async () => {
+    setIsSubmittingFinal(true);
+    try {
+      const sid = localStorage.getItem("session_id");
+      const uid = localStorage.getItem("user_id");
+      if (chatAnalyticsId && sid) {
+        fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid, event_type: 'chat_ended', metadata: { chat_analytics_id: chatAnalyticsId, message_count: messages.length } }),
+        }).catch(() => {});
+      }
+      if (sid) {
+        await fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sid,
+            event_type: "final_submission",
+            phase: `phase${phaseNumber}`,
+            component,
+            metadata: { responses, timestamp: new Date().toISOString() },
+          }),
+        }).catch(err => console.error("Failed to log final_submission:", err));
+      }
+      localStorage.setItem(`solbot_phase${phaseNumber}_completed`, "true");
+      if (uid) {
+        fetch("/api/user-data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: uid, dataType: `phase${phaseNumber}_completed`, value: "true", metadata: { phase: phaseNumber, timestamp: new Date().toISOString() } }),
+        }).catch(() => {});
+      }
+      try { localStorage.removeItem(`solbot_temp_responses_${component}_${phase}`); } catch {}
+      setFinalSubmitted(true);
+      setMessages(prev => [...prev, {
+        id: uuidv4(), sender: "bot" as const,
+        content: "Your responses have been successfully submitted! You can now proceed to the next phase.",
+        type: "question" as const
+      }]);
+      if (onComplete) onComplete();
+    } catch (error) {
+      console.error("Error during final submission:", error);
+    } finally {
+      setIsSubmittingFinal(false);
+    }
+  };
 
   const handleEditSingleQuestion = (questionIndex: number) => {
     setEditingSingleQuestion(questionIndex);
@@ -470,49 +530,54 @@ export default function GuidedMonitoring({
         </div>
       );
     } else { // 'chatting'
+      if (finalSubmitted) return null;
       return (
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-3">
           <div className="flex gap-2 items-start">
             <Textarea
               placeholder="Refine your monitoring system based on the feedback..."
               value={userInput}
               onChange={(e) => {
                 setUserInput(e.target.value);
-                // Log revision_started on first keystroke after feedback for time-on-feedback tracking
                 if (feedbackReceived && e.target.value.length === 1 && userInput.length === 0 && sessionId) {
                   fetch('/api/events', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      session_id: sessionId,
-                      event_type: 'revision_started',
-                      phase: phase,
-                      component: component,
-                      metadata: { timestamp: new Date().toISOString() }
-                    })
+                    body: JSON.stringify({ session_id: sessionId, event_type: 'revision_started', phase, component, metadata: { timestamp: new Date().toISOString() } })
                   }).catch(err => console.error("Failed to log revision_started:", err));
                 }
               }}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
-              style={{
-                backgroundColor: neutralSurface,
-                borderColor: neutralBorder,
-                color: "hsl(var(--foreground))"
-              }}
+              style={{ backgroundColor: neutralSurface, borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
               rows={3}
             />
-            <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT} title="Send message">
+            <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT || isLoading} title="Send message">
               <Send size={18} />
             </Button>
           </div>
-          {showRetryOption && (
-            <div className="flex justify-center mt-2">
-              <Button onClick={handleRetryFeedback} variant="outline" style={{ borderColor: accent, color: accent }} title="Request new feedback">
-                Try Again for Feedback
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            {showRetryOption ? (
+              <Button onClick={handleRetryFeedback} variant="outline" size="sm" style={{ borderColor: accent, color: accent }}>Try Again for Feedback</Button>
+            ) : <div />}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" className="px-4" style={primaryButtonStyle} disabled={isLoading || isSubmittingFinal}>
+                  {isSubmittingFinal ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting...</> : <>Submit Final Version</>}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Submit Final Version?</AlertDialogTitle>
+                  <AlertDialogDescription>Your current responses will be submitted as your final version. Once submitted, you&apos;ll proceed to the next phase.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Go Back</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleFinalSubmit}>Yes, Submit</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       )
     }
