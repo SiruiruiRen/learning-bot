@@ -137,13 +137,8 @@ export default function GuidedMCII({
     if (chatContainer) { chatContainer.scrollTop = chatContainer.scrollHeight; }
   }, [messages, isLoading]);
 
-  // Automatically call onComplete when feedback is received (task is complete)
-  useEffect(() => {
-    if (feedbackReceived && onComplete) {
-      onComplete();
-    }
-  }, [feedbackReceived, onComplete]);
-  
+  // NOTE: Removed duplicate onComplete useEffect — onComplete is already called in submitToApi on success
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isLoading) {
@@ -287,6 +282,25 @@ export default function GuidedMCII({
       setMessages(prev => [...prev, botFeedback]);
       setFeedbackReceived(true);
       setLastFailedRequest(null); // Clear on success
+
+      // Log feedback_delivered event for time-on-feedback tracking
+      try {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'feedback_delivered',
+            phase: phase,
+            component: component,
+            metadata: {
+              timestamp: new Date().toISOString(),
+            }
+          })
+        })
+      } catch (error) {
+        console.error("Failed to log feedback_delivered:", error)
+      }
 
       // Enable continue button
       if (onComplete) {
@@ -486,7 +500,23 @@ export default function GuidedMCII({
             <Textarea
               placeholder="Refine your MCII plan based on the feedback..."
               value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
+              onChange={(e) => {
+                setUserInput(e.target.value);
+                // Log revision_started on first keystroke after feedback for time-on-feedback tracking
+                if (feedbackReceived && e.target.value.length === 1 && userInput.length === 0 && sessionId) {
+                  fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      session_id: sessionId,
+                      event_type: 'revision_started',
+                      phase: phase,
+                      component: component,
+                      metadata: { timestamp: new Date().toISOString() }
+                    })
+                  }).catch(err => console.error("Failed to log revision_started:", err));
+                }
+              }}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
               style={{

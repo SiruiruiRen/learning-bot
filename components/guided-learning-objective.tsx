@@ -73,23 +73,39 @@ export default function GuidedLearningObjective({
   const [isLoading, setIsLoading] = useState(false)
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0)
   const [chatAnalyticsId, setChatAnalyticsId] = useState<string | null>(null);
+  const [feedbackReceived, setFeedbackReceived] = useState(false);
+  const [lastFailedRequest, setLastFailedRequest] = useState<string | null>(null);
+  const [showRetryOption, setShowRetryOption] = useState(false);
+  const [editingSingleQuestion, setEditingSingleQuestion] = useState<number | null>(null);
 
   useEffect(() => {
     const initializeChat = async () => {
       const storedSessionId = localStorage.getItem("session_id");
       if (storedSessionId) {
         setSessionId(storedSessionId);
-        
-        // Create a chat analytics entry
+
+        // Load any saved responses to prevent data loss
         try {
-          const response = await fetch('/api/analytics/chat', {
+          const savedResponses = localStorage.getItem(`solbot_temp_responses_${component}_${phase}`);
+          if (savedResponses) {
+            const parsedResponses = JSON.parse(savedResponses);
+            setResponses(parsedResponses);
+            console.log("Restored saved responses from localStorage");
+          }
+        } catch (error) {
+          console.warn("Could not load saved responses:", error);
+        }
+
+        // Log chat_started event via unified events API
+        try {
+          const response = await fetch('/api/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               session_id: storedSessionId,
+              event_type: 'chat_started',
               phase: phase,
               component: component,
-              start_time: new Date().toISOString(),
             }),
           });
           const data = await response.json();
@@ -100,13 +116,13 @@ export default function GuidedLearningObjective({
           console.error("Failed to create chat analytics entry:", error);
         }
       }
-      
+
       setMessages([
         { id: uuidv4(), sender: "bot", content: "Let's define your learning objective. I'll guide you through the process step by step.", type: "question" },
         { id: uuidv4(), sender: "bot", content: OBJECTIVE_QUESTIONS[0].question, type: "question" }
       ]);
     };
-    
+
     initializeChat();
   }, [phase, component]);
 
@@ -132,29 +148,71 @@ export default function GuidedLearningObjective({
     const newResponses = { ...responses, [questionId]: userInput };
     setResponses(newResponses);
 
+    // Save responses to localStorage to prevent data loss
+    try {
+      localStorage.setItem(`solbot_temp_responses_${component}_${phase}`, JSON.stringify(newResponses));
+    } catch (error) {
+      console.warn("Could not save responses to localStorage:", error);
+    }
+
+    // Log individual question response for research analytics
+    try {
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: 'text_input',
+          phase: phase,
+          component: component,
+          metadata: {
+            field_name: questionId,
+            input_value: userInput,
+            question_index: currentQuestionIndex,
+            question_text: OBJECTIVE_QUESTIONS[currentQuestionIndex].question,
+            is_submission: false,
+            attempt_number: 1,
+            timestamp: new Date().toISOString()
+          }
+        })
+      })
+    } catch (error) {
+      console.error("Failed to log question response:", error)
+    }
+
     const userMessage: Message = { id: uuidv4(), sender: "user", content: userInput, type: "response" };
     let botMessages: Message[] = [];
 
-    if (currentQuestionIndex < OBJECTIVE_QUESTIONS.length - 1) {
+    const confirmationContent = {
+      task: newResponses["goal_clarity"],
+      resources: newResponses["background_connection"],
+      strategy: newResponses["study_resources"]
+    };
+
+    // If editing a single question, return to confirmation after this answer
+    if (editingSingleQuestion !== null) {
+      setEditingSingleQuestion(null);
+      setInteractionState("confirming");
+      botMessages.push({ id: uuidv4(), sender: "bot", content: confirmationContent, type: "confirmation" });
+    } else if (currentQuestionIndex < OBJECTIVE_QUESTIONS.length - 1) {
       const nextQuestionIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextQuestionIndex);
       botMessages.push({ id: uuidv4(), sender: "bot", content: OBJECTIVE_QUESTIONS[nextQuestionIndex].question, type: "question" });
     } else {
       setInteractionState("confirming");
-      const confirmationContent = {
-        task: newResponses["goal_clarity"],
-        resources: newResponses["background_connection"],
-        strategy: newResponses["study_resources"]
-      };
       botMessages.push({ id: uuidv4(), sender: "bot", content: confirmationContent, type: "confirmation" });
     }
     setMessages(prev => [...prev, userMessage, ...botMessages]);
     setUserInput("");
   };
 
-  const submitToApi = async (message: string) => {
+  const submitToApi = async (message: string, isRetry: boolean = false) => {
     if (!sessionId) return;
     setIsLoading(true);
+    setShowRetryOption(false);
+
+    // Save the request for potential retry
+    setLastFailedRequest(message);
 
     // Log user message
     try {
@@ -191,13 +249,35 @@ export default function GuidedLearningObjective({
         throw new Error(errorData.error || errorData.details || "Server error")
       }
       const data = await response.json();
-      
+
       if (!data || !data.data) {
         throw new Error("Invalid response format from server")
       }
 
       const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation", evaluation: data.data.evaluation };
       setMessages(prev => [...prev, botFeedback]);
+      setFeedbackReceived(true);
+      setLastFailedRequest(null); // Clear on success
+
+      // Log feedback_delivered event for time-on-feedback tracking
+      try {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'feedback_delivered',
+            phase: phase,
+            component: component,
+            metadata: {
+              timestamp: new Date().toISOString(),
+              has_evaluation: !!data.data.evaluation,
+            }
+          })
+        })
+      } catch (error) {
+        console.error("Failed to log feedback_delivered:", error)
+      }
 
       // Enable continue button
       if (onComplete) {
@@ -224,28 +304,31 @@ export default function GuidedLearningObjective({
       } catch (error) {
         console.error("Failed to log AI response:", error)
       }
+    } catch (error: any) {
+      console.error("Chat API error:", error);
 
-      // Update chat analytics entry
-      if (chatAnalyticsId) {
-        try {
-          await fetch(`/api/analytics/chat/${chatAnalyticsId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              end_time: new Date().toISOString(),
-              message_count: messages.length + 2, // User message + Bot feedback
-            }),
-          });
-        } catch (error) {
-          console.error("Failed to update chat analytics entry:", error);
-        }
-      }
-    } catch (error) {
-      const errorMessage: Message = { id: uuidv4(), sender: "bot", content: "Sorry, an error occurred while getting feedback.", type: "evaluation" };
+      // Create user-friendly error message with retry option
+      const errorContent = error.message?.includes("timeout") || error.message?.includes("took longer")
+        ? "I'm taking longer than usual to analyze your thoughtful response. This often happens with complex educational content that requires careful consideration.\n\n**Your work is saved** - you can try again for feedback or continue to the next task."
+        : "I encountered a temporary issue while providing feedback on your response.\n\n**Your work is saved** - please try again or continue to the next task.";
+
+      const errorMessage: Message = {
+        id: uuidv4(),
+        sender: "bot",
+        content: errorContent,
+        type: "evaluation"
+      };
       setMessages(prev => [...prev, errorMessage]);
+      setShowRetryOption(true); // Show retry option on error
     } finally {
       setIsLoading(false);
       setInteractionState("chatting");
+    }
+  };
+
+  const handleRetryFeedback = () => {
+    if (lastFailedRequest) {
+      submitToApi(lastFailedRequest, true);
     }
   };
 
@@ -271,6 +354,36 @@ export default function GuidedLearningObjective({
         { id: uuidv4(), sender: "bot", content: OBJECTIVE_QUESTIONS[0].question, type: "question" }
     ]);
     setUserInput(responses[OBJECTIVE_QUESTIONS[0].id] || "");
+
+    if (sessionId) {
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: 'revision_submitted',
+          phase: phase,
+          component: component,
+          metadata: {
+            attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+            content_changes: responses,
+          },
+        }),
+      });
+    }
+  };
+
+  const handleEditSingleQuestion = (questionIndex: number) => {
+    setEditingSingleQuestion(questionIndex);
+    setInteractionState("guiding");
+    setCurrentQuestionIndex(questionIndex);
+    const questionId = OBJECTIVE_QUESTIONS[questionIndex].id;
+    setMessages(prev => [
+      ...prev,
+      { id: uuidv4(), sender: "bot", content: `Editing your response for: **${["Course/Learning Task", "Available Resources", "Strategic Resource Utilization"][questionIndex]}**`, type: "question" },
+      { id: uuidv4(), sender: "bot", content: OBJECTIVE_QUESTIONS[questionIndex].question, type: "question" }
+    ]);
+    setUserInput(responses[questionId] || "");
   };
   
   const accent = "var(--accent-text)"
@@ -323,11 +436,28 @@ export default function GuidedLearningObjective({
       );
     } else { // 'chatting'
       return (
-         <div className="flex gap-2 items-start">
+        <div className="flex flex-col space-y-4">
+          <div className="flex gap-2 items-start">
             <Textarea
               placeholder="Refine your learning objective based on the feedback..."
               value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
+              onChange={(e) => {
+                setUserInput(e.target.value);
+                // Log revision_started on first keystroke after feedback for time-on-feedback tracking
+                if (feedbackReceived && e.target.value.length === 1 && userInput.length === 0 && sessionId) {
+                  fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      session_id: sessionId,
+                      event_type: 'revision_started',
+                      phase: phase,
+                      component: component,
+                      metadata: { timestamp: new Date().toISOString() }
+                    })
+                  }).catch(err => console.error("Failed to log revision_started:", err));
+                }
+              }}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
               style={{
@@ -341,6 +471,14 @@ export default function GuidedLearningObjective({
               <Send size={18} />
             </Button>
           </div>
+          {showRetryOption && (
+            <div className="flex justify-center mt-2">
+              <Button onClick={handleRetryFeedback} variant="outline" style={{ borderColor: accent, color: accent }} title="Request new feedback">
+                Try Again for Feedback
+              </Button>
+            </div>
+          )}
+        </div>
       )
     }
   }
@@ -371,19 +509,24 @@ export default function GuidedLearningObjective({
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                 {message.type === 'confirmation' && typeof message.content === 'object' ? (
                   <div className="space-y-3">
-                    <p>Thank you! Here is your complete learning objective. Please review it.</p>
-                    <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder }}>
-                      <h4 className="font-semibold mb-1" style={{ color: accent }}>Course/Learning Task:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.task}</p>
-                    </div>
-                    <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder }}>
-                      <h4 className="font-semibold mb-1" style={{ color: accent }}>Available Resources:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.resources}</p>
-                    </div>
-                    <div className="p-3 rounded-md border" style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder }}>
-                      <h4 className="font-semibold mb-1" style={{ color: accent }}>Strategic Resource Utilization:</h4>
-                      <p className="whitespace-pre-wrap">{message.content.strategy}</p>
-                    </div>
+                    <p>Thank you! Here is your complete learning objective. Please review it. <span style={{ color: mutedText, fontSize: "0.85em" }}>Click any section to edit it.</span></p>
+                    {[
+                      { key: "task" as const, label: "Course/Learning Task:", index: 0 },
+                      { key: "resources" as const, label: "Available Resources:", index: 1 },
+                      { key: "strategy" as const, label: "Strategic Resource Utilization:", index: 2 },
+                    ].map(({ key, label, index }) => (
+                      <div
+                        key={key}
+                        className="p-3 rounded-md border transition-colors"
+                        style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder, cursor: interactionState === "confirming" ? "pointer" : "default" }}
+                        onClick={() => { if (interactionState === "confirming") handleEditSingleQuestion(index); }}
+                        onMouseEnter={(e) => { if (interactionState === "confirming") { e.currentTarget.style.borderColor = accent; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.7)"; }}}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = neutralBorder; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.5)"; }}
+                      >
+                        <h4 className="font-semibold mb-1" style={{ color: accent }}>{label}</h4>
+                        <p className="whitespace-pre-wrap">{(message.content as Record<string, string>)[key]}</p>
+                      </div>
+                    ))}
                   </div>
                 ) : message.type === 'evaluation' ? (
                   <FeedbackDisplay 

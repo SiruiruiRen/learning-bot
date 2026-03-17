@@ -125,6 +125,11 @@ export async function POST(request: NextRequest) {
       case 'feedback_style_view':
         await handleFeedbackStyleView(session_id, userId, phase, component, metadata);
         break;
+      case 'feedback_delivered':
+      case 'revision_started':
+        // Logged via master content_interaction_logs above — timestamps used for time-on-feedback calculation
+        // No extra table needed; Q11 in research_analysis_queries.sql computes the metric
+        break;
     }
 
     return NextResponse.json(responseData);

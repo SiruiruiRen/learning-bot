@@ -69,15 +69,57 @@ export default function GuidedMonitoring({
   const [isLoading, setIsLoading] = useState(false)
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0)
   const [editingSingleQuestion, setEditingSingleQuestion] = useState<number | null>(null);
+  const [chatAnalyticsId, setChatAnalyticsId] = useState<string | null>(null);
+  const [feedbackReceived, setFeedbackReceived] = useState(false);
+  const [lastFailedRequest, setLastFailedRequest] = useState<string | null>(null);
+  const [showRetryOption, setShowRetryOption] = useState(false);
 
   useEffect(() => {
-    const storedSessionId = localStorage.getItem("session_id");
-    if (storedSessionId) { setSessionId(storedSessionId); }
-    setMessages([
-      { id: uuidv4(), sender: "bot", content: "Let's develop your monitoring and adaptation system. I'll guide you through creating a comprehensive approach to track and improve your learning.", type: "question" },
-      { id: uuidv4(), sender: "bot", content: MONITORING_QUESTIONS[0].question, type: "question" }
-    ]);
-  }, []);
+    const initializeChat = async () => {
+      const storedSessionId = localStorage.getItem("session_id");
+      if (storedSessionId) {
+        setSessionId(storedSessionId);
+
+        // Load any saved responses to prevent data loss
+        try {
+          const savedResponses = localStorage.getItem(`solbot_temp_responses_${component}_${phase}`);
+          if (savedResponses) {
+            const parsedResponses = JSON.parse(savedResponses);
+            setResponses(parsedResponses);
+            console.log("Restored saved responses from localStorage");
+          }
+        } catch (error) {
+          console.warn("Could not load saved responses:", error);
+        }
+
+        // Log chat_started event
+        try {
+          const response = await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: storedSessionId,
+              event_type: 'chat_started',
+              phase: phase,
+              component: component,
+            }),
+          });
+          const data = await response.json();
+          if (data.id) {
+            setChatAnalyticsId(data.id);
+          }
+        } catch (error) {
+          console.error("Failed to create chat analytics entry:", error);
+        }
+      }
+
+      setMessages([
+        { id: uuidv4(), sender: "bot", content: "Let's develop your monitoring and adaptation system. I'll guide you through creating a comprehensive approach to track and improve your learning.", type: "question" },
+        { id: uuidv4(), sender: "bot", content: MONITORING_QUESTIONS[0].question, type: "question" }
+      ]);
+    };
+    initializeChat();
+  }, [phase, component]);
 
   useEffect(() => {
     const chatContainer = document.getElementById("guided-chat-container-phase5");
@@ -104,6 +146,38 @@ export default function GuidedMonitoring({
     const newResponses = { ...responses, [questionId]: userInput };
     setResponses(newResponses);
 
+    // Save responses to localStorage to prevent data loss
+    try {
+      localStorage.setItem(`solbot_temp_responses_${component}_${phase}`, JSON.stringify(newResponses));
+    } catch (error) {
+      console.warn("Could not save responses to localStorage:", error);
+    }
+
+    // Log individual question response for research analytics
+    try {
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: 'text_input',
+          phase: phase,
+          component: component,
+          metadata: {
+            field_name: questionId,
+            input_value: userInput,
+            question_index: currentQuestionIndex,
+            question_text: MONITORING_QUESTIONS[currentQuestionIndex].question,
+            is_submission: false,
+            attempt_number: 1,
+            timestamp: new Date().toISOString()
+          }
+        })
+      })
+    } catch (error) {
+      console.error("Failed to log question response:", error)
+    }
+
     const userMessage: Message = { id: uuidv4(), sender: "user", content: userInput, type: "response" };
     let botMessages: Message[] = [];
 
@@ -129,9 +203,13 @@ export default function GuidedMonitoring({
     setUserInput("");
   };
 
-  const submitToApi = async (message: string) => {
+  const submitToApi = async (message: string, isRetry: boolean = false) => {
     if (!sessionId) return;
     setIsLoading(true);
+    setShowRetryOption(false);
+
+    // Save the request for potential retry
+    setLastFailedRequest(message);
 
     // Log user message
     try {
@@ -168,21 +246,39 @@ export default function GuidedMonitoring({
         throw new Error(errorData.error || errorData.details || "Server error")
       }
       const data = await response.json();
-      
+
       if (!data || !data.data) {
         throw new Error("Invalid response format from server")
       }
 
       const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation" };
       setMessages(prev => [...prev, botFeedback]);
+      setFeedbackReceived(true);
+      setLastFailedRequest(null); // Clear on success
+
+      // Log feedback_delivered event for time-on-feedback tracking
+      try {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'feedback_delivered',
+            phase: phase,
+            component: component,
+            metadata: {
+              timestamp: new Date().toISOString(),
+            }
+          })
+        })
+      } catch (error) {
+        console.error("Failed to log feedback_delivered:", error)
+      }
 
       // Enable continue button
       if (onComplete) {
         onComplete();
       }
-      
-      // Set interaction state to chatting after feedback is received
-      setInteractionState("chatting");
 
       // Log AI response
       try {
@@ -204,12 +300,31 @@ export default function GuidedMonitoring({
       } catch (error) {
         console.error("Failed to log AI response:", error)
       }
-    } catch (error) {
-      const errorMessage: Message = { id: uuidv4(), sender: "bot", content: "Sorry, an error occurred while getting feedback.", type: "evaluation" };
+    } catch (error: any) {
+      console.error("Chat API error:", error);
+
+      // Create user-friendly error message with retry option
+      const errorContent = error.message?.includes("timeout") || error.message?.includes("took longer")
+        ? "I'm taking longer than usual to analyze your thoughtful response. This often happens with complex educational content that requires careful consideration.\n\n**Your work is saved** - you can try again for feedback or continue to the next task."
+        : "I encountered a temporary issue while providing feedback on your response.\n\n**Your work is saved** - please try again or continue to the next task.";
+
+      const errorMessage: Message = {
+        id: uuidv4(),
+        sender: "bot",
+        content: errorContent,
+        type: "evaluation"
+      };
       setMessages(prev => [...prev, errorMessage]);
+      setShowRetryOption(true);
     } finally {
       setIsLoading(false);
       setInteractionState("chatting");
+    }
+  };
+
+  const handleRetryFeedback = () => {
+    if (lastFailedRequest) {
+      submitToApi(lastFailedRequest, true);
     }
   };
 
@@ -248,6 +363,23 @@ export default function GuidedMonitoring({
         { id: uuidv4(), sender: "bot", content: MONITORING_QUESTIONS[0].question, type: "question" }
     ]);
     setUserInput(responses[MONITORING_QUESTIONS[0].id] || "");
+
+    if (sessionId) {
+      fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: 'revision_submitted',
+          phase: phase,
+          component: component,
+          metadata: {
+            attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+            content_changes: responses,
+          },
+        }),
+      });
+    }
   };
   
   const accent = "var(--accent-text)"
@@ -300,11 +432,28 @@ export default function GuidedMonitoring({
       );
     } else { // 'chatting'
       return (
-         <div className="flex gap-2 items-start">
+        <div className="flex flex-col space-y-4">
+          <div className="flex gap-2 items-start">
             <Textarea
               placeholder="Refine your monitoring system based on the feedback..."
               value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
+              onChange={(e) => {
+                setUserInput(e.target.value);
+                // Log revision_started on first keystroke after feedback for time-on-feedback tracking
+                if (feedbackReceived && e.target.value.length === 1 && userInput.length === 0 && sessionId) {
+                  fetch('/api/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      session_id: sessionId,
+                      event_type: 'revision_started',
+                      phase: phase,
+                      component: component,
+                      metadata: { timestamp: new Date().toISOString() }
+                    })
+                  }).catch(err => console.error("Failed to log revision_started:", err));
+                }
+              }}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
               style={{
@@ -318,6 +467,14 @@ export default function GuidedMonitoring({
               <Send size={18} />
             </Button>
           </div>
+          {showRetryOption && (
+            <div className="flex justify-center mt-2">
+              <Button onClick={handleRetryFeedback} variant="outline" style={{ borderColor: accent, color: accent }} title="Request new feedback">
+                Try Again for Feedback
+              </Button>
+            </div>
+          )}
+        </div>
       )
     }
   }
