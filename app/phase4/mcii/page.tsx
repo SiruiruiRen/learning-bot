@@ -129,8 +129,9 @@ export default function MCIIPage() {
                       >
                         <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
                         <p className="text-sm text-muted-foreground">
-                          Answer each question step by step, then review and <strong>submit your final version</strong> to continue.
-                          You can interact with SoL2LBot multiple times to improve your responses.
+                          Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
+                          You can revise your answers and request feedback as many times as you like.
+                          When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
                         </p>
                       </div>
                       <GuidedMCII

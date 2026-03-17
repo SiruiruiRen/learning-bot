@@ -195,8 +195,8 @@ export default function FinalSubmissionCard({
           >
             <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
             <p className="text-sm text-muted-foreground">
-              You can interact with SoL2LBot multiple times to improve your responses.
-              Click <strong>&quot;Edit Responses&quot;</strong> to revise, then submit when you&apos;re ready.
+              Not satisfied? Click <strong>&quot;Edit Responses&quot;</strong> to revise your answers and get AI score &amp; feedback.
+              Submit your final version when you&apos;re ready.
             </p>
           </div>
 
