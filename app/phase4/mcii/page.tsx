@@ -68,7 +68,7 @@ export default function MCIIPage() {
                 <span>MCII: Mental Contrasting with Implementation Intentions</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="min-h-[620px] p-3 text-sm" style={{ color: mutedText }}>
+            <CardContent className="min-h-[420px] p-3 text-sm" style={{ color: mutedText }}>
               {userId ? (
                 <>
                   {showInstruction && (

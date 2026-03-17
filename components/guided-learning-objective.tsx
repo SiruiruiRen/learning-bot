@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, ArrowRight, Send, User, Bot, Loader2 } from "lucide-react"
+import { Check, ArrowRight, Send, Bot, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -625,8 +625,8 @@ export default function GuidedLearningObjective({
                 <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
-            <Card 
-              className={`${message.type === 'evaluation' ? 'w-full' : 'max-w-[85%]'}`}
+            <Card
+              className="max-w-[85%]"
               style={{
                 backgroundColor: message.sender === "bot" ? neutralSurface : "hsl(var(--primary) / 0.1)",
                 borderColor: neutralBorder,
@@ -670,11 +670,6 @@ export default function GuidedLearningObjective({
                 )}
               </CardContent>
             </Card>
-            {message.sender === "user" && (
-              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: "hsl(var(--muted))" }}>
-                <User size={16} style={{ color: "hsl(var(--foreground))" }} />
-              </div>
-            )}
           </motion.div>
         ))}
         {isLoading && (

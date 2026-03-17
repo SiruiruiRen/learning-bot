@@ -62,7 +62,7 @@ export default function Phase2ChatPage() {
                 </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="min-h-[700px] p-2">
+            <CardContent className="min-h-[420px] p-2">
               <div
                 className="flex items-start gap-3 p-3 mb-3 rounded-lg border-l-4"
                 style={{

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, Send, User, Bot, Loader2 } from "lucide-react"
+import { Check, Send, Bot, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -615,10 +615,10 @@ export default function GuidedMCII({
                 <Bot size={16} style={{ color: "#ffffff" }} />
               </div>
             )}
-            <Card 
-              className={`${message.type === 'evaluation' ? 'w-full' : 'max-w-[85%]'}`}
-              style={{ 
-                backgroundColor: neutralSurface, 
+            <Card
+              className="max-w-[85%]"
+              style={{
+                backgroundColor: neutralSurface,
                 borderColor: neutralBorder,
                 color: "hsl(var(--foreground))"
               }}
@@ -653,11 +653,6 @@ export default function GuidedMCII({
                 )}
               </CardContent>
             </Card>
-            {message.sender === "user" && (
-              <div className="flex-shrink-0 rounded-full h-8 w-8 flex items-center justify-center" style={{ backgroundColor: "hsl(var(--muted))" }}>
-                <User size={16} style={{ color: "hsl(var(--foreground))" }} />
-              </div>
-            )}
           </motion.div>
         ))}
         {isLoading && (

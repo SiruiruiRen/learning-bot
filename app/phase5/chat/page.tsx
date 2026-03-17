@@ -86,7 +86,7 @@ export default function Phase5ChatContent() {
               </CardTitle>
             </CardHeader>
 
-            <CardContent className="min-h-[700px] p-2">
+            <CardContent className="min-h-[420px] p-2">
               {userId ? (
                 <>
                   {showInstruction && (
