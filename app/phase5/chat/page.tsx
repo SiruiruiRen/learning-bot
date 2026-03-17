@@ -147,7 +147,7 @@ export default function Phase5ChatContent() {
             <Button
               variant="outline"
               style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
-              onClick={() => router.push('/phase5')}
+              onClick={() => { if (window.confirm('Go back? Any unsaved progress will be lost.')) router.push('/phase5'); }}
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Instructions

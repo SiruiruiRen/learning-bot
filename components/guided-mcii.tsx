@@ -463,7 +463,6 @@ export default function GuidedMCII({
                 color: "hsl(var(--foreground))"
               }}
               rows={3}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendResponse(); }}}
             />
             <Button onClick={handleSendResponse} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
               <Send size={18} />
@@ -496,7 +495,6 @@ export default function GuidedMCII({
                 color: "hsl(var(--foreground))"
               }}
               rows={3}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChatMessage(); }}}
             />
             <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
               <Send size={18} />

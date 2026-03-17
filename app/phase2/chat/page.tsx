@@ -91,7 +91,7 @@ export default function Phase2ChatPage() {
               variant="outline"
               className="border"
               style={{ borderColor: neutralBorder, color: mutedText }}
-              onClick={() => router.push('/phase2')}
+              onClick={() => { if (window.confirm('Go back? Any unsaved progress will be lost.')) router.push('/phase2'); }}
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Instructions

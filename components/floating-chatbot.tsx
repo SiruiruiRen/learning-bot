@@ -681,12 +681,6 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                       <Textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            handleSend()
-                          }
-                        }}
                         placeholder="Type your question..."
                         className="flex-1 text-sm resize-none"
                         style={{ backgroundColor: neutralSurface, borderColor: neutralBorder, color: "hsl(var(--foreground))" }}

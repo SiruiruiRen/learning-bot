@@ -235,7 +235,6 @@ export default function GuidedShortTermGoal({
               maxLength={CHARACTER_LIMIT}
               className="flex-1 bg-[hsl(var(--card))] border-[hsl(var(--border))] focus:border-[#b8892e] min-h-[80px]"
               rows={3}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendResponse(); }}}
             />
             <Button onClick={handleSendResponse} className="h-auto bg-[#b8892e] hover:bg-[#96722d] py-3" disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
               <Send size={18} />
@@ -263,7 +262,6 @@ export default function GuidedShortTermGoal({
               maxLength={CHARACTER_LIMIT}
               className="flex-1 bg-[hsl(var(--card))] border-[hsl(var(--border))] focus:border-[#b8892e] min-h-[80px]"
               rows={3}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendChatMessage(); }}}
             />
             <Button onClick={handleSendChatMessage} className="h-auto bg-[#b8892e] hover:bg-[#96722d] py-3" disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
               <Send size={18} />

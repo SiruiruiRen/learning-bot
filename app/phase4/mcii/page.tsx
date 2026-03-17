@@ -119,10 +119,10 @@ export default function MCIIPage() {
               variant="outline"
               className="border"
               style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
-              onClick={() => router.push('/phase4')}
+              onClick={() => { if (window.confirm('Go back? Any unsaved progress will be lost.')) router.push('/phase4'); }}
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
-              Back to Phase 4
+              Back to Instructions
             </Button>
             {chatComplete && (
               <PhaseNavigationButton
