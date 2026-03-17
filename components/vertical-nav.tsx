@@ -26,6 +26,7 @@ export function VerticalNav({
       <button
         onClick={onPrev}
         disabled={currentCardIndex === 0}
+        title="Go to previous step"
         className={`rounded-full p-2 transition-all ${
           currentCardIndex === 0
             ? "opacity-30 cursor-not-allowed"
@@ -50,6 +51,7 @@ export function VerticalNav({
       <button
         onClick={onNext}
         disabled={isNextDisabled}
+        title="Go to next step"
         className={`rounded-full p-2 transition-all ${
           isNextDisabled
             ? "opacity-30 cursor-not-allowed"

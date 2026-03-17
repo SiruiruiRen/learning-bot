@@ -417,6 +417,7 @@ const KnowledgeCheckQuestion = ({
                 disabled={!selectedOption}
                 className="shadow-md disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
+                title="Submit your answer"
               >
                 Submit Answer
               </Button>
@@ -426,6 +427,7 @@ const KnowledgeCheckQuestion = ({
                 variant="outline"
                 className="hover:bg-[hsl(var(--muted)_/_0.25)]"
                 style={{ borderColor: border, color: mutedText }}
+                title="Try answering again"
               >
                 Try Again
               </Button>
@@ -439,6 +441,7 @@ const KnowledgeCheckQuestion = ({
                 onClick={onNextQuestion}
                 className="flex items-center gap-2 shadow-md"
                 style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
+                title="Go to the next question"
               >
                 Next Question <ArrowRight className="h-4 w-4" />
               </Button>

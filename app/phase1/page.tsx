@@ -260,6 +260,7 @@ export default function Phase1Content() {
             disabled={localAnswers.some(answer => !answer.trim())}
             className="mt-6 font-medium py-2 px-6 rounded-md flex items-center gap-2 shadow-md"
             style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
+            title="Submit your answers"
           >
             Submit Answers
             <ArrowRight className="h-4 w-4" />
@@ -399,6 +400,7 @@ export default function Phase1Content() {
                             onClick={handleStartQuiz}
                             className="px-6 py-3 rounded-md shadow-md"
                             style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
+                            title="Start the knowledge check quiz"
                           >
                             Start Knowledge Check
                           </Button>

@@ -464,7 +464,7 @@ export default function GuidedMCII({
               }}
               rows={3}
             />
-            <Button onClick={handleSendResponse} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
+            <Button onClick={handleSendResponse} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT} title="Send your response">
               <Send size={18} />
             </Button>
           </div>
@@ -473,8 +473,8 @@ export default function GuidedMCII({
     } else if (interactionState === 'confirming') {
       return (
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleEditResponses} disabled={isLoading} style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}>Edit</Button>
-          <Button onClick={handleSubmitForFeedback} disabled={isLoading} style={primaryButtonStyle}>
+          <Button variant="outline" onClick={handleEditResponses} disabled={isLoading} style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }} title="Edit your response">Edit</Button>
+          <Button onClick={handleSubmitForFeedback} disabled={isLoading} style={primaryButtonStyle} title="Confirm and submit for feedback">
             <Check size={16} className="mr-2"/>Confirm & Submit
           </Button>
         </div>
@@ -489,20 +489,20 @@ export default function GuidedMCII({
               onChange={(e) => setUserInput(e.target.value)}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
-              style={{ 
-                backgroundColor: neutralSurface, 
+              style={{
+                backgroundColor: neutralSurface,
                 borderColor: neutralBorder,
                 color: "hsl(var(--foreground))"
               }}
               rows={3}
             />
-            <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
+            <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT} title="Send message">
               <Send size={18} />
             </Button>
           </div>
           {showRetryOption && (
             <div className="flex justify-center mt-2">
-              <Button onClick={handleRetryFeedback} variant="outline" style={{ borderColor: accent, color: accent }}>
+              <Button onClick={handleRetryFeedback} variant="outline" style={{ borderColor: accent, color: accent }} title="Request new feedback">
                 Try Again for Feedback
               </Button>
             </div>

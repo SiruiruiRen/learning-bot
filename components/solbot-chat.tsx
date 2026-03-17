@@ -330,7 +330,8 @@ export default function SolBotChat({
             onClick={handleSend}
             disabled={(isLoading || isLoadingProp) || !input.trim()}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-3 py-1.5 disabled:opacity-50"
-            style={{ 
+            title="Send message"
+            style={{
               backgroundColor: "hsl(var(--primary))",
               color: "hsl(var(--primary-foreground))"
             }}

@@ -302,6 +302,7 @@ const KnowledgeCheckQuestion = ({
                 disabled={!selectedOption}
                 className="shadow-md disabled:opacity-50"
                 style={primaryButtonStyle}
+                title="Submit your answer"
               >
                 Submit Answer
               </Button>
@@ -311,6 +312,7 @@ const KnowledgeCheckQuestion = ({
                 variant="outline"
                 className="hover:bg-[hsl(var(--muted)_/_0.25)]"
                 style={{ borderColor: border, color: mutedText }}
+                title="Try answering again"
               >
                 Try Again
               </Button>
@@ -323,6 +325,7 @@ const KnowledgeCheckQuestion = ({
               onClick={onNextQuestion}
               className="flex items-center gap-2 shadow-md"
               style={primaryButtonStyle}
+              title="Go to the next question"
             >
               Next Question <ArrowRight className="h-4 w-4" />
             </Button>
@@ -486,16 +489,16 @@ export default function Phase2Page() {
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                          <FileQuestion className="h-6 w-6" style={{ color: accent }} />
+                          <Video className="h-6 w-6" style={{ color: accent }} />
                         </div>
-                        <span className="text-xs font-medium" style={{ color: accent }}>Knowledge Check</span>
+                        <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
                         <div className="p-2 rounded-full mb-1" style={{ backgroundColor: pillSurface }}>
-                          <Video className="h-6 w-6" style={{ color: accent }} />
+                          <FileQuestion className="h-6 w-6" style={{ color: accent }} />
                         </div>
-                        <span className="text-xs font-medium" style={{ color: accent }}>Watch Video</span>
+                        <span className="text-xs font-medium" style={{ color: accent }}>Knowledge Check</span>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       <div className="flex flex-col items-center text-center">
@@ -606,7 +609,7 @@ export default function Phase2Page() {
                     Continue to Chat <ChevronRight className="h-5 w-5 ml-2" />
                   </Button>
                 ) : currentCardIndex === 4 && !postTestCompleted ? (
-                  <Button 
+                  <Button
                     className="font-semibold px-6 py-2 rounded-lg opacity-60 cursor-not-allowed"
                     style={{
                       background: "linear-gradient(135deg, #b8892e, #96722d)",
@@ -614,6 +617,7 @@ export default function Phase2Page() {
                       color: "#fff",
                     }}
                     disabled
+                    title="Complete the knowledge check to continue"
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>

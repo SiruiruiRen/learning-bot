@@ -22,6 +22,7 @@ export default function HomeButton() {
         className="rounded-full w-12 h-12 shadow-lg p-0 text-white"
         style={{ background: "linear-gradient(135deg, #d8b26f, #b8892e)", boxShadow: "0 4px 14px rgba(184,137,46,0.3)" }}
         aria-label="Return to home page"
+        title="Return to home page"
       >
         <Home className="h-5 w-5" />
       </Button>

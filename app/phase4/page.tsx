@@ -250,6 +250,7 @@ export default function Phase4IntroPage() {
                     className="px-6 py-2 rounded-lg shadow-md opacity-60 cursor-not-allowed"
                     style={{ background: "linear-gradient(135deg, #b8892e, #96722d)", color: "#fff" }}
                     disabled
+                    title="Complete the knowledge check to continue"
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>

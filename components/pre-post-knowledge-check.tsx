@@ -467,6 +467,7 @@ export default function PrePostKnowledgeCheck({
                 onClick={handleSubmit}
                 disabled={!selectedAnswer || (isSelectAll && selectedAnswerArray.length === 0)}
                 className="font-medium"
+                title="Submit your answer"
                 style={{
                   background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
                   color: "#fff",
@@ -480,6 +481,7 @@ export default function PrePostKnowledgeCheck({
                 <Button
                   onClick={handleNext}
                   className="font-medium"
+                  title="Go to the next question"
                   style={{
                     background: "linear-gradient(135deg, #d8b26f, #e6c98c)",
                     color: "#fff"

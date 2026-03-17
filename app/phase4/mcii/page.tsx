@@ -89,6 +89,7 @@ export default function MCIIPage() {
                         <Button
                           onClick={handleStartChat}
                           style={primaryButtonStyle}
+                          title="Start the MCII exercise"
                         >
                           Start MCII Exercise
                           <ChevronRight className="h-4 w-4 ml-2" />

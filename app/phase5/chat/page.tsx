@@ -118,6 +118,7 @@ export default function Phase5ChatContent() {
                         <Button
                           onClick={handleStartChat}
                           style={primaryButtonStyle}
+                          title="Start the monitoring exercise"
                         >
                           Start Monitoring Exercise
                           <ChevronRight className="h-4 w-4 ml-2" />

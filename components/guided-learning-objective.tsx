@@ -306,7 +306,7 @@ export default function GuidedLearningObjective({
               }}
               rows={3}
             />
-            <Button onClick={handleSendResponse} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
+            <Button onClick={handleSendResponse} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT} title="Send your response">
               <Send size={18} />
             </Button>
           </div>
@@ -315,8 +315,8 @@ export default function GuidedLearningObjective({
     } else if (interactionState === 'confirming') {
       return (
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleEdit} disabled={isLoading} style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}>Edit</Button>
-          <Button onClick={handleSubmitForFeedback} disabled={isLoading} style={primaryButtonStyle}>
+          <Button variant="outline" onClick={handleEdit} disabled={isLoading} style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }} title="Edit your response">Edit</Button>
+          <Button onClick={handleSubmitForFeedback} disabled={isLoading} style={primaryButtonStyle} title="Confirm and submit for feedback">
             <Check size={16} className="mr-2"/>Confirm & Submit
           </Button>
         </div>
@@ -337,7 +337,7 @@ export default function GuidedLearningObjective({
               }}
               rows={3}
             />
-            <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT}>
+            <Button onClick={handleSendChatMessage} className="h-auto py-3" style={primaryButtonStyle} disabled={!userInput.trim() || userInput.length > CHARACTER_LIMIT} title="Send message">
               <Send size={18} />
             </Button>
           </div>

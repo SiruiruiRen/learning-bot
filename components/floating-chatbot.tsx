@@ -601,7 +601,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                     Quick Help
                   </span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); closeChatbot() }} className="h-6 w-6 p-0 rounded">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); closeChatbot() }} className="h-6 w-6 p-0 rounded" title="Close Quick Help">
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -707,6 +707,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                         disabled={isLoading || !input.trim()}
                         className="h-auto px-3"
                         style={{ backgroundColor: "#b8892e", color: "#fff" }}
+                        title="Send message"
                       >
                         <Send className="w-4 h-4" />
                       </Button>
