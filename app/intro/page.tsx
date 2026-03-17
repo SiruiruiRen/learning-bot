@@ -106,6 +106,19 @@ export default function IntroPage() {
     try {
       localStorage.removeItem("solbot_phase4_completed_tasks")
       localStorage.removeItem("solbot_long_term_goal")
+      // Clear all phase completion flags
+      for (let i = 1; i <= 6; i++) {
+        localStorage.removeItem(`solbot_phase${i}_completed`)
+        localStorage.removeItem(`solbot_progress_phase${i}`)
+      }
+      // Clear guided component temp responses
+      const tempKeys = [
+        "solbot_temp_responses_learning_objectives_2",
+        "solbot_temp_responses_mcii_4",
+        "solbot_temp_responses_progress_monitoring_phase5",
+        "solbot_temp_responses_long_term_goals_4",
+      ]
+      tempKeys.forEach((key) => localStorage.removeItem(key))
     } catch (error) {
       console.error("Error clearing localStorage:", error)
     }

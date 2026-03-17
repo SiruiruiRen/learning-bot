@@ -22,6 +22,8 @@ import {
   FileQuestion,
   Video,
   MessageCircle,
+  Lock,
+  CheckCircle2,
 } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -33,6 +35,7 @@ import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
 import { phase2KnowledgeChecks } from "@/lib/knowledge-check-questions"
 import InstructionGuide from "@/components/instruction-guide"
 import { phaseInstructions } from "@/lib/post-task-questions"
+import { useProgressSaver } from "@/hooks/useProgressSaver"
 
 const accent = "var(--accent-text)"
 const neutralSurface = "hsl(var(--card) / 0.78)"
@@ -372,6 +375,7 @@ export default function Phase2Page() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [videoWatched, setVideoWatched] = useState(false)
   const [postTestCompleted, setPostTestCompleted] = useState(false)
+  const { savedProgress, saveProgress, clearProgress } = useProgressSaver("phase2")
 
   const cards = [
     { id: "intro", title: "Understand Your Task" },
@@ -385,24 +389,31 @@ export default function Phase2Page() {
 
   const nextCard = () => {
     if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
+      const newIndex = currentCardIndex + 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoWatched, postTestCompleted })
     } else {
+      clearProgress()
       router.push("/phase2/chat")
     }
   }
 
   const prevCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
+      const newIndex = currentCardIndex - 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoWatched, postTestCompleted })
     }
   }
 
   const handleVideoComplete = () => {
     setVideoWatched(true)
+    saveProgress({ cardIndex: currentCardIndex, videoWatched: true, postTestCompleted })
   }
-  
+
   const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
     setPostTestCompleted(true)
+    saveProgress({ cardIndex: currentCardIndex, videoWatched, postTestCompleted: true })
   }
 
   useEffect(() => {
@@ -410,7 +421,13 @@ export default function Phase2Page() {
     if (storedName) {
       setUserName(storedName)
     }
-  }, [])
+    // Restore saved progress
+    if (savedProgress) {
+      if (savedProgress.cardIndex > 0) setCurrentCardIndex(savedProgress.cardIndex)
+      if (savedProgress.videoWatched) setVideoWatched(true)
+      if (savedProgress.postTestCompleted) setPostTestCompleted(true)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
 
@@ -542,11 +559,22 @@ export default function Phase2Page() {
                     videoTitle="Learning Task Analysis"
                   />
                   <div
-                    className="mt-4 p-3 rounded-lg text-center border"
-                    style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
+                    className="mt-4 p-3 rounded-lg border-l-4 flex items-center gap-3"
+                    style={{
+                      borderLeftColor: videoWatched ? "#22c55e" : "#d8b26f",
+                      backgroundColor: videoWatched ? "hsl(142 76% 36% / 0.08)" : "hsl(var(--muted) / 0.25)",
+                    }}
                   >
-                    <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will proceed to an interactive chat with SoL2LBot.</p>
+                    {videoWatched ? (
+                      <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "#22c55e" }} />
+                    ) : (
+                      <Lock className="h-5 w-5 shrink-0" style={{ color: "#d8b26f" }} />
+                    )}
+                    <p className="text-sm" style={{ color: videoWatched ? "#22c55e" : "hsl(var(--muted-foreground))" }}>
+                      {videoWatched
+                        ? "Video completed! You can proceed to the Knowledge Check."
+                        : "Please watch the full video to unlock the next step."}
+                    </p>
                   </div>
                 </div>
               )}
@@ -623,6 +651,12 @@ export default function Phase2Page() {
                   </Button>
                 ) : null}
               </div>
+              {currentCardIndex === 3 && !videoWatched && (
+                <p className="text-xs text-center mt-2" style={{ color: "#d8b26f" }}>Complete the video above to continue</p>
+              )}
+              {currentCardIndex === 4 && !postTestCompleted && (
+                <p className="text-xs text-center mt-2" style={{ color: "#d8b26f" }}>Complete the knowledge check to continue</p>
+              )}
             </CardContent>
           </Card>
         </motion.div>

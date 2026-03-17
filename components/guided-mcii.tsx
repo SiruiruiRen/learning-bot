@@ -433,13 +433,9 @@ export default function GuidedMCII({
       });
     }
     
-    // Clean up temporary saved responses on successful completion
-    try {
-      localStorage.removeItem(`solbot_temp_responses_${component}_${phase}`);
-    } catch (error) {
-      console.warn("Could not clean up temporary responses:", error);
-    }
-    
+    // Note: temp responses are NOT cleaned up here — they are needed by
+    // FinalSubmissionCard to display the summary. Cleanup happens on final submission.
+
     if (onComplete) {
       onComplete();
     }

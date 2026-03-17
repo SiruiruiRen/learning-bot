@@ -5,12 +5,13 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Target, ChevronRight, ChevronLeft, Map, Video, FileQuestion, MessageCircle } from "lucide-react"
+import { Target, ChevronRight, ChevronLeft, Map, Video, FileQuestion, MessageCircle, Lock, CheckCircle2 } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import VideoPlayer from "@/components/video-player"
 import { VerticalNav } from "@/components/vertical-nav"
 import PrePostKnowledgeCheck from "@/components/pre-post-knowledge-check"
 import { phase4KnowledgeChecks } from "@/lib/knowledge-check-questions"
+import { useProgressSaver } from "@/hooks/useProgressSaver"
 
 export default function Phase4IntroPage() {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function Phase4IntroPage() {
   const [videoCompleted, setVideoCompleted] = useState(false)
   const [postTestCompleted, setPostTestCompleted] = useState(false)
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
+  const { savedProgress, saveProgress, clearProgress } = useProgressSaver("phase4")
 
   const cards = [
     { id: "intro", title: "Introduction to Strategic Planning" },
@@ -39,29 +41,42 @@ export default function Phase4IntroPage() {
       console.error("Error accessing localStorage:", error)
       router.push('/intro');
     }
-  }, [router]);
+    // Restore saved progress
+    if (savedProgress) {
+      if (savedProgress.cardIndex > 0) setCurrentCardIndex(savedProgress.cardIndex)
+      if (savedProgress.videoCompleted) setVideoCompleted(true)
+      if (savedProgress.postTestCompleted) setPostTestCompleted(true)
+    }
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nextCard = () => {
     if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
+      const newIndex = currentCardIndex + 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoCompleted, postTestCompleted })
     }
   }
 
   const prevCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
+      const newIndex = currentCardIndex - 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoCompleted, postTestCompleted })
     }
   }
 
   const handleVideoComplete = () => {
     setVideoCompleted(true)
+    saveProgress({ cardIndex: currentCardIndex, videoCompleted: true, postTestCompleted })
   }
 
   const handlePostTestComplete = () => {
     setPostTestCompleted(true)
+    saveProgress({ cardIndex: currentCardIndex, videoCompleted, postTestCompleted: true })
   }
 
   const handleContinueToChat = () => {
+    clearProgress()
     router.push("/phase4/mcii")
   }
 
@@ -185,11 +200,22 @@ export default function Phase4IntroPage() {
                     videoTitle="MCII Framework for Strategic Planning"
                   />
                   <div
-                    className="mt-4 p-3 rounded-lg text-center border"
-                    style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
+                    className="mt-4 p-3 rounded-lg border-l-4 flex items-center gap-3"
+                    style={{
+                      borderLeftColor: videoCompleted ? "#22c55e" : "#d8b26f",
+                      backgroundColor: videoCompleted ? "hsl(142 76% 36% / 0.08)" : "hsl(var(--muted) / 0.25)",
+                    }}
                   >
-                    <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will complete a knowledge check, then proceed to the MCII exercise with SoL2LBot.</p>
+                    {videoCompleted ? (
+                      <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "#22c55e" }} />
+                    ) : (
+                      <Lock className="h-5 w-5 shrink-0" style={{ color: "#d8b26f" }} />
+                    )}
+                    <p className="text-sm" style={{ color: videoCompleted ? "#22c55e" : "hsl(var(--muted-foreground))" }}>
+                      {videoCompleted
+                        ? "Video completed! You can proceed to the Knowledge Check."
+                        : "Please watch the full video to unlock the next step."}
+                    </p>
                   </div>
                 </div>
               )}
@@ -256,6 +282,12 @@ export default function Phase4IntroPage() {
                   </Button>
                 ) : null}
               </div>
+              {currentCardIndex === 1 && !videoCompleted && (
+                <p className="text-xs text-center mt-2" style={{ color: "#d8b26f" }}>Complete the video above to continue</p>
+              )}
+              {currentCardIndex === 2 && !postTestCompleted && (
+                <p className="text-xs text-center mt-2" style={{ color: "#d8b26f" }}>Complete the knowledge check to continue</p>
+              )}
             </CardContent>
           </Card>
         </motion.div>

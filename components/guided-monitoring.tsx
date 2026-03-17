@@ -275,6 +275,28 @@ export default function GuidedMonitoring({
         console.error("Failed to log feedback_delivered:", error)
       }
 
+      // Log chat_ended event
+      if (chatAnalyticsId && sessionId) {
+        try {
+          await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: sessionId,
+              event_type: 'chat_ended',
+              phase: phase,
+              component: component,
+              metadata: {
+                chat_analytics_id: chatAnalyticsId,
+                message_count: messages.length + 2, // +2 for current user msg and bot response
+              },
+            }),
+          })
+        } catch (error) {
+          console.error("Failed to log chat_ended:", error)
+        }
+      }
+
       // Enable continue button
       if (onComplete) {
         onComplete();

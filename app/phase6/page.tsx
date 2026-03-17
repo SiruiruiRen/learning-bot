@@ -6,7 +6,18 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Medal, ChevronRight, CheckCircle } from "lucide-react"
+import { Medal, ChevronRight, CheckCircle, Send } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import ModuleBar from "@/components/module-bar"
 
 export default function Phase6Page() {
@@ -134,6 +145,13 @@ export default function Phase6Page() {
       } catch (error) {
         console.error("Failed to log submission:", error)
       }
+    }
+
+    // Mark Phase 6 as completed for PhaseGuard
+    try {
+      localStorage.setItem("solbot_phase6_completed", "true")
+    } catch (error) {
+      console.error("Error saving Phase 6 completion:", error)
     }
 
     // Navigate to summary after a short delay
@@ -282,16 +300,37 @@ export default function Phase6Page() {
                   </div>
 
                   <div className="flex justify-end">
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={!answer.trim()}
-                      className="font-semibold"
-                      style={primaryButtonStyle}
-                      title="Submit your assessment"
-                    >
-                      Submit Assessment
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          disabled={!answer.trim()}
+                          className="font-semibold px-6 py-2 rounded-lg shadow-md"
+                          style={{
+                            background: "linear-gradient(135deg, #b8892e, #96722d)",
+                            color: "#fff",
+                          }}
+                          title="Submit your assessment"
+                        >
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit Assessment
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Submit Final Assessment?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Your responses will be recorded and you&apos;ll see your training summary.
+                            Make sure you&apos;re satisfied with your answers before submitting.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Go Back</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleSubmit}>
+                            Yes, Submit
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ) : (

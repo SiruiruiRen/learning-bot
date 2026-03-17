@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { PlayCircle, CheckCircle, Brain, MoveRight, Sparkles, BookMarked, ChevronRight, ChevronLeft, ChevronUp, ChevronDown, HelpCircle, AlertCircle, ArrowRight, Map, BookOpen, Video, FileQuestion } from "lucide-react"
+import { PlayCircle, CheckCircle, Brain, MoveRight, Sparkles, BookMarked, ChevronRight, ChevronLeft, ChevronUp, ChevronDown, HelpCircle, AlertCircle, ArrowRight, Map, BookOpen, Video, FileQuestion, Lock, CheckCircle2 } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import VideoPlayer from "@/components/video-player"
@@ -20,6 +20,7 @@ import SolBotChat from "@/components/solbot-chat"
 import { getNextPhase } from "@/lib/phase-data"
 import { VerticalNav } from "@/components/vertical-nav"
 import ModuleBar from "@/components/module-bar"
+import { useProgressSaver } from "@/hooks/useProgressSaver"
 
 // --- Helper function to log events ---
 const logEvent = (sessionId: string, eventType: string, metadata: any) => {
@@ -495,6 +496,7 @@ export default function Phase3Content() {
   const [step, setStep] = useState(1)
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const { savedProgress, saveProgress, clearProgress } = useProgressSaver("phase3")
 
   // Define the cards for easy reference
   const cards = [
@@ -509,9 +511,11 @@ export default function Phase3Content() {
   // Function to navigate to the next card
   const nextCard = () => {
     if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
+      const newIndex = currentCardIndex + 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoCompleted, postTestCompleted })
     } else {
-      // If we're on the last card, complete the phase
+      clearProgress()
       handleComplete()
     }
   }
@@ -519,7 +523,9 @@ export default function Phase3Content() {
   // Function to navigate to the previous card
   const prevCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
+      const newIndex = currentCardIndex - 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoCompleted, postTestCompleted })
     }
   }
 
@@ -540,7 +546,13 @@ export default function Phase3Content() {
       console.error("Error accessing localStorage:", error)
       router.replace('/intro');
     }
-  }, [router]);
+    // Restore saved progress
+    if (savedProgress) {
+      if (savedProgress.cardIndex > 0) setCurrentCardIndex(savedProgress.cardIndex)
+      if (savedProgress.videoCompleted) setVideoCompleted(true)
+      if (savedProgress.postTestCompleted) setPostTestCompleted(true)
+    }
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Knowledge check questions
   const knowledgeChecks = [
@@ -601,6 +613,7 @@ export default function Phase3Content() {
 
   const handlePostTestComplete = (answers: { [questionId: number]: string | string[] }, allCorrect: boolean) => {
     setPostTestCompleted(true)
+    saveProgress({ cardIndex: currentCardIndex, videoCompleted, postTestCompleted: true })
   }
 
   const handleWatchVideo = () => {
@@ -613,12 +626,20 @@ export default function Phase3Content() {
   const handleCompleteVideo = () => {
     setViewingVideo(false)
     setVideoCompleted(true)
+    saveProgress({ cardIndex: currentCardIndex, videoCompleted: true, postTestCompleted })
     if (sessionId) {
       logEvent(sessionId, 'video_watch_completed', { video_title: videoContent.title });
     }
   }
 
   const handleComplete = () => {
+    // Mark Phase 3 as completed for PhaseGuard
+    try {
+      localStorage.setItem("solbot_phase3_completed", "true")
+    } catch (error) {
+      console.error("Error saving completion status:", error)
+    }
+    clearProgress()
     router.push("/phase4")
   }
 
@@ -789,14 +810,22 @@ export default function Phase3Content() {
                     </div>
                   </div>
                   <div
-                    className="mt-4 p-3 rounded-lg text-center border"
+                    className="mt-4 p-3 rounded-lg border-l-4 flex items-center gap-3"
                     style={{
-                      backgroundColor: neutralSurface,
-                      borderColor: neutralBorder,
+                      borderLeftColor: videoCompleted ? "#22c55e" : "#d8b26f",
+                      backgroundColor: videoCompleted ? "hsl(142 76% 36% / 0.08)" : "hsl(var(--muted) / 0.25)",
                     }}
                   >
-                    <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                    <p className="text-muted-foreground text-sm">You will proceed to the next Knowledge Check.</p>
+                    {videoCompleted ? (
+                      <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "#22c55e" }} />
+                    ) : (
+                      <Lock className="h-5 w-5 shrink-0" style={{ color: "#d8b26f" }} />
+                    )}
+                    <p className="text-sm" style={{ color: videoCompleted ? "#22c55e" : "hsl(var(--muted-foreground))" }}>
+                      {videoCompleted
+                        ? "Video completed! You can proceed to the Knowledge Check."
+                        : "Please watch the full video to unlock the next step."}
+                    </p>
                   </div>
                 </div>
               )}
@@ -847,6 +876,12 @@ export default function Phase3Content() {
                   {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </div>
+              {currentCardIndex === 4 && !videoCompleted && (
+                <p className="text-xs text-center mt-2" style={{ color: "#d8b26f" }}>Complete the video above to continue</p>
+              )}
+              {currentCardIndex === 5 && !postTestCompleted && (
+                <p className="text-xs text-center mt-2" style={{ color: "#d8b26f" }}>Complete the knowledge check to continue</p>
+              )}
             </CardContent>
           </Card>
         </motion.div>

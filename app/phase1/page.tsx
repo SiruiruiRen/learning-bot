@@ -4,7 +4,7 @@ import { useState, useEffect, ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BrainCircuit, PlayCircle, VideoIcon, MoveRight, CheckCircle, Bot, Sparkles, MessageSquare, User, ArrowRight, Send, Youtube, FileQuestion, CheckCircle2, ChevronRight, ChevronLeft, Map, Video } from "lucide-react"
+import { BrainCircuit, PlayCircle, VideoIcon, MoveRight, CheckCircle, Bot, Sparkles, MessageSquare, User, ArrowRight, Send, Youtube, FileQuestion, CheckCircle2, ChevronRight, ChevronLeft, Map, Video, Lock } from "lucide-react"
 import { motion } from "framer-motion"
 import ModuleBar from "@/components/module-bar"
 import { VerticalNav } from "@/components/vertical-nav"
@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { v4 as uuidv4 } from 'uuid'
 import React from "react"
 import { useSessionManager } from "@/lib/session-manager"
+import { useProgressSaver } from "@/hooks/useProgressSaver"
 
 export default function Phase1Content() {
   const router = useRouter()
@@ -40,6 +41,7 @@ export default function Phase1Content() {
   const [answersSubmitted, setAnswersSubmitted] = useState(false)
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [sessionReady, setSessionReady] = useState(false)
+  const { savedProgress, saveProgress, clearProgress } = useProgressSaver("phase1")
 
   // Define the cards for easy reference
   const cards = [
@@ -50,9 +52,11 @@ export default function Phase1Content() {
   // Function to navigate to the next card
   const nextCard = () => {
     if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
+      const newIndex = currentCardIndex + 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoWatched, quizCompleted, quizStarted, answersSubmitted })
     } else {
-      // If we're on the last card, complete the phase
+      clearProgress()
       handleComplete()
     }
   }
@@ -60,13 +64,16 @@ export default function Phase1Content() {
   // Function to navigate to the previous card
   const prevCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
+      const newIndex = currentCardIndex - 1
+      setCurrentCardIndex(newIndex)
+      saveProgress({ cardIndex: newIndex, videoWatched, quizCompleted, quizStarted, answersSubmitted })
     }
   }
   
   // Function to handle video completion
   const handleVideoComplete = () => {
     setVideoWatched(true)
+    saveProgress({ cardIndex: currentCardIndex, videoWatched: true, quizCompleted, quizStarted, answersSubmitted })
     // Save to localStorage that user has watched the video
     try {
       const stateToSave = {
@@ -122,6 +129,19 @@ export default function Phase1Content() {
     initializeSession()
   }, [])
 
+  // Restore saved progress on mount
+  useEffect(() => {
+    if (savedProgress) {
+      if (savedProgress.cardIndex > 0) setCurrentCardIndex(savedProgress.cardIndex)
+      if (savedProgress.videoWatched) setVideoWatched(true)
+      if (savedProgress.quizCompleted) {
+        setQuizCompleted(true)
+        setQuizStarted(true)
+        setAnswersSubmitted(true)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleWatchVideo = () => {
     setQuizStarted(true)
   }
@@ -154,6 +174,7 @@ export default function Phase1Content() {
   }
 
   const handleComplete = () => {
+    clearProgress()
     // Save completion to localStorage
     try {
       localStorage.setItem("solbot_phase1_completed", "true")
@@ -182,6 +203,7 @@ export default function Phase1Content() {
       setAnswersSubmitted(true);
       setQuizCompleted(true);
       setFeedback("Great job identifying the four stages of self-regulated learning! These stages will help you become a more effective learner.");
+      saveProgress({ cardIndex: currentCardIndex, videoWatched, quizCompleted: true, quizStarted: true, answersSubmitted: true })
     };
     
     return (
@@ -324,7 +346,7 @@ export default function Phase1Content() {
               totalCards={cards.length}
               onPrev={prevCard}
               onNext={nextCard}
-              isNextDisabled={currentCardIndex === 1 && !quizCompleted}
+              isNextDisabled={(currentCardIndex === 0 && !videoWatched) || (currentCardIndex === 1 && !quizCompleted)}
             />
 
             {/* Content */}
@@ -381,9 +403,23 @@ export default function Phase1Content() {
                         videoTitle="Self-Regulated Learning Introduction"
                       />
 
-                      <div className="mt-4 p-3 rounded-2xl border text-center shadow-[0_10px_26px_rgba(0,0,0,0.2)] backdrop-blur-md" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
-                        <p className="font-semibold" style={{ color: accent }}>After the video:</p>
-                        <p className="text-muted-foreground text-sm">You will proceed to a Knowledge Check.</p>
+                      <div
+                        className="mt-4 p-3 rounded-lg border-l-4 flex items-center gap-3"
+                        style={{
+                          borderLeftColor: videoWatched ? "#22c55e" : "#d8b26f",
+                          backgroundColor: videoWatched ? "hsl(142 76% 36% / 0.08)" : "hsl(var(--muted) / 0.25)",
+                        }}
+                      >
+                        {videoWatched ? (
+                          <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: "#22c55e" }} />
+                        ) : (
+                          <Lock className="h-5 w-5 shrink-0" style={{ color: "#d8b26f" }} />
+                        )}
+                        <p className="text-sm" style={{ color: videoWatched ? "#22c55e" : "hsl(var(--muted-foreground))" }}>
+                          {videoWatched
+                            ? "Video completed! You can proceed to the Knowledge Check."
+                            : "Please watch the full video to unlock the next step."}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -430,12 +466,23 @@ export default function Phase1Content() {
                       background: "linear-gradient(135deg, #b8892e, #96722d)",
                       color: "#fff",
                     }}
-                    disabled={currentCardIndex === 1 && !quizCompleted}
+                    disabled={(currentCardIndex === 0 && !videoWatched) || (currentCardIndex === 1 && !quizCompleted)}
                     title={currentCardIndex < cards.length - 1 ? "Go to next step" : "Continue to the next activity"}
                   >
                     {currentCardIndex < cards.length - 1 ? 'Next' : 'Complete Phase'} <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </CardFooter>
+                {/* Disabled button hint */}
+                {currentCardIndex === 0 && !videoWatched && (
+                  <p className="text-xs text-center pb-3" style={{ color: "#d8b26f" }}>
+                    Complete the video above to continue
+                  </p>
+                )}
+                {currentCardIndex === 1 && !quizCompleted && (
+                  <p className="text-xs text-center pb-3" style={{ color: "#d8b26f" }}>
+                    Complete the knowledge check to continue
+                  </p>
+                )}
               </Card>
             </motion.div>
           </>

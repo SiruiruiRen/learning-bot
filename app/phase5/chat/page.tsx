@@ -4,49 +4,64 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { LineChart, ChevronLeft, ChevronRight } from "lucide-react"
+import { LineChart, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoring from "@/components/guided-monitoring"
 import InstructionGuide from "@/components/instruction-guide"
+import FinalSubmissionCard from "@/components/final-submission-card"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import { phaseInstructions } from "@/lib/post-task-questions"
+
+const MONITORING_QUESTION_LABELS = [
+  { id: "progress_checks", label: "Progress Checks" },
+  { id: "adaptation_triggers", label: "Adaptation Triggers" },
+  { id: "strategy_alternatives", label: "Strategy Alternatives" },
+]
 
 export default function Phase5ChatContent() {
   const router = useRouter()
   const [userId, setUserId] = useState<string>("")
-  const [isComplete, setIsComplete] = useState(false)
   const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
-  
+  const [finalSubmitted, setFinalSubmitted] = useState(false)
+  const [editKey, setEditKey] = useState(0)
+
   // Load user data on component mount
   useEffect(() => {
     try {
       const storedUserId = localStorage.getItem("user_id")
       const storedSessionId = localStorage.getItem("session_id")
-      
+
       if (storedUserId && storedSessionId) {
         setUserId(storedUserId)
       } else {
-        // If there's no session, redirect to intro
         console.warn("No session found, redirecting to intro.")
         router.push('/intro')
         return
       }
     } catch (error) {
       console.error("Error accessing localStorage:", error)
-      // Handle cases where localStorage might be blocked or unavailable.
       router.push('/intro')
     }
   }, [router])
 
   const handlePhaseComplete = () => {
-    setIsComplete(true);
-    setChatComplete(true);
+    setChatComplete(true)
   }
-  
+
   const handleStartChat = () => {
     setShowInstruction(false)
+  }
+
+  const handleEdit = () => {
+    setChatComplete(false)
+    setShowInstruction(false) // Go directly to guided component
+    setEditKey((prev) => prev + 1)
+  }
+
+  const handleFinalSubmit = () => {
+    setFinalSubmitted(true)
   }
 
   const accent = "var(--accent-text)"
@@ -92,69 +107,104 @@ export default function Phase5ChatContent() {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto"
         >
-          <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
-                <LineChart className="h-8 w-8" style={{ color: accent }} />
-                <span style={{ color: accent }}>
-                  Create Your Monitoring System
-                </span>
-              </CardTitle>
-            </CardHeader>
+          {/* Instruction + Guided Component — hidden when showing final submission */}
+          {!chatComplete && (
+            <Card style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-center">
+                  <LineChart className="h-8 w-8" style={{ color: accent }} />
+                  <span style={{ color: accent }}>
+                    Create Your Monitoring System
+                  </span>
+                </CardTitle>
+              </CardHeader>
 
-            <CardContent className="min-h-[700px] p-2">
-              {userId ? (
-                <>
-                  {showInstruction && !chatComplete && (
-                    <div className="space-y-4">
-                      <InstructionGuide
-                        title={phaseInstructions.phase5.title}
-                        instructions={phaseInstructions.phase5.instructions}
-                        tips={phaseInstructions.phase5.tips}
-                        examples={phaseInstructions.phase5.examples}
-                        phase="phase5"
-                      />
-                      <div className="flex justify-center mt-6">
-                        <Button
-                          onClick={handleStartChat}
-                          style={primaryButtonStyle}
-                          title="Start the monitoring exercise"
-                        >
-                          Start Monitoring Exercise
-                          <ChevronRight className="h-4 w-4 ml-2" />
-                        </Button>
+              <CardContent className="min-h-[700px] p-2">
+                {userId ? (
+                  <>
+                    {showInstruction && (
+                      <div className="space-y-4">
+                        <InstructionGuide
+                          title={phaseInstructions.phase5.title}
+                          instructions={phaseInstructions.phase5.instructions}
+                          tips={phaseInstructions.phase5.tips}
+                          examples={phaseInstructions.phase5.examples}
+                          phase="phase5"
+                        />
+                        <div className="flex justify-center mt-6">
+                          <Button
+                            onClick={handleStartChat}
+                            style={primaryButtonStyle}
+                            title="Start the monitoring exercise"
+                          >
+                            Start Monitoring Exercise
+                            <ChevronRight className="h-4 w-4 ml-2" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {!showInstruction && (
-                    <GuidedMonitoring
-                      userId={userId}
-                      phase="phase5"
-                      component="progress_monitoring"
-                      onComplete={() => {}} // Don't auto-complete - use button instead
-                      height="calc(100% - 80px)"
-                    />
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p>Loading session...</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
+                    )}
+                    {!showInstruction && (
+                      <>
+                      <div
+                        className="flex items-start gap-3 p-3 mb-3 rounded-lg border-l-4"
+                        style={{
+                          borderLeftColor: "#d8b26f",
+                          backgroundColor: "hsl(var(--muted) / 0.25)",
+                        }}
+                      >
+                        <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
+                        <p className="text-sm text-muted-foreground">
+                          Answer each question step by step, then review and <strong>submit your final version</strong> to continue.
+                          You can interact with SoL2LBot multiple times to improve your responses.
+                        </p>
+                      </div>
+                      <GuidedMonitoring
+                        key={editKey}
+                        userId={userId}
+                        phase="phase5"
+                        component="progress_monitoring"
+                        onComplete={handlePhaseComplete}
+                        height="calc(100% - 80px)"
+                      />
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p>Loading session...</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Final Submission Card */}
+          {chatComplete && !finalSubmitted && (
+            <div className="mb-6">
+              <FinalSubmissionCard
+                phase="phase5"
+                phaseNumber={5}
+                componentName="progress_monitoring"
+                questionLabels={MONITORING_QUESTION_LABELS}
+                onEdit={handleEdit}
+                onSubmit={handleFinalSubmit}
+              />
+            </div>
+          )}
+
           <div className="flex flex-col gap-3 mt-4">
-            <Button
-              variant="outline"
-              style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
-              onClick={() => { if (window.confirm('Go back? Any unsaved progress will be lost.')) router.push('/phase5'); }}
-              title="Return to the instructions page"
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Back to Instructions
-            </Button>
-            {chatComplete && (
+            {!chatComplete && (
+              <Button
+                variant="outline"
+                style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
+                onClick={() => { if (window.confirm('Go back? Any unsaved progress will be lost.')) router.push('/phase5'); }}
+                title="Return to the instructions page"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Back to Instructions
+              </Button>
+            )}
+            {finalSubmitted && (
               <PhaseNavigationButton
                 nextPhase={6}
                 onNavigate={() => router.push('/phase6')}
@@ -166,4 +216,4 @@ export default function Phase5ChatContent() {
       </div>
     </div>
   )
-} 
+}

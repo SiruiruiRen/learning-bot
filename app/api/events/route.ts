@@ -130,6 +130,18 @@ export async function POST(request: NextRequest) {
         // Logged via master content_interaction_logs above — timestamps used for time-on-feedback calculation
         // No extra table needed; Q11 in research_analysis_queries.sql computes the metric
         break;
+      case 'user_left_page':
+      case 'user_returned_to_page':
+        // User visibility/leave/return tracking for engagement analysis
+        // Logged via master content_interaction_logs above
+        // metadata includes: page, time_on_page_seconds, total_active_time_seconds, away_duration_seconds (for return events)
+        // page_unload events use user_left_page with reason: "page_unload" in metadata
+        break;
+      case 'final_submission':
+        // User confirmed final submission of guided component responses
+        // Logged via master content_interaction_logs above
+        // metadata includes: responses (all question answers), response_count, timestamp
+        break;
     }
 
     return NextResponse.json(responseData);
