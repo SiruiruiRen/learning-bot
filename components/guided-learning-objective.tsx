@@ -20,6 +20,7 @@ import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
+import { useChatPersistence } from '@/hooks/useChatPersistence'
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -93,25 +94,70 @@ export default function GuidedLearningObjective({
   const [finalSubmitted, setFinalSubmitted] = useState(false);
   const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
 
+  const { loadChatState, saveChatState, clearChatState } = useChatPersistence(component, phase);
+
+  // Save full chat state whenever key state changes
+  useEffect(() => {
+    if (messages.length === 0) return; // Don't save empty state
+    saveChatState({
+      messages,
+      interactionState,
+      currentQuestionIndex,
+      responses,
+      feedbackReceived,
+      finalSubmitted,
+    });
+  }, [messages, interactionState, currentQuestionIndex, responses, feedbackReceived, finalSubmitted, saveChatState]);
+
   useEffect(() => {
     const initializeChat = async () => {
       const storedSessionId = localStorage.getItem("session_id");
       if (storedSessionId) {
         setSessionId(storedSessionId);
 
-        // Load any saved responses to prevent data loss
+        // Try to restore full chat state first (complete conversation history)
+        const savedChatState = loadChatState();
+        if (savedChatState && savedChatState.messages.length > 0) {
+          setMessages(savedChatState.messages);
+          setInteractionState(savedChatState.interactionState);
+          setCurrentQuestionIndex(savedChatState.currentQuestionIndex);
+          setResponses(savedChatState.responses);
+          setFeedbackReceived(savedChatState.feedbackReceived);
+          setFinalSubmitted(savedChatState.finalSubmitted);
+          console.log("Restored full chat state from localStorage");
+
+          // Log chat_resumed event
+          try {
+            const response = await fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: storedSessionId,
+                event_type: 'chat_started',
+                phase: phase,
+                component: component,
+                metadata: { resumed: true },
+              }),
+            });
+            const data = await response.json();
+            if (data.id) setChatAnalyticsId(data.id);
+          } catch (error) {
+            console.error("Failed to create chat analytics entry:", error);
+          }
+          return;
+        }
+
+        // Fallback: Load temp responses (legacy path)
         let hasSavedResponses = false;
         try {
           const savedResponses = localStorage.getItem(`solbot_temp_responses_${component}_${phase}`);
           if (savedResponses) {
             const parsedResponses = JSON.parse(savedResponses);
             setResponses(parsedResponses);
-            // Check if all questions have responses — if so, jump to confirming state
             const allAnswered = OBJECTIVE_QUESTIONS.every(q => parsedResponses[q.id] && parsedResponses[q.id].trim().length > 0);
             if (allAnswered) {
               hasSavedResponses = true;
             }
-            console.log("Restored saved responses from localStorage");
           }
         } catch (error) {
           console.warn("Could not load saved responses:", error);

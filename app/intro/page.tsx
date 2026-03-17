@@ -85,6 +85,8 @@ export default function IntroPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasExistingSession, setHasExistingSession] = useState(false)
+  const [existingProgress, setExistingProgress] = useState<{ lastPhase: number; name: string } | null>(null)
 
   const accent = "var(--accent-text)"
   const canvasGradient = "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.85) 100%)"
@@ -100,39 +102,94 @@ export default function IntroPage() {
     boxShadow: "0 10px 24px rgba(0,0,0,0.14)",
   }
 
-  useEffect(() => {
-    setIsClient(true)
-    // Clear previous session data for a clean start
+  // Clear all session data — only called when user explicitly starts a new session
+  const clearAllSessionData = () => {
     try {
       localStorage.removeItem("solbot_phase4_completed_tasks")
       localStorage.removeItem("solbot_long_term_goal")
-      // Clear all phase completion flags
       for (let i = 1; i <= 6; i++) {
         localStorage.removeItem(`solbot_phase${i}_completed`)
         localStorage.removeItem(`solbot_progress_phase${i}`)
       }
-      // Clear guided component temp responses
+      // Clear guided component temp responses and chat history
       const tempKeys = [
         "solbot_temp_responses_learning_objectives_2",
         "solbot_temp_responses_mcii_4",
         "solbot_temp_responses_progress_monitoring_phase5",
         "solbot_temp_responses_long_term_goals_4",
+        "solbot_temp_responses_short_term_goals_4",
+        "solbot_temp_responses_contingency_strategies_4",
+        "solbot_temp_responses_monitoring_adaptation_4",
+        "solbot_chat_history_learning_objectives_2",
+        "solbot_chat_history_mcii_4",
+        "solbot_chat_history_progress_monitoring_phase5",
+        "solbot_mcii_plan",
+        "solbot_user_course",
       ]
       tempKeys.forEach((key) => localStorage.removeItem(key))
+      localStorage.removeItem("session_id")
+      localStorage.removeItem("user_id")
     } catch (error) {
       console.error("Error clearing localStorage:", error)
     }
-    // Try to retrieve user info from localStorage to pre-fill the form
+  }
+
+  useEffect(() => {
+    setIsClient(true)
     try {
+      // Check if user has an existing session with progress
+      const existingSessionId = localStorage.getItem("session_id")
       const storedName = localStorage.getItem("solbot_user_name")
-      if (storedName) setUserName(storedName)
       const storedEmail = localStorage.getItem("solbot_user_email")
+
+      if (storedName) setUserName(storedName)
       if (storedEmail) setUserEmail(storedEmail)
+
+      if (existingSessionId && storedName) {
+        // Find the highest completed phase
+        let lastPhase = 0
+        for (let i = 1; i <= 6; i++) {
+          if (localStorage.getItem(`solbot_phase${i}_completed`) === "true") {
+            lastPhase = i
+          }
+        }
+        // Also check if there's in-progress work (temp responses or progress saves)
+        if (lastPhase === 0) {
+          // Check for any phase progress (e.g., user started phase 1 but didn't finish)
+          for (let i = 1; i <= 6; i++) {
+            const progress = localStorage.getItem(`solbot_progress_phase${i}`)
+            if (progress) { lastPhase = i - 1; break; } // They're working on phase i
+          }
+        }
+
+        setHasExistingSession(true)
+        setExistingProgress({ lastPhase, name: storedName })
+      }
     } catch (error) {
       console.error("Error accessing localStorage:", error)
     }
     setIsLoading(false)
   }, [])
+
+  const handleResume = () => {
+    // Navigate to the appropriate phase based on progress
+    if (!existingProgress) return
+    const nextPhase = Math.min(existingProgress.lastPhase + 1, 6)
+    // If all phases completed, go to the last one or summary
+    if (existingProgress.lastPhase >= 6) {
+      router.push("/summary")
+    } else {
+      router.push(`/phase${nextPhase}`)
+    }
+  }
+
+  const handleStartNew = async () => {
+    // Clear old session data before creating new session
+    clearAllSessionData()
+    setHasExistingSession(false)
+    setExistingProgress(null)
+    await handleSubmit()
+  }
 
   const handleSubmit = async () => {
     if (!userName || !userEmail) {
@@ -166,11 +223,15 @@ export default function IntroPage() {
       if (!response.ok || !result.success) {
         throw new Error(result.detail || "Failed to start session.");
       }
-      
+
+      // Clear any leftover progress data for the fresh session
+      clearAllSessionData()
       localStorage.setItem("session_id", result.data.session_id);
       localStorage.setItem("user_id", result.data.user_id);
       localStorage.setItem("solbot_user_name", userName);
+      localStorage.setItem("solbot_user_email", userEmail);
       localStorage.setItem("solbot_coach_tone", coachTone);
+      if (challengingCourse) localStorage.setItem("solbot_user_course", challengingCourse);
 
       router.push("/phase1");
 
@@ -222,6 +283,11 @@ export default function IntroPage() {
                 <p className="text-center text-lg" style={{ color: mutedText }}>
                   An evidence-based training to help you study more effectively.
                 </p>
+                <div className="flex justify-center">
+                  <p className="text-sm px-3 py-1.5 rounded-full border" style={{ color: mutedText, borderColor: neutralBorder, backgroundColor: pillSurface }}>
+                    For the best experience, please use <strong style={{ color: "hsl(var(--foreground))" }}>Google Chrome</strong> on a <strong style={{ color: "hsl(var(--foreground))" }}>laptop or desktop</strong>.
+                  </p>
+                </div>
               </CardHeader>
             </Card>
           </motion.div>
@@ -309,6 +375,49 @@ export default function IntroPage() {
             </Card>
           </motion.div>
 
+          {/* Resume banner for returning users */}
+          {hasExistingSession && existingProgress && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.15 }}
+            >
+              <Card style={{ backgroundColor: "hsl(var(--card))", borderColor: "#b8892e", borderWidth: "2px" }}>
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Sparkles className="h-6 w-6" style={{ color: accent }} />
+                    <h3 className="text-xl font-semibold">Welcome back, {existingProgress.name}!</h3>
+                  </div>
+                  <p className="text-base mb-4" style={{ color: mutedText }}>
+                    {existingProgress.lastPhase === 0
+                      ? "You have an active session. Continue where you left off?"
+                      : existingProgress.lastPhase >= 6
+                        ? "You've completed all 6 phases! View your summary or start a new training session."
+                        : `You've completed Phase ${existingProgress.lastPhase} of 6. Continue to Phase ${existingProgress.lastPhase + 1}?`}
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleResume}
+                      className="flex-1 font-semibold"
+                      style={primaryButtonStyle}
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      {existingProgress.lastPhase >= 6 ? "View Summary" : "Continue Training"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setHasExistingSession(false); }}
+                      className="font-medium"
+                      style={{ borderColor: neutralBorder, color: mutedText }}
+                    >
+                      Start New Session
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -316,7 +425,9 @@ export default function IntroPage() {
           >
             <Card data-tour="form" style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}>
               <CardHeader>
-                <CardTitle className="text-2xl font-semibold">Start your personalized session</CardTitle>
+                <CardTitle className="text-2xl font-semibold">
+                  {hasExistingSession ? "Start a new training session" : "Start your personalized session"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-base" style={{ color: mutedText }}>
@@ -430,7 +541,7 @@ export default function IntroPage() {
                     </div>
 
                     <Button
-                      onClick={handleSubmit}
+                      onClick={hasExistingSession ? handleStartNew : handleSubmit}
                       disabled={isSubmitting || !userName || !userEmail}
                       className="w-full font-semibold"
                       style={primaryButtonStyle}
@@ -442,7 +553,7 @@ export default function IntroPage() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
-                          Begin Learning Intervention
+                          {hasExistingSession ? "Start New Training Session" : "Begin Learning Intervention"}
                           <ArrowRight className="h-4 w-4" />
                         </div>
                       )}

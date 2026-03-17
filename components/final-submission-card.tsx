@@ -201,30 +201,20 @@ export default function FinalSubmissionCard({
           </div>
 
           {hasResponses ? (
-            questionLabels.map(({ id, label }) => (
-              <div
-                key={id}
-                className="p-4 rounded-lg border"
-                style={{
-                  backgroundColor: "hsl(var(--muted) / 0.3)",
-                  borderColor: neutralBorder,
-                }}
-              >
-                <h4
-                  className="text-sm font-semibold mb-2"
-                  style={{ color: accent }}
-                >
-                  {label}
-                </h4>
-                <p className="text-sm text-foreground whitespace-pre-wrap">
-                  {responses[id] || (
-                    <span className="italic text-muted-foreground">
-                      No response provided
-                    </span>
-                  )}
-                </p>
-              </div>
-            ))
+            <div
+              className="p-4 rounded-lg border"
+              style={{
+                backgroundColor: "hsl(var(--muted) / 0.3)",
+                borderColor: neutralBorder,
+              }}
+            >
+              <p className="text-sm text-foreground whitespace-pre-wrap">
+                {questionLabels
+                  .map(({ id }) => responses[id])
+                  .filter(Boolean)
+                  .join("\n\n")}
+              </p>
+            </div>
           ) : (
             <div className="p-6 text-center text-muted-foreground">
               <p>No responses found. Please go back and complete the exercise.</p>

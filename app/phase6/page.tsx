@@ -55,6 +55,10 @@ export default function Phase6Page() {
     if (storedUserId) setUserId(storedUserId)
 
     // Fetch course name from user profile
+    // Try localStorage first (instant), then API as enhancement
+    const localCourse = localStorage.getItem("solbot_user_course")
+    if (localCourse) setCourseName(localCourse)
+
     const fetchCourseName = async () => {
       if (storedUserId) {
         try {
@@ -62,8 +66,8 @@ export default function Phase6Page() {
           if (response.ok) {
             const userData = await response.json()
             if (userData.profile_data) {
-              const profileData = typeof userData.profile_data === 'string' 
-                ? JSON.parse(userData.profile_data) 
+              const profileData = typeof userData.profile_data === 'string'
+                ? JSON.parse(userData.profile_data)
                 : userData.profile_data
               if (profileData.challenging_course) {
                 setCourseName(profileData.challenging_course)
@@ -72,30 +76,11 @@ export default function Phase6Page() {
           }
         } catch (error) {
           console.error("Error fetching course name:", error)
-          // Fallback: try to get from session metadata or localStorage
-          try {
-            if (storedSessionId) {
-              const sessionResponse = await fetch(`/api/summary?session_id=${storedSessionId}`)
-              if (sessionResponse.ok) {
-                const sessionData = await sessionResponse.json()
-                if (sessionData.user?.profileData) {
-                  const profileData = typeof sessionData.user.profileData === 'string'
-                    ? JSON.parse(sessionData.user.profileData)
-                    : sessionData.user.profileData
-                  if (profileData.challenging_course) {
-                    setCourseName(profileData.challenging_course)
-                  }
-                }
-              }
-            }
-          } catch (fallbackError) {
-            console.error("Fallback course name fetch failed:", fallbackError)
-          }
         }
       }
     }
 
-    fetchCourseName()
+    if (!localCourse) fetchCourseName()
   }, [])
 
   const handleSubmit = async () => {
