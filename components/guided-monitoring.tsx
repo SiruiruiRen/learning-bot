@@ -117,17 +117,17 @@ export default function GuidedMonitoring({
         } catch (error) {
           console.error("Failed to create chat analytics entry:", error);
         }
-      }
 
-      // If all responses exist (returning from Edit), jump to confirming/summary
-      if (hasSavedResponses) {
-        const saved = JSON.parse(localStorage.getItem(`solbot_temp_responses_${component}_${phase}`) || "{}");
-        setInteractionState("confirming");
-        setMessages([
-          { id: uuidv4(), sender: "bot", content: "Welcome back! Here are your saved responses. Click any section to edit it.", type: "question" },
-          { id: uuidv4(), sender: "bot", content: { progress_checks: saved["progress_checks"], adaptation_triggers: saved["adaptation_triggers"], strategy_alternatives: saved["strategy_alternatives"] }, type: "confirmation" }
-        ]);
-        return;
+        // If all responses exist (returning from Edit), jump to confirming/summary
+        if (hasSavedResponses) {
+          const saved = JSON.parse(localStorage.getItem(`solbot_temp_responses_${component}_${phase}`) || "{}");
+          setInteractionState("confirming");
+          setMessages([
+            { id: uuidv4(), sender: "bot", content: "Welcome back! Here are your saved responses. Click any section to edit it.", type: "question" },
+            { id: uuidv4(), sender: "bot", content: { progress_checks: saved["progress_checks"], adaptation_triggers: saved["adaptation_triggers"], strategy_alternatives: saved["strategy_alternatives"] }, type: "confirmation" }
+          ]);
+          return;
+        }
       }
 
       setMessages([

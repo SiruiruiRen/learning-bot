@@ -128,17 +128,17 @@ export default function GuidedMCII({
         } catch (error) {
           console.error("Failed to create chat analytics entry:", error);
         }
-      }
 
-      // If all responses exist (returning from Edit), jump to confirming/summary
-      if (hasSavedResponses) {
-        const saved = JSON.parse(localStorage.getItem(`solbot_temp_responses_${component}_${phase}`) || "{}");
-        setInteractionState("confirming");
-        setMessages([
-          { id: uuidv4(), sender: "bot", content: "Welcome back! Here are your saved responses. Click any section to edit it.", type: "question" },
-          { id: uuidv4(), sender: "bot", content: { pick_goal: saved["pick_goal"], indulge: saved["indulge"], consider_obstacles: saved["consider_obstacles"], implementation_intention: saved["implementation_intention"] }, type: "confirmation" }
-        ]);
-        return;
+        // If all responses exist (returning from Edit), jump to confirming/summary
+        if (hasSavedResponses) {
+          const saved = JSON.parse(localStorage.getItem(`solbot_temp_responses_${component}_${phase}`) || "{}");
+          setInteractionState("confirming");
+          setMessages([
+            { id: uuidv4(), sender: "bot", content: "Welcome back! Here are your saved responses. Click any section to edit it.", type: "question" },
+            { id: uuidv4(), sender: "bot", content: { pick_goal: saved["pick_goal"], indulge: saved["indulge"], consider_obstacles: saved["consider_obstacles"], implementation_intention: saved["implementation_intention"] }, type: "confirmation" }
+          ]);
+          return;
+        }
       }
 
       setMessages([
