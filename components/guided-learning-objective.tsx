@@ -85,11 +85,17 @@ export default function GuidedLearningObjective({
         setSessionId(storedSessionId);
 
         // Load any saved responses to prevent data loss
+        let hasSavedResponses = false;
         try {
           const savedResponses = localStorage.getItem(`solbot_temp_responses_${component}_${phase}`);
           if (savedResponses) {
             const parsedResponses = JSON.parse(savedResponses);
             setResponses(parsedResponses);
+            // Check if all questions have responses — if so, jump to confirming state
+            const allAnswered = OBJECTIVE_QUESTIONS.every(q => parsedResponses[q.id] && parsedResponses[q.id].trim().length > 0);
+            if (allAnswered) {
+              hasSavedResponses = true;
+            }
             console.log("Restored saved responses from localStorage");
           }
         } catch (error) {
@@ -114,6 +120,17 @@ export default function GuidedLearningObjective({
           }
         } catch (error) {
           console.error("Failed to create chat analytics entry:", error);
+        }
+
+        // If all responses exist (returning from Edit), jump to confirming/summary
+        if (hasSavedResponses) {
+          const saved = JSON.parse(localStorage.getItem(`solbot_temp_responses_${component}_${phase}`) || "{}");
+          setInteractionState("confirming");
+          setMessages([
+            { id: uuidv4(), sender: "bot", content: "Welcome back! Here are your saved responses. Click any section to edit it.", type: "question" },
+            { id: uuidv4(), sender: "bot", content: { task: saved["goal_clarity"], resources: saved["background_connection"], strategy: saved["study_resources"] }, type: "confirmation" }
+          ]);
+          return;
         }
       }
 

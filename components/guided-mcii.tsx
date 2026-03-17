@@ -93,17 +93,23 @@ export default function GuidedMCII({
         setSessionId(storedSessionId);
         
         // Load any saved responses to prevent data loss
+        let hasSavedResponses = false;
         try {
           const savedResponses = localStorage.getItem(`solbot_temp_responses_${component}_${phase}`);
           if (savedResponses) {
             const parsedResponses = JSON.parse(savedResponses);
             setResponses(parsedResponses);
+            // Check if all questions have responses — if so, jump to confirming state
+            const allAnswered = MCII_QUESTIONS.every(q => parsedResponses[q.id] && parsedResponses[q.id].trim().length > 0);
+            if (allAnswered) {
+              hasSavedResponses = true;
+            }
             console.log("Restored saved responses from localStorage");
           }
         } catch (error) {
           console.warn("Could not load saved responses:", error);
         }
-        
+
         try {
           const response = await fetch('/api/events', {
             method: 'POST',
@@ -123,7 +129,18 @@ export default function GuidedMCII({
           console.error("Failed to create chat analytics entry:", error);
         }
       }
-      
+
+      // If all responses exist (returning from Edit), jump to confirming/summary
+      if (hasSavedResponses) {
+        const saved = JSON.parse(localStorage.getItem(`solbot_temp_responses_${component}_${phase}`) || "{}");
+        setInteractionState("confirming");
+        setMessages([
+          { id: uuidv4(), sender: "bot", content: "Welcome back! Here are your saved responses. Click any section to edit it.", type: "question" },
+          { id: uuidv4(), sender: "bot", content: { pick_goal: saved["pick_goal"], indulge: saved["indulge"], consider_obstacles: saved["consider_obstacles"], implementation_intention: saved["implementation_intention"] }, type: "confirmation" }
+        ]);
+        return;
+      }
+
       setMessages([
         { id: uuidv4(), sender: "bot", content: "Welcome to the MCII (Mental Contrasting with Implementation Intentions) exercise! I'll guide you through four steps to create a powerful strategic plan for achieving your learning goal.", type: "question" },
         { id: uuidv4(), sender: "bot", content: MCII_QUESTIONS[0].question, type: "question" }
