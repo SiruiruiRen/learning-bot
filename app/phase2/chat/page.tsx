@@ -118,8 +118,8 @@ export default function Phase2ChatPage() {
             </Card>
           )}
 
-          {/* Final Submission Card — shown after chat completion, before final submit */}
-          {chatComplete && !finalSubmitted && (
+          {/* Final Submission Card — stays visible to show success state */}
+          {chatComplete && (
             <div className="mb-6">
               <FinalSubmissionCard
                 phase="2"

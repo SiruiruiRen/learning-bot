@@ -154,8 +154,8 @@ export default function MCIIPage() {
             </Card>
           )}
 
-          {/* Final Submission Card */}
-          {chatComplete && !finalSubmitted && (
+          {/* Final Submission Card — stays visible to show success state */}
+          {chatComplete && (
             <div className="mb-6">
               <FinalSubmissionCard
                 phase="4"
