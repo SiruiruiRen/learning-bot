@@ -59,7 +59,7 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
             # Update name/profile if changed
             db.table("users").update({
                 "name": name,
-                "profile_data": json.dumps(profile_data) if profile_data else None,
+                "profile_data": profile_data if profile_data else None,
                 "updated_at": datetime.utcnow().isoformat()
             }).eq("id", user_id).execute()
             logger.info(f"Returning user {user_id} (email={email_lower})")
@@ -70,7 +70,7 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
                 "id": user_id,
                 "name": name,
                 "email": email_lower,
-                "profile_data": json.dumps(profile_data) if profile_data else None
+                "profile_data": profile_data if profile_data else None
             }
             db.table("users").insert(user_insert_data).execute()
             logger.info(f"Created new user {user_id} (email={email_lower})")
@@ -94,9 +94,19 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
             .eq("user_id", user_id).order("created_at", desc=True).limit(1).execute()
         if prev_session.data and prev_session.data[0].get("metadata"):
             meta = prev_session.data[0]["metadata"]
+            # Handle both double-encoded (old) and proper (new) metadata
             if isinstance(meta, str):
-                meta = json.loads(meta)
-            condition = meta.get("condition", "bot")
+                try:
+                    meta = json.loads(meta)
+                except (json.JSONDecodeError, TypeError):
+                    meta = {}
+            if isinstance(meta, str):
+                # Still a string after one parse = double-encoded
+                try:
+                    meta = json.loads(meta)
+                except (json.JSONDecodeError, TypeError):
+                    meta = {}
+            condition = meta.get("condition", "bot") if isinstance(meta, dict) else "bot"
         else:
             condition = "bot"
         logger.info(f"Returning user keeps condition: {condition}")
@@ -114,11 +124,11 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
     session_insert_data = {
         "id": new_session_id,
         "user_id": user_id,
-        "metadata": json.dumps({
+        "metadata": {
             "initial_profile": profile_data,
             "condition": condition,
             "is_returning": is_returning
-        })
+        }
     }
 
     try:
@@ -176,7 +186,7 @@ def log_message(session_id: str, role: str, content: str, phase: Optional[str] =
         "content": content,
         "phase": phase,
         "component": component,
-        "metadata": json.dumps(metadata) if metadata else None
+        "metadata": metadata if metadata else None
     }
     
     try:
