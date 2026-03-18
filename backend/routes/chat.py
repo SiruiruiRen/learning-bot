@@ -56,9 +56,15 @@ class UserDataRequest(BaseModel):
     metadata: Dict[str, Any] = None
 
 # --- API Endpoints ---
+DEPLOY_VERSION = "2026-03-18-v2"  # Bump this to verify deploys
+
 @router.on_event("startup")
 async def startup_event():
     db.get_db()
+
+@router.get("/version")
+async def get_version():
+    return {"version": DEPLOY_VERSION}
 
 @router.post("/onboarding")
 async def handle_onboarding(request: OnboardingRequest):
