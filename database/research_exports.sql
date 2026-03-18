@@ -12,6 +12,15 @@
 --     computed in Python from EXPORT_RQ2_TEXT below.
 --   • All timestamps are UTC.
 --
+-- PREREQUISITES (run ONCE before first export):
+--   • Run database/migration_add_test_type.sql to add test_type column
+--     to quiz_session_summary.
+--   • Condition assignment (bot/static) is set at onboarding and stored in
+--     sessions.metadata->>'condition'. Only users onboarded AFTER the
+--     condition assignment code was deployed will have this field.
+--   • Currently only post-tests exist (no pre-tests), so quiz_pre_accuracy
+--     will be NULL. quiz_gain columns are reserved for future pre-test addition.
+--
 -- QUERIES:
 --   1. OVERVIEW          — participation dashboard
 --   2. TIMELINE          — complete per-user event timeline
@@ -437,11 +446,13 @@ ORDER BY u.id, a.phase, a.component, a.attempt_number;
 --   quiz_pre_accuracy, quiz_post_accuracy, quiz_gain
 --
 --   [Engagement context]
---   total_learning_min, phases_completed
+--   total_learning_min, video_time_min, chat_time_min, quiz_time_min
+--   phases_completed
 --   total_chat_messages, total_chat_min
 --   video_completion_pct, total_video_pauses, total_video_rewinds
 --   quick_help_opens, quick_help_questions
 --   feedback_style_switches
+--   avg_scaffolding_level, total_feedback_count
 --
 --   [Phase 6 self-report]
 --   phase6_aiming_grade, phase6_expected_grade, phase6_preparation
@@ -487,6 +498,9 @@ SELECT
 
     -- === Engagement Context ===
     ROUND(COALESCE(time_d.total_sec,0)::numeric/60.0,1)  AS total_learning_min,
+    ROUND(COALESCE(time_d.video_sec,0)::numeric/60.0,1)  AS video_time_min,
+    ROUND(COALESCE(time_d.chat_sec,0)::numeric/60.0,1)   AS chat_time_min,
+    ROUND(COALESCE(time_d.quiz_sec,0)::numeric/60.0,1)   AS quiz_time_min,
     COALESCE(comp.phases_done, 0)                         AS phases_completed,
     COALESCE(chat.total_msgs, 0)                          AS total_chat_messages,
     ROUND(COALESCE(chat.total_sec,0)::numeric/60.0,1)    AS total_chat_min,
@@ -496,6 +510,10 @@ SELECT
     COALESCE(qh.opens, 0)                                 AS quick_help_opens,
     COALESCE(qh.questions, 0)                             AS quick_help_questions,
     COALESCE(fsv_d.switches, 0)                           AS feedback_style_switches,
+
+    -- Scaffolding intensity
+    COALESCE(scaff.avg_scaffolding_level, 0)              AS avg_scaffolding_level,
+    COALESCE(scaff.total_feedback_count, 0)               AS total_feedback_count,
 
     -- Leave/return
     COALESCE(leave_d.leaves, 0)                           AS total_leaves,
@@ -544,14 +562,17 @@ LEFT JOIN (SELECT user_id, session_id, COUNT(*) AS cnt FROM assessments WHERE ph
 LEFT JOIN (SELECT user_id, session_id, ROUND(AVG(accuracy_percentage)::numeric,1) AS accuracy FROM quiz_session_summary WHERE completed AND COALESCE(test_type,metadata->>'test_type')='pre' GROUP BY user_id, session_id) pre_q ON u.id=pre_q.user_id AND s.id=pre_q.session_id
 LEFT JOIN (SELECT user_id, session_id, ROUND(AVG(accuracy_percentage)::numeric,1) AS accuracy FROM quiz_session_summary WHERE completed AND COALESCE(test_type,metadata->>'test_type')='post' GROUP BY user_id, session_id) post_q ON u.id=post_q.user_id AND s.id=post_q.session_id
 
--- Context metrics
-LEFT JOIN (SELECT user_id, session_id, SUM(total_time_seconds) AS total_sec FROM phase_completion_analytics GROUP BY user_id, session_id) time_d ON u.id=time_d.user_id AND s.id=time_d.session_id
+-- Context metrics (with activity time breakdown)
+LEFT JOIN (SELECT user_id, session_id, SUM(total_time_seconds) AS total_sec, SUM(video_time_seconds) AS video_sec, SUM(chat_time_seconds) AS chat_sec, SUM(quiz_time_seconds) AS quiz_sec FROM phase_completion_analytics GROUP BY user_id, session_id) time_d ON u.id=time_d.user_id AND s.id=time_d.session_id
 LEFT JOIN (SELECT user_id, session_id, COUNT(DISTINCT phase) AS phases_done FROM phase_completion_analytics WHERE completed_successfully GROUP BY user_id, session_id) comp ON u.id=comp.user_id AND s.id=comp.session_id
 LEFT JOIN (SELECT user_id, session_id, SUM(message_count) AS total_msgs, SUM(total_duration_seconds) AS total_sec FROM user_chat_analytics WHERE component!='floating_chatbot' GROUP BY user_id, session_id) chat ON u.id=chat.user_id AND s.id=chat.session_id
 LEFT JOIN (SELECT user_id, session_id, ROUND(AVG(completion_percentage)::numeric,1) AS avg_pct, SUM(pause_count) AS pauses, SUM(rewind_count) AS rewinds FROM user_video_analytics GROUP BY user_id, session_id) vid ON u.id=vid.user_id AND s.id=vid.session_id
 LEFT JOIN (SELECT user_id, session_id, COUNT(CASE WHEN interaction_type='floating_chatbot_opened' THEN 1 END) AS opens, COUNT(CASE WHEN interaction_type='floating_chat_question' THEN 1 END) AS questions FROM content_interaction_logs WHERE interaction_type IN ('floating_chatbot_opened','floating_chat_question') GROUP BY user_id, session_id) qh ON u.id=qh.user_id AND s.id=qh.session_id
 LEFT JOIN (SELECT user_id, session_id, COUNT(*) AS switches FROM feedback_style_views GROUP BY user_id, session_id) fsv_d ON u.id=fsv_d.user_id AND s.id=fsv_d.session_id
 LEFT JOIN (SELECT user_id, session_id, COUNT(CASE WHEN interaction_type='user_left_page' THEN 1 END) AS leaves, SUM(CASE WHEN interaction_type='user_returned_to_page' THEN (interaction_data->>'away_duration_seconds')::numeric ELSE 0 END) AS away_sec FROM content_interaction_logs GROUP BY user_id, session_id) leave_d ON u.id=leave_d.user_id AND s.id=leave_d.session_id
+
+-- Scaffolding intensity
+LEFT JOIN (SELECT user_id, ROUND(AVG(scaffolding_level::numeric),2) AS avg_scaffolding_level, COUNT(*) AS total_feedback_count FROM assessments WHERE feedback_content IS NOT NULL GROUP BY user_id) scaff ON u.id=scaff.user_id
 
 -- Phase 6
 LEFT JOIN (SELECT user_id, interaction_data->>'aiming_grade' AS aiming_grade, interaction_data->>'expected_grade' AS expected_grade, interaction_data->>'preparation_level' AS preparation_level FROM content_interaction_logs WHERE interaction_type='post_assessment_submitted') p6_evt ON u.id=p6_evt.user_id

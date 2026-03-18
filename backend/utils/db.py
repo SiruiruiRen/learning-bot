@@ -58,12 +58,17 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
         logger.error(f"Error creating user in database: {e}")
         raise e
 
-    # 2. Create the Session
+    # 2. Create the Session with random condition assignment (bot vs static)
+    import random
+    condition = random.choice(["bot", "static"])
     new_session_id = str(uuid.uuid4())
     session_insert_data = {
         "id": new_session_id,
         "user_id": new_user_id,
-        "metadata": json.dumps({"initial_profile": profile_data})
+        "metadata": json.dumps({
+            "initial_profile": profile_data,
+            "condition": condition
+        })
     }
     
     try:
@@ -77,7 +82,7 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
         logger.error(f"Error creating session in database: {e}")
         raise e
 
-    return {"user_id": new_user_id, "session_id": new_session_id}
+    return {"user_id": new_user_id, "session_id": new_session_id, "condition": condition}
 
 
 def get_session_by_id(session_id: str) -> Optional[Dict[str, Any]]:

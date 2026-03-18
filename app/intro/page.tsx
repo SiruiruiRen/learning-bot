@@ -129,6 +129,7 @@ export default function IntroPage() {
       tempKeys.forEach((key) => localStorage.removeItem(key))
       localStorage.removeItem("session_id")
       localStorage.removeItem("user_id")
+      localStorage.removeItem("solbot_condition")
     } catch (error) {
       console.error("Error clearing localStorage:", error)
     }
@@ -231,6 +232,7 @@ export default function IntroPage() {
       localStorage.setItem("solbot_user_name", userName);
       localStorage.setItem("solbot_user_email", userEmail);
       localStorage.setItem("solbot_coach_tone", coachTone);
+      if (result.data.condition) localStorage.setItem("solbot_condition", result.data.condition);
       if (challengingCourse) localStorage.setItem("solbot_user_course", challengingCourse);
 
       router.push("/phase1");

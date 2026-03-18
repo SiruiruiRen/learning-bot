@@ -394,6 +394,7 @@ CREATE TABLE quiz_session_summary (
   session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   phase TEXT NOT NULL,
+  test_type TEXT NOT NULL DEFAULT 'post',
   total_questions INTEGER DEFAULT 0,
   correct_answers INTEGER DEFAULT 0,
   incorrect_answers INTEGER DEFAULT 0,
@@ -407,7 +408,8 @@ CREATE TABLE quiz_session_summary (
   quiz_end_time TIMESTAMP WITH TIME ZONE,
   completed BOOLEAN DEFAULT FALSE,
   metadata JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(session_id, phase, test_type)
 );
 
 CREATE INDEX idx_quiz_summary_session_id ON quiz_session_summary(session_id);
