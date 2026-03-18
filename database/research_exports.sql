@@ -13,12 +13,16 @@
 --   • All timestamps are UTC.
 --
 -- PREREQUISITES (run ONCE before first export):
---   • Run database/migration_add_test_type.sql to add test_type column
---     to quiz_session_summary.
+--   • Run database/migration_safe_order.sql in Supabase SQL Editor.
 --   • Condition assignment (bot/static) is stored in sessions.metadata->>'condition'.
 --     Users without this field default to 'bot' (all pre-deployment users were bot).
 --   • Currently only post-tests exist (no pre-tests), so quiz_pre_accuracy
 --     will be NULL. quiz_gain columns are reserved for future pre-test addition.
+--
+-- DATA CUTOFF:
+--   ★ Change this date to your actual study start date.
+--   ★ All sessions before this date are treated as pilot/test data and excluded.
+--   ★ The OVERVIEW query shows ALL users (including pilot) for transparency.
 --
 -- QUERIES:
 --   1. OVERVIEW          — participation dashboard
@@ -46,7 +50,7 @@ SELECT
     u.profile_data->>'challenging_course'                     AS course,
     u.profile_data->>'coach_tone'                             AS tone,        -- warm/direct
     COALESCE(s.metadata->>'condition', 'bot')             AS condition,   -- bot/static
-    COALESCE(u.is_test, FALSE)                                AS is_test,     -- TRUE = researcher/test
+    CASE WHEN s.created_at < '2026-04-01'::timestamptz THEN TRUE ELSE FALSE END AS is_pilot,  -- ★ Change date to your study start
     COALESCE(s.metadata->>'is_returning', 'false')            AS is_returning,-- TRUE = same email re-registered
     s.created_at                                              AS enrolled_at,
 
@@ -73,7 +77,6 @@ SELECT
 
 FROM users u
 JOIN sessions s ON u.id = s.user_id
-WHERE COALESCE(u.is_test, FALSE) = FALSE
 ORDER BY s.created_at;
 
 
@@ -104,7 +107,7 @@ SELECT
 FROM content_interaction_logs cil
 JOIN sessions s ON cil.session_id = s.id
 JOIN users u   ON cil.user_id   = u.id
-WHERE COALESCE(u.is_test, FALSE) = FALSE
+WHERE s.created_at >= '2026-04-01'::timestamptz  -- ★ Change to your study start date
 ORDER BY u.id, cil.timestamp;
 
 
@@ -265,7 +268,7 @@ LEFT JOIN (
     FROM user_video_analytics GROUP BY user_id, session_id
 ) vid ON u.id=vid.user_id AND s.id=vid.session_id
 
-WHERE COALESCE(u.is_test, FALSE) = FALSE
+WHERE s.created_at >= '2026-04-01'::timestamptz  -- ★ Change to your study start date
 ORDER BY u.id;
 
 
@@ -378,7 +381,7 @@ LEFT JOIN (
 ) assess ON u.id = assess.user_id
 
 WHERE COALESCE(s.metadata->>'condition', 'bot') = 'bot'
-  AND COALESCE(u.is_test, FALSE) = FALSE
+  AND s.created_at >= '2026-04-01'::timestamptz  -- ★ Change to your study start date
 ORDER BY u.id;
 
 
@@ -426,7 +429,7 @@ LEFT JOIN user_inputs ui ON a.session_id = ui.session_id
     AND ui.is_submission = true
     AND ui.attempt_number = a.attempt_number
 WHERE COALESCE(s.metadata->>'condition', 'bot') = 'bot'
-  AND COALESCE(u.is_test, FALSE) = FALSE
+  AND s.created_at >= '2026-04-01'::timestamptz  -- ★ Change to your study start date
 ORDER BY u.id, a.phase, a.component, a.attempt_number;
 
 
@@ -584,7 +587,7 @@ LEFT JOIN (SELECT user_id, ROUND(AVG(scaffolding_level::numeric),2) AS avg_scaff
 LEFT JOIN (SELECT user_id, interaction_data->>'aiming_grade' AS aiming_grade, interaction_data->>'expected_grade' AS expected_grade, interaction_data->>'preparation_level' AS preparation_level FROM content_interaction_logs WHERE interaction_type='post_assessment_submitted') p6_evt ON u.id=p6_evt.user_id
 
 WHERE COALESCE(s.metadata->>'condition', 'bot') = 'bot'
-  AND COALESCE(u.is_test, FALSE) = FALSE
+  AND s.created_at >= '2026-04-01'::timestamptz  -- ★ Change to your study start date
 ORDER BY u.id;
 
 
@@ -620,7 +623,7 @@ SELECT
 
 FROM users u
 JOIN sessions s ON u.id = s.user_id
-WHERE COALESCE(u.is_test, FALSE) = FALSE
+WHERE s.created_at >= '2026-04-01'::timestamptz  -- ★ Change to your study start date
 ORDER BY
     (SELECT COUNT(DISTINCT phase) FROM phase_completion_analytics WHERE session_id=s.id AND completed_successfully),
     u.email;

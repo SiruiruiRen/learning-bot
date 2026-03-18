@@ -71,11 +71,7 @@ END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email
   ON users(email) WHERE email IS NOT NULL;
 
--- ============ STEP 5: Mark test accounts ============
-UPDATE users SET is_test = TRUE
-WHERE email ILIKE '%test%'
-   OR email ILIKE '%demo%'
-   OR email ILIKE '%example.com%';
+-- ============ STEP 5: (Skipped — test data excluded by date cutoff in queries) ============
 
 -- ============ STEP 6: Set condition for existing sessions ============
 -- All existing users were bot group (pre-randomization era).

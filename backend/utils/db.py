@@ -39,23 +39,14 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
       • email is the canonical participant identifier (merges with external surveys)
       • Same email → same user_id (no duplicates)
       • Each registration creates a new session under that user_id
-      • Test accounts are auto-flagged via is_test field
+      • Test/pilot data is excluded by date cutoff in research queries (not by email)
 
-    Returns dict with user_id, session_id, condition, is_test, is_returning.
+    Returns dict with user_id, session_id, condition, is_returning.
     """
     db = get_db()
 
-    # --- Detect test accounts ---
-    # Emails containing these patterns are auto-flagged as test data.
-    # Add researcher emails to TEST_EMAILS env var (comma-separated).
-    test_email_patterns = ["test", "demo", "example.com", "localhost"]
-    researcher_emails = [e.strip().lower() for e in
-                         os.environ.get("TEST_EMAILS", "").split(",") if e.strip()]
+    # --- Normalize email ---
     email_lower = email.lower().strip()
-    is_test = (
-        any(pat in email_lower for pat in test_email_patterns)
-        or email_lower in researcher_emails
-    )
 
     # --- 1. Find existing user by email or create new one ---
     is_returning = False
@@ -69,7 +60,6 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
             db.table("users").update({
                 "name": name,
                 "profile_data": json.dumps(profile_data) if profile_data else None,
-                "is_test": is_test,
                 "updated_at": datetime.utcnow().isoformat()
             }).eq("id", user_id).execute()
             logger.info(f"Returning user {user_id} (email={email_lower})")
@@ -80,11 +70,10 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
                 "id": user_id,
                 "name": name,
                 "email": email_lower,
-                "profile_data": json.dumps(profile_data) if profile_data else None,
-                "is_test": is_test
+                "profile_data": json.dumps(profile_data) if profile_data else None
             }
             db.table("users").insert(user_insert_data).execute()
-            logger.info(f"Created new user {user_id} (email={email_lower}, is_test={is_test})")
+            logger.info(f"Created new user {user_id} (email={email_lower})")
     except Exception as e:
         logger.error(f"Error in user lookup/creation: {e}")
         raise e
@@ -96,7 +85,6 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
     #   "static_only" → all users get static (for testing)
     #
     # Returning users keep their original condition.
-    # Test accounts always get "bot" (don't consume static quota).
     import random
     study_mode = os.environ.get("STUDY_MODE", "bot_only")
 
@@ -112,9 +100,6 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
         else:
             condition = "bot"
         logger.info(f"Returning user keeps condition: {condition}")
-    elif is_test:
-        condition = "bot"
-        logger.info(f"Test account assigned: bot")
     elif study_mode == "randomize":
         condition = _assign_condition_by_block_randomization(db)
     elif study_mode == "static_only":
@@ -132,7 +117,6 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
         "metadata": json.dumps({
             "initial_profile": profile_data,
             "condition": condition,
-            "is_test": is_test,
             "is_returning": is_returning
         })
     }
@@ -152,7 +136,6 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
         "user_id": user_id,
         "session_id": new_session_id,
         "condition": condition,
-        "is_test": is_test,
         "is_returning": is_returning
     }
 
