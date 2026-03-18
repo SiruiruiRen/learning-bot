@@ -8,12 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedMCII from "@/components/guided-mcii"
+import StaticGuidedActivity from "@/components/static-guided-activity"
 import InstructionGuide from "@/components/instruction-guide"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import { phaseInstructions } from "@/lib/post-task-questions"
+import { useCondition } from "@/hooks/useCondition"
+import { PHASE4_STATIC_QUESTIONS } from "@/lib/static-condition-data"
 
 export default function MCIIPage() {
   const router = useRouter()
+  const condition = useCondition()
   const [userId, setUserId] = useState<string | null>(null)
   const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
@@ -103,19 +107,33 @@ export default function MCIIPage() {
                     >
                       <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
                       <p className="text-sm text-muted-foreground">
-                        Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
-                        You can revise your answers and request feedback as many times as you like.
-                        When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
+                        {condition === "bot" ? (
+                          <>Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score. You can revise your answers and request feedback as many times as you like. When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.</>
+                        ) : (
+                          <>Answer each question in your own words first, then view the sample answer to compare. Mark each question as done when you&apos;re satisfied, then submit.</>
+                        )}
                       </p>
                     </div>
-                    <GuidedMCII
-                      userId={userId}
-                      phase="4"
-                      phaseNumber={4}
-                      component="mcii"
-                      onComplete={handleComplete}
-                      height="100%"
-                    />
+                    {condition === "bot" ? (
+                      <GuidedMCII
+                        userId={userId}
+                        phase="4"
+                        phaseNumber={4}
+                        component="mcii"
+                        onComplete={handleComplete}
+                        height="100%"
+                      />
+                    ) : (
+                      <StaticGuidedActivity
+                        userId={userId}
+                        phase="phase4"
+                        phaseNumber={4}
+                        component="mcii"
+                        questions={PHASE4_STATIC_QUESTIONS}
+                        onComplete={handleComplete}
+                        height="100%"
+                      />
+                    )}
                     </>
                   )}
                 </>

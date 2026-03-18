@@ -58,9 +58,19 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
         logger.error(f"Error creating user in database: {e}")
         raise e
 
-    # 2. Create the Session with random condition assignment (bot vs static)
+    # 2. Create the Session with condition assignment
+    # STUDY_MODE controls group assignment:
+    #   "bot_only"   → all users get bot (current phase — static UI not yet built)
+    #   "randomize"  → random 50/50 bot vs static (enable when static UI is ready)
+    #   "static_only"→ all users get static (for testing static condition)
     import random
-    condition = random.choice(["bot", "static"])
+    study_mode = os.environ.get("STUDY_MODE", "bot_only")
+    if study_mode == "randomize":
+        condition = random.choice(["bot", "static"])
+    elif study_mode == "static_only":
+        condition = "static"
+    else:
+        condition = "bot"
     new_session_id = str(uuid.uuid4())
     session_insert_data = {
         "id": new_session_id,

@@ -8,9 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ArrowLeft, BarChart } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoringAdaptation from "@/components/guided-monitoring-adaptation"
+import StaticGuidedActivity from "@/components/static-guided-activity"
+import { useCondition } from "@/hooks/useCondition"
+import { PHASE5_STATIC_QUESTIONS } from "@/lib/static-condition-data"
 
 export default function MonitoringAdaptationPage() {
   const router = useRouter()
+  const condition = useCondition()
   const phaseId = 5
   const [userName, setUserName] = useState("")
   const [userId, setUserId] = useState("")
@@ -120,12 +124,24 @@ export default function MonitoringAdaptationPage() {
                 </p>
               </div>
 
-              <GuidedMonitoringAdaptation 
-                userId={userId}
-                phase="phase5" 
-                height="750px"
-                onComplete={handlePhaseComplete}
-              />
+              {condition === "bot" ? (
+                <GuidedMonitoringAdaptation
+                  userId={userId}
+                  phase="phase5"
+                  height="750px"
+                  onComplete={handlePhaseComplete}
+                />
+              ) : (
+                <StaticGuidedActivity
+                  userId={userId}
+                  phase="phase5"
+                  phaseNumber={5}
+                  component="monitoring_adaptation"
+                  questions={PHASE5_STATIC_QUESTIONS}
+                  onComplete={() => handlePhaseComplete()}
+                  height="750px"
+                />
+              )}
             </CardContent>
           </Card>
         </motion.div>

@@ -42,16 +42,21 @@ export default function ClientLayout({
 // Client component to conditionally render the floating chatbot
 function FloatingChatbotWrapper() {
   const pathname = usePathname()
-  
+
   // Detect current phase from pathname
   const phaseMatch = pathname.match(/\/phase(\d+)/)
   const currentPhase = phaseMatch ? `phase${phaseMatch[1]}` : "default"
-  
+
   // Don't show on landing page only
   if (pathname === "/landing" || pathname === "/") {
     return null
   }
-  
+
+  // Hide for static condition — they have no chatbot access
+  if (typeof window !== "undefined" && localStorage.getItem("solbot_condition") === "static") {
+    return null
+  }
+
   // key={pathname} forces React to fully unmount/remount on page change,
   // ensuring fresh messages state and per-page suggested questions
   return <FloatingChatbot key={pathname} currentPhase={currentPhase} />

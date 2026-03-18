@@ -8,12 +8,16 @@ import { LineChart, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ModuleBar from "@/components/module-bar"
 import GuidedMonitoring from "@/components/guided-monitoring"
+import StaticGuidedActivity from "@/components/static-guided-activity"
 import InstructionGuide from "@/components/instruction-guide"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
 import { phaseInstructions } from "@/lib/post-task-questions"
+import { useCondition } from "@/hooks/useCondition"
+import { PHASE5_STATIC_QUESTIONS } from "@/lib/static-condition-data"
 
 export default function Phase5ChatContent() {
   const router = useRouter()
+  const condition = useCondition()
   const [userId, setUserId] = useState<string>("")
   const [showInstruction, setShowInstruction] = useState(true)
   const [chatComplete, setChatComplete] = useState(false)
@@ -121,19 +125,33 @@ export default function Phase5ChatContent() {
                     >
                       <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
                       <p className="text-sm text-muted-foreground">
-                        Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
-                        You can revise your answers and request feedback as many times as you like.
-                        When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
+                        {condition === "bot" ? (
+                          <>Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score. You can revise your answers and request feedback as many times as you like. When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.</>
+                        ) : (
+                          <>Answer each question in your own words first, then view the sample answer to compare. Mark each question as done when you&apos;re satisfied, then submit.</>
+                        )}
                       </p>
                     </div>
-                    <GuidedMonitoring
-                      userId={userId}
-                      phase="phase5"
-                      phaseNumber={5}
-                      component="progress_monitoring"
-                      onComplete={() => setChatComplete(true)}
-                      height="calc(100% - 80px)"
-                    />
+                    {condition === "bot" ? (
+                      <GuidedMonitoring
+                        userId={userId}
+                        phase="phase5"
+                        phaseNumber={5}
+                        component="progress_monitoring"
+                        onComplete={() => setChatComplete(true)}
+                        height="calc(100% - 80px)"
+                      />
+                    ) : (
+                      <StaticGuidedActivity
+                        userId={userId}
+                        phase="phase5"
+                        phaseNumber={5}
+                        component="progress_monitoring"
+                        questions={PHASE5_STATIC_QUESTIONS}
+                        onComplete={() => setChatComplete(true)}
+                        height="calc(100% - 80px)"
+                      />
+                    )}
                     </>
                   )}
                 </>

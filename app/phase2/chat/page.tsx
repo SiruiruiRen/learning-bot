@@ -8,10 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Target, ChevronLeft, Lightbulb } from "lucide-react"
 import ModuleBar from "@/components/module-bar"
 import GuidedLearningObjective from "@/components/guided-learning-objective"
+import StaticGuidedActivity from "@/components/static-guided-activity"
 import { PhaseNavigationButton } from "@/components/phase-navigation-button"
+import { useCondition } from "@/hooks/useCondition"
+import { PHASE2_STATIC_QUESTIONS } from "@/lib/static-condition-data"
 
 export default function Phase2ChatPage() {
   const router = useRouter()
+  const condition = useCondition()
   const [userId, setUserId] = useState<string | null>(null)
   const [chatComplete, setChatComplete] = useState(false)
 
@@ -72,19 +76,33 @@ export default function Phase2ChatPage() {
               >
                 <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
                 <p className="text-sm text-muted-foreground">
-                  Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score.
-                  You can revise your answers and request feedback as many times as you like.
-                  When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.
+                  {condition === "bot" ? (
+                    <>Complete each guided question, then click <strong>&quot;Get AI Score &amp; Feedback&quot;</strong> to receive your score. You can revise your answers and request feedback as many times as you like. When you&apos;re satisfied, click <strong>&ldquo;Submit Final Version&rdquo;</strong> to continue.</>
+                  ) : (
+                    <>Answer each question in your own words first, then view the sample answer to compare. Mark each question as done when you&apos;re satisfied, then submit.</>
+                  )}
                 </p>
               </div>
               {userId ? (
-                <GuidedLearningObjective
-                  userId={userId}
-                  phase="2"
-                  phaseNumber={2}
-                  onComplete={() => setChatComplete(true)}
-                  height="100%"
-                />
+                condition === "bot" ? (
+                  <GuidedLearningObjective
+                    userId={userId}
+                    phase="2"
+                    phaseNumber={2}
+                    onComplete={() => setChatComplete(true)}
+                    height="100%"
+                  />
+                ) : (
+                  <StaticGuidedActivity
+                    userId={userId}
+                    phase="phase2"
+                    phaseNumber={2}
+                    component="learning_objectives"
+                    questions={PHASE2_STATIC_QUESTIONS}
+                    onComplete={() => setChatComplete(true)}
+                    height="100%"
+                  />
+                )
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading session...</p>
