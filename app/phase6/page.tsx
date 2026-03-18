@@ -113,11 +113,12 @@ export default function Phase6Page() {
         
         // Also save the answer as user data for research purposes
         if (userId) {
-          await fetch(`/api/user-data/${userId}`, {
+          await fetch('/api/user-data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              data_type: 'final_exam_preparation_plan',
+              userId: userId,
+              dataType: 'final_exam_preparation_plan',
               value: answer,
               metadata: {
                 course_name: courseName,
