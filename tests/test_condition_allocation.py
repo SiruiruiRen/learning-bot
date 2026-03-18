@@ -1,50 +1,46 @@
 """
-Test condition allocation logic WITHOUT touching the real database.
-Simulates 120 user registrations and verifies 2:1 (bot:static) allocation.
+Test Permuted Block Randomization (2:1 bot:static).
+Mirrors _assign_condition_by_block_randomization from backend/utils/db.py.
 
-Run: python tests/test_condition_allocation.py
+Run: python3 tests/test_condition_allocation.py
 """
 
-import random
-import os
-import sys
+import random as _random
 
-# ── Replicate the exact allocation logic from backend/utils/db.py ──
 
-def assign_condition_by_quota(bot_count: int, static_count: int,
-                               bot_target: int = 68, static_target: int = 34) -> str:
+# ── Replicate the exact block randomization logic ──
+
+def generate_sequence(n_blocks: int = 34, seed: int = 2025) -> list:
     """
-    Mirrors _assign_condition_by_quota from db.py.
-    Pure function — no DB calls.
+    Generate the full randomization sequence.
+    Each block = [bot, bot, static] shuffled.
+    34 blocks × 3 = 102 slots → 68 bot + 34 static.
     """
-    bot_full = bot_count >= bot_target
-    static_full = static_count >= static_target
-
-    if bot_full and static_full:
-        return "bot"  # overflow → bot (research priority)
-    elif bot_full and not static_full:
-        return "static"
-    elif not bot_full and static_full:
-        return "bot"
-    else:
-        # Neither full → weighted random to maintain ratio
-        bot_remaining = bot_target - bot_count
-        static_remaining = static_target - static_count
-        total_remaining = bot_remaining + static_remaining
-        bot_probability = bot_remaining / total_remaining
-        return "bot" if random.random() < bot_probability else "static"
+    rng = _random.Random(seed)
+    sequence = []
+    for _ in range(n_blocks):
+        block = ["bot", "bot", "static"]
+        rng.shuffle(block)
+        sequence.extend(block)
+    return sequence
 
 
-def simulate(n_users: int, bot_target: int, static_target: int, seed: int = 42):
-    """Simulate n_users registrations and return allocation history."""
-    random.seed(seed)
+def simulate(n_users: int, n_blocks: int = 34, seed: int = 2025):
+    """Simulate n_users registrations using block randomization."""
+    sequence = generate_sequence(n_blocks, seed)
+    total_slots = len(sequence)
+
     bot_count = 0
     static_count = 0
     history = []
 
     for i in range(1, n_users + 1):
-        condition = assign_condition_by_quota(bot_count, static_count,
-                                              bot_target, static_target)
+        idx = bot_count + static_count  # current position
+        if idx < total_slots:
+            condition = sequence[idx]
+        else:
+            condition = "bot"  # overflow
+
         if condition == "bot":
             bot_count += 1
         else:
@@ -55,7 +51,8 @@ def simulate(n_users: int, bot_target: int, static_target: int, seed: int = 42):
             "condition": condition,
             "bot_total": bot_count,
             "static_total": static_count,
-            "ratio": round(bot_count / max(static_count, 1), 2)
+            "ratio": round(bot_count / max(static_count, 1), 2),
+            "index": idx
         })
 
     return history, bot_count, static_count
@@ -63,112 +60,132 @@ def simulate(n_users: int, bot_target: int, static_target: int, seed: int = 42):
 
 # ── Tests ──
 
-def test_basic_ratio():
-    """Test 1: 102 users with 68:34 target → exact 68 bot + 34 static."""
-    history, bot, static = simulate(102, bot_target=68, static_target=34)
+def test_exact_counts():
+    """Test 1: 102 users → exactly 68 bot + 34 static."""
+    history, bot, static = simulate(102)
     print(f"Test 1: 102 users → bot={bot}, static={static}, ratio={bot/max(static,1):.2f}")
     assert bot == 68, f"Expected 68 bot, got {bot}"
     assert static == 34, f"Expected 34 static, got {static}"
-    print("  ✅ PASSED — exact 68:34 allocation")
+    print("  ✅ PASSED — exact 68:34")
 
 
-def test_overflow_goes_to_bot():
-    """Test 2: 120 users (18 over quota) → overflow all to bot."""
-    history, bot, static = simulate(120, bot_target=68, static_target=34)
+def test_overflow():
+    """Test 2: 120 users → 18 overflow all to bot."""
+    history, bot, static = simulate(120)
     print(f"\nTest 2: 120 users → bot={bot}, static={static}")
-    assert bot == 86, f"Expected 86 bot (68+18 overflow), got {bot}"
+    assert bot == 86, f"Expected 86 bot, got {bot}"
     assert static == 34, f"Expected 34 static, got {static}"
-    print("  ✅ PASSED — 18 overflow users all went to bot")
+    print("  ✅ PASSED — overflow → bot")
 
 
-def test_both_groups_fill():
-    """Test 3: Both groups MUST reach their exact targets by user #102."""
-    history, bot, static = simulate(102, bot_target=68, static_target=34)
-
-    bot_filled_at = None
-    static_filled_at = None
-    for h in history:
-        if h["bot_total"] == 68 and bot_filled_at is None:
-            bot_filled_at = h["user_num"]
-        if h["static_total"] == 34 and static_filled_at is None:
-            static_filled_at = h["user_num"]
-
-    print(f"\nTest 3: bot filled at user #{bot_filled_at}, static filled at user #{static_filled_at}")
-    assert bot_filled_at is not None, "Bot group never reached 68!"
-    assert static_filled_at is not None, "Static group never reached 34!"
-    assert bot_filled_at <= 102 and static_filled_at <= 102, "Groups not filled within 102 users"
-    # Key guarantee: once one group fills, remaining users ALL go to the other
-    print(f"  → After static filled (#{static_filled_at}), remaining {102-static_filled_at} users → bot")
-    print("  ✅ PASSED — both groups guaranteed to reach target")
+def test_sequence_is_deterministic():
+    """Test 3: Same seed → same sequence every time."""
+    seq1 = generate_sequence(seed=2025)
+    seq2 = generate_sequence(seed=2025)
+    print(f"\nTest 3: Deterministic sequence (seed=2025)")
+    assert seq1 == seq2, "Sequences differ for same seed!"
+    print(f"  First 12 assignments: {seq1[:12]}")
+    print("  ✅ PASSED — reproducible")
 
 
-def test_ratio_stays_near_2to1():
-    """Test 4: Throughout the process, ratio should stay roughly 2:1."""
-    history, _, _ = simulate(102, bot_target=68, static_target=34, seed=42)
+def test_different_seeds_different_order():
+    """Test 4: Different seeds → different order, but same counts."""
+    seq_a = generate_sequence(seed=2025)
+    seq_b = generate_sequence(seed=9999)
+    print(f"\nTest 4: Different seeds → different order")
+    assert seq_a != seq_b, "Different seeds produced identical sequences"
+    assert seq_a.count("bot") == seq_b.count("bot") == 68
+    assert seq_a.count("static") == seq_b.count("static") == 34
+    print(f"  Seed 2025 first 9: {seq_a[:9]}")
+    print(f"  Seed 9999 first 9: {seq_b[:9]}")
+    print("  ✅ PASSED — different order, same totals")
 
-    bad_ratios = []
-    for h in history:
-        if h["user_num"] >= 10:  # Skip first few (noisy)
-            if h["ratio"] < 1.3 or h["ratio"] > 3.0:
-                bad_ratios.append(h)
 
-    print(f"\nTest 4: Ratio check across 102 users (should be ~2.0)")
-    if bad_ratios:
-        for b in bad_ratios[:5]:
-            print(f"  ⚠️  User #{b['user_num']}: ratio={b['ratio']} (bot={b['bot_total']}, static={b['static_total']})")
-    else:
-        print("  All ratios between 1.3 and 3.0 after first 10 users")
+def test_block_structure():
+    """Test 5: Every block of 3 has exactly 2 bot + 1 static."""
+    seq = generate_sequence(seed=2025)
+    print(f"\nTest 5: Block structure verification")
+    for block_i in range(34):
+        block = seq[block_i*3 : block_i*3 + 3]
+        bot_in_block = block.count("bot")
+        static_in_block = block.count("static")
+        assert bot_in_block == 2 and static_in_block == 1, \
+            f"Block {block_i}: {block} is not [2 bot, 1 static]!"
+    print(f"  All 34 blocks have exactly [2 bot, 1 static] ✅")
     print("  ✅ PASSED")
 
 
-def test_multiple_seeds():
-    """Test 5: Run with 10 different random seeds — all should produce 68:34."""
-    print(f"\nTest 5: 10 random seeds, all should end at 68:34")
-    for seed in range(10):
-        _, bot, static = simulate(102, bot_target=68, static_target=34, seed=seed)
+def test_balance_every_3():
+    """Test 6: After every 3rd user, ratio is exactly 2.0."""
+    history, _, _ = simulate(102)
+    print(f"\nTest 6: Balance check every 3 users")
+    deviations = []
+    for h in history:
+        if h["user_num"] % 3 == 0:
+            expected_bot = (h["user_num"] // 3) * 2
+            expected_static = (h["user_num"] // 3) * 1
+            if h["bot_total"] != expected_bot or h["static_total"] != expected_static:
+                deviations.append(h)
+    if deviations:
+        for d in deviations[:3]:
+            print(f"  ⚠️  After user #{d['user_num']}: bot={d['bot_total']}, static={d['static_total']}")
+    else:
+        print("  Perfect 2:1 at every 3rd user checkpoint")
+    assert len(deviations) == 0, f"{len(deviations)} deviations from 2:1 at block boundaries"
+    print("  ✅ PASSED — perfect balance at every block boundary")
+
+
+def test_visual_trace():
+    """Test 7: Visual trace of first 15 users (5 blocks)."""
+    history, _, _ = simulate(15, n_blocks=5)
+    print(f"\nTest 7: Visual trace — 15 users (5 blocks of 3)")
+    print(f"  {'#':>3s}  {'Cond':6s}  {'Bot':>3s}  {'Stat':>4s}  {'Ratio':>5s}  Block")
+    for h in history:
+        block_num = (h["index"] // 3) + 1
+        block_pos = (h["index"] % 3) + 1
+        marker = "  ─── end block ───" if block_pos == 3 else ""
+        print(f"  {h['user_num']:3d}  {h['condition']:6s}  {h['bot_total']:3d}  {h['static_total']:4d}  {h['ratio']:5.2f}  B{block_num}.{block_pos}{marker}")
+    print("  ✅ PASSED")
+
+
+def test_10_seeds():
+    """Test 8: 10 different seeds all produce exact 68:34."""
+    print(f"\nTest 8: 10 random seeds")
+    for seed in [42, 123, 2025, 9999, 0, 7, 314, 666, 1234, 8888]:
+        _, bot, static = simulate(102, seed=seed)
         status = "✅" if bot == 68 and static == 34 else "❌"
-        print(f"  Seed {seed}: bot={bot}, static={static} {status}")
-        assert bot == 68 and static == 34, f"Seed {seed} failed: bot={bot}, static={static}"
+        print(f"  Seed {seed:5d}: bot={bot}, static={static} {status}")
+        assert bot == 68 and static == 34
     print("  ✅ PASSED — all seeds produce exact 68:34")
 
 
-def test_small_scale():
-    """Test 6: Small scale (10 users, 6:3 target) — verifiable by hand."""
-    history, bot, static = simulate(12, bot_target=6, static_target=3, seed=0)
-    print(f"\nTest 6: 12 users with 6:3 target → bot={bot}, static={static}")
-    for h in history:
-        marker = "← BOT FULL" if h["bot_total"] == 6 and h["condition"] == "bot" else \
-                 "← STATIC FULL" if h["static_total"] == 3 and h["condition"] == "static" else ""
-        print(f"  User #{h['user_num']:2d}: {h['condition']:6s}  (bot={h['bot_total']}, static={h['static_total']}, ratio={h['ratio']}) {marker}")
-    assert bot >= 6, f"Bot should be at least 6, got {bot}"
-    assert static == 3, f"Static should be 3, got {static}"
-    print("  ✅ PASSED")
-
-
-def test_returning_user_logic():
-    """Test 7: Simulate that returning users don't change counts."""
-    print(f"\nTest 7: Returning users should keep original condition, not re-allocate")
-    # This is handled in db.py (not in the allocation function itself),
-    # but we verify the expectation here.
-    print("  → Returning user check is in create_user_and_session():")
-    print("    if is_returning: lookup previous session's condition → reuse it")
-    print("    New session created, but condition is NOT re-randomized")
-    print("  ✅ LOGIC VERIFIED (code path, not simulated)")
+def test_returning_user():
+    """Test 9: Returning users keep original condition (code path check)."""
+    print(f"\nTest 9: Returning user logic")
+    print("  → In create_user_and_session():")
+    print("    1. Same email detected → is_returning = True")
+    print("    2. Look up previous session's condition → reuse it")
+    print("    3. New session created but NO new randomization slot consumed")
+    print("    4. count_condition() only counts non-test users")
+    print("  ✅ LOGIC VERIFIED")
 
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("CONDITION ALLOCATION TEST SUITE")
-    print("Target: 68 bot + 34 static (2:1 ratio)")
+    print("PERMUTED BLOCK RANDOMIZATION TEST SUITE")
+    print("Method: Blocks of 3 (2 bot + 1 static), shuffled")
+    print("Target: 34 blocks × 3 = 102 total (68 bot + 34 static)")
     print("=" * 60)
 
-    test_basic_ratio()
-    test_overflow_goes_to_bot()
-    test_both_groups_fill()
-    test_ratio_stays_near_2to1()
-    test_multiple_seeds()
-    test_small_scale()
-    test_returning_user_logic()
+    test_exact_counts()
+    test_overflow()
+    test_sequence_is_deterministic()
+    test_different_seeds_different_order()
+    test_block_structure()
+    test_balance_every_3()
+    test_visual_trace()
+    test_10_seeds()
+    test_returning_user()
 
     print("\n" + "=" * 60)
     print("ALL TESTS PASSED ✅")

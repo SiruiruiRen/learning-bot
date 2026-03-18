@@ -116,7 +116,7 @@ def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any])
         condition = "bot"
         logger.info(f"Test account assigned: bot")
     elif study_mode == "randomize":
-        condition = _assign_condition_by_quota(db)
+        condition = _assign_condition_by_block_randomization(db)
     elif study_mode == "static_only":
         condition = "static"
     else:
@@ -272,60 +272,70 @@ def get_messages_for_session(session_id: str, limit: int = 10) -> List[Dict[str,
 
 # --- Condition Assignment ---
 
-def _assign_condition_by_quota(db_client) -> str:
+def _assign_condition_by_block_randomization(db_client) -> str:
     """
-    Assigns condition using quota-based 2:1 (bot:static) allocation.
-    Reads BOT_TARGET and STATIC_TARGET from env vars.
+    Permuted Block Randomization — 2:1 ratio (RCT gold standard).
 
-    Logic:
-      1. Count current bot and static participants.
-      2. If bot quota not yet filled → assign bot.
-      3. If bot full but static not → assign static.
-      4. If both full → overflow to bot (research priority).
-      5. If neither full → use weighted random (2:1) to maintain ratio.
+    Method:
+      - Generates a fixed random sequence using blocks of size 3.
+      - Each block = [bot, bot, static], shuffled randomly.
+      - 34 blocks × 3 = 102 slots → exactly 68 bot + 34 static.
+      - Each new non-test user gets the NEXT assignment in the sequence.
+      - After all 102 slots used → overflow to bot.
 
-    This guarantees bot group reaches target size first.
+    Why this is the correct approach for research:
+      - Every participant is genuinely randomly assigned
+      - No adaptive probabilities that change over time
+      - Perfectly balanced every 3 participants
+      - Standard method in clinical trials & educational RCTs
+      - The sequence is reproducible (fixed seed → same sequence)
+
+    Env vars:
+      N_BLOCKS           = number of blocks (default 34 → 102 total)
+      RANDOMIZATION_SEED = fixed seed for reproducibility (default 2025)
     """
-    import random
+    import random as _random
 
-    bot_target = int(os.environ.get("BOT_TARGET", "68"))
-    static_target = int(os.environ.get("STATIC_TARGET", "34"))
+    n_blocks = int(os.environ.get("N_BLOCKS", "34"))
+    seed = int(os.environ.get("RANDOMIZATION_SEED", "2025"))
 
+    # Generate the full pre-determined sequence (deterministic for given seed)
+    rng = _random.Random(seed)
+    sequence = []
+    for _ in range(n_blocks):
+        block = ["bot", "bot", "static"]  # 2:1 per block
+        rng.shuffle(block)
+        sequence.extend(block)
+    # sequence = 102 items, exactly 68 "bot" + 34 "static", in random order
+
+    # Count how many non-test users have already been assigned
     try:
-        # Count existing assignments from sessions table
         bot_resp = db_client.rpc("count_condition", {"cond": "bot"}).execute()
         static_resp = db_client.rpc("count_condition", {"cond": "static"}).execute()
         bot_count = bot_resp.data if isinstance(bot_resp.data, int) else 0
         static_count = static_resp.data if isinstance(static_resp.data, int) else 0
     except Exception:
-        # Fallback: direct count query
         try:
             all_sessions = db_client.table("sessions").select("metadata").execute()
-            bot_count = sum(1 for s in (all_sessions.data or [])
+            rows = all_sessions.data or []
+            bot_count = sum(1 for s in rows
                            if (s.get("metadata") or {}).get("condition") == "bot")
-            static_count = sum(1 for s in (all_sessions.data or [])
+            static_count = sum(1 for s in rows
                                if (s.get("metadata") or {}).get("condition") == "static")
         except Exception as e:
             logger.error(f"Failed to count conditions, defaulting to bot: {e}")
             return "bot"
 
-    logger.info(f"Current counts — bot: {bot_count}/{bot_target}, static: {static_count}/{static_target}")
+    current_index = bot_count + static_count
+    total_slots = len(sequence)
 
-    bot_full = bot_count >= bot_target
-    static_full = static_count >= static_target
+    logger.info(f"Block randomization: index={current_index}/{total_slots}, "
+                f"bot={bot_count}, static={static_count}, seed={seed}")
 
-    if bot_full and static_full:
-        # Both quotas met — overflow to bot (research priority)
-        return "bot"
-    elif bot_full and not static_full:
-        return "static"
-    elif not bot_full and static_full:
-        return "bot"
+    if current_index < total_slots:
+        condition = sequence[current_index]
     else:
-        # Neither full — weighted random to maintain 2:1 ratio
-        # Calculate remaining slots
-        bot_remaining = bot_target - bot_count
-        static_remaining = static_target - static_count
-        total_remaining = bot_remaining + static_remaining
-        bot_probability = bot_remaining / total_remaining
-        return "bot" if random.random() < bot_probability else "static"
+        condition = "bot"
+        logger.info(f"All {total_slots} slots used, overflow → bot")
+
+    return condition
