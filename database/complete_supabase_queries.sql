@@ -228,6 +228,90 @@ GROUP BY interaction_type
 ORDER BY event_count DESC;
 
 
+-- B8: Chatbot interaction overview per phase per user
+-- Shows message counts, duration, assessment scores for each chatbot phase (2, 4, 5)
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    uca.phase,
+    uca.component,
+    uca.chat_start_time,
+    uca.chat_end_time,
+    uca.total_duration_seconds,
+    uca.message_count,
+    uca.user_message_count,
+    uca.bot_message_count,
+    -- Assessment results for this chatbot phase
+    (SELECT COUNT(*) FROM assessments a WHERE a.session_id = s.id AND a.phase = uca.phase) AS assessment_attempts,
+    (SELECT MAX(a.overall_score) FROM assessments a WHERE a.session_id = s.id AND a.phase = uca.phase) AS best_score,
+    (SELECT a.overall_score FROM assessments a WHERE a.session_id = s.id AND a.phase = uca.phase ORDER BY a.attempt_number DESC LIMIT 1) AS final_score,
+    -- Revision count for this phase
+    (SELECT COUNT(*) FROM user_revision_tracking urt WHERE urt.session_id = s.id AND urt.phase = uca.phase) AS revision_count
+FROM user_chat_analytics uca
+JOIN sessions s ON uca.session_id = s.id
+JOIN users u ON uca.user_id = u.id
+WHERE uca.phase IN ('phase2', 'phase4', 'phase5')
+ORDER BY u.id, uca.phase;
+
+
+-- B9: Chatbot interaction summary (aggregated across all users)
+SELECT
+    uca.phase,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    COUNT(DISTINCT uca.user_id) AS n_users,
+    ROUND(AVG(uca.total_duration_seconds)::numeric / 60.0, 1) AS avg_duration_min,
+    ROUND(AVG(uca.message_count)::numeric, 1) AS avg_messages,
+    ROUND(AVG(uca.user_message_count)::numeric, 1) AS avg_user_msgs,
+    ROUND(AVG(uca.bot_message_count)::numeric, 1) AS avg_bot_msgs,
+    -- Assessment stats
+    ROUND(AVG(best.score)::numeric, 3) AS avg_best_score,
+    ROUND(AVG(rev.cnt)::numeric, 1) AS avg_revisions
+FROM user_chat_analytics uca
+JOIN sessions s ON uca.session_id = s.id
+LEFT JOIN (
+    SELECT session_id, phase, MAX(overall_score) AS score
+    FROM assessments GROUP BY session_id, phase
+) best ON best.session_id = s.id AND best.phase = uca.phase
+LEFT JOIN (
+    SELECT session_id, phase, COUNT(*) AS cnt
+    FROM user_revision_tracking GROUP BY session_id, phase
+) rev ON rev.session_id = s.id AND rev.phase = uca.phase
+WHERE uca.phase IN ('phase2', 'phase4', 'phase5')
+GROUP BY uca.phase, COALESCE(s.metadata->>'condition', 'unknown')
+ORDER BY uca.phase;
+
+
+-- B10: Final feedback ratings overview (from summary page)
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    (cil.interaction_data->'ratings'->>'usefulness')::int AS usefulness,
+    (cil.interaction_data->'ratings'->>'satisfaction')::int AS satisfaction,
+    (cil.interaction_data->'ratings'->>'recommendation')::int AS recommendation,
+    cil.interaction_data->>'feedback_text' AS feedback_text,
+    cil.timestamp
+FROM content_interaction_logs cil
+JOIN sessions s ON cil.session_id = s.id
+JOIN users u ON cil.user_id = u.id
+WHERE cil.interaction_type = 'final_feedback'
+ORDER BY cil.timestamp DESC;
+
+
+-- B11: User data table overview (progress tracking, phase completions)
+SELECT
+    u.id AS user_id,
+    u.name,
+    ud.data_type,
+    ud.value,
+    ud.metadata,
+    ud.created_at
+FROM user_data ud
+JOIN users u ON ud.user_id = u.id
+ORDER BY u.id, ud.created_at;
+
+
 -- ████████████████████████████████████████████████████████████████
 -- SECTION C: RQ1 — Between-Group Comparison (Bot vs Static)
 -- RQ1a: Immediate effects (skill mastery, motivation, exam)
@@ -319,19 +403,24 @@ ORDER BY uva.phase;
 
 
 -- C5: Phase 6 post-assessment responses by condition
--- Final exam preparation plan written by students
+-- Grades + preparation level come from content_interaction_logs (event metadata)
+-- The actual exam preparation plan TEXT is stored in user_data table
 SELECT
     u.id AS user_id,
     u.name,
     COALESCE(s.metadata->>'condition', 'unknown') AS condition,
-    cil.interaction_data->>'answer' AS exam_prep_plan,
+    -- From event log (content_interaction_logs)
     cil.interaction_data->>'aiming_grade' AS aiming_grade,
     cil.interaction_data->>'expected_grade' AS expected_grade,
     cil.interaction_data->>'preparation_level' AS preparation_level,
-    cil.timestamp
+    (cil.interaction_data->>'answer_length')::int AS answer_length,
+    cil.timestamp,
+    -- From user_data table (the actual written plan)
+    ud.value AS exam_prep_plan_text
 FROM content_interaction_logs cil
 JOIN sessions s ON cil.session_id = s.id
 JOIN users u ON cil.user_id = u.id
+LEFT JOIN user_data ud ON ud.user_id = u.id AND ud.data_type = 'final_exam_preparation_plan'
 WHERE cil.interaction_type = 'post_assessment_submitted'
 ORDER BY u.id;
 
@@ -575,7 +664,7 @@ SELECT
     u.email,
     COALESCE(s.metadata->>'condition', 'unknown') AS condition,
     -- Profile/baseline data (covariates for RQ3-4)
-    u.profile_data->>'academic_level' AS academic_level,
+    u.profile_data->>'year' AS year_level,
     u.profile_data->>'major' AS major,
     u.profile_data->>'challenging_course' AS target_course,
     u.profile_data->>'coach_tone' AS feedback_preference,
@@ -638,7 +727,7 @@ SELECT
     u.email,
     COALESCE(s.metadata->>'condition', 'unknown') AS condition,
     -- Demographics from profile_data
-    u.profile_data->>'academic_level' AS academic_level,
+    u.profile_data->>'year' AS year_level,
     u.profile_data->>'major' AS major,
     u.profile_data->>'challenging_course' AS course,
     u.profile_data->>'coach_tone' AS preferred_tone,
