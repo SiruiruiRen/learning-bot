@@ -312,6 +312,344 @@ JOIN users u ON ud.user_id = u.id
 ORDER BY u.id, ud.created_at;
 
 
+-- B12: User pace — time to complete each phase + leave/return patterns
+-- How long each user took, how many times they left, total away time
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    cil.phase,
+    -- Total events in this phase
+    COUNT(*) AS total_events,
+    -- First and last event timestamps → total elapsed time
+    MIN(cil.timestamp) AS phase_start,
+    MAX(cil.timestamp) AS phase_end,
+    ROUND(EXTRACT(EPOCH FROM (MAX(cil.timestamp) - MIN(cil.timestamp)))::numeric / 60.0, 1) AS elapsed_minutes,
+    -- Leave/return tracking
+    COUNT(CASE WHEN cil.interaction_type = 'user_left_page' THEN 1 END) AS leave_count,
+    COUNT(CASE WHEN cil.interaction_type = 'user_returned_to_page' THEN 1 END) AS return_count,
+    -- Total away time (sum of away_duration_seconds from return events)
+    ROUND(COALESCE(SUM(
+        CASE WHEN cil.interaction_type = 'user_returned_to_page'
+        THEN (cil.interaction_data->>'away_duration_seconds')::numeric END
+    ), 0) / 60.0, 1) AS total_away_minutes,
+    -- Active time = elapsed - away
+    ROUND((EXTRACT(EPOCH FROM (MAX(cil.timestamp) - MIN(cil.timestamp)))::numeric -
+        COALESCE(SUM(CASE WHEN cil.interaction_type = 'user_returned_to_page'
+            THEN (cil.interaction_data->>'away_duration_seconds')::numeric END), 0)
+    ) / 60.0, 1) AS active_minutes
+FROM content_interaction_logs cil
+JOIN sessions s ON cil.session_id = s.id
+JOIN users u ON cil.user_id = u.id
+WHERE cil.phase IS NOT NULL
+GROUP BY u.id, u.name, COALESCE(s.metadata->>'condition', 'unknown'), cil.phase, s.id
+ORDER BY u.id, cil.phase;
+
+
+-- B13: Video interaction trace — every play/pause/seek/rewind per video
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    vie.phase,
+    vie.video_name,
+    vie.event_type,
+    vie.playback_position,
+    vie.total_watched_seconds,
+    vie.event_timestamp,
+    vie.metadata
+FROM video_interaction_events vie
+JOIN sessions s ON vie.session_id = s.id
+JOIN users u ON vie.user_id = u.id
+ORDER BY u.id, vie.phase, vie.event_timestamp;
+
+
+-- B14: Video analytics summary per user per video
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    uva.phase,
+    uva.video_name,
+    uva.total_duration_seconds AS video_length_sec,
+    uva.watched_duration_seconds,
+    uva.completion_percentage,
+    uva.play_count,
+    uva.pause_count,
+    uva.rewind_count,
+    uva.fast_forward_count,
+    uva.seek_count,
+    uva.last_position,
+    uva.first_play_at,
+    uva.completed_at,
+    uva.last_interaction_at,
+    uva.engagement_score
+FROM user_video_analytics uva
+JOIN sessions s ON uva.session_id = s.id
+JOIN users u ON uva.user_id = u.id
+ORDER BY u.id, uva.phase;
+
+
+-- B15: Quick Help (floating chatbot) — every question & response with full text
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    cil.phase,
+    cil.interaction_type,
+    -- Question details
+    cil.interaction_data->>'question' AS question_text,
+    -- Response details
+    cil.interaction_data->>'response' AS response_text,
+    cil.interaction_data->>'model' AS model_used,
+    -- Context
+    cil.interaction_data->>'page' AS page_url,
+    cil.interaction_data->>'trigger' AS open_trigger,
+    -- Session timing
+    (cil.interaction_data->>'duration_seconds')::numeric AS session_duration_sec,
+    (cil.interaction_data->>'message_count')::int AS message_count_at_event,
+    cil.timestamp
+FROM content_interaction_logs cil
+JOIN sessions s ON cil.session_id = s.id
+JOIN users u ON cil.user_id = u.id
+WHERE cil.interaction_type IN (
+    'floating_chatbot_opened', 'floating_chatbot_closed',
+    'floating_chat_question', 'floating_chat_response'
+)
+ORDER BY u.id, cil.timestamp;
+
+
+-- B16: Quick Help vs Main Chatbot concurrent usage
+-- Detect if user had Quick Help open while on a chatbot phase page
+SELECT
+    u.id AS user_id,
+    u.name,
+    cil.phase,
+    cil.interaction_type,
+    cil.interaction_data->>'page' AS page,
+    cil.timestamp,
+    -- Flag: is this a Quick Help event on a chatbot phase page?
+    CASE WHEN cil.interaction_type IN ('floating_chat_question', 'floating_chat_response')
+         AND cil.phase IN ('phase2', 'phase4', 'phase5')
+    THEN true ELSE false END AS quick_help_during_chatbot_phase
+FROM content_interaction_logs cil
+JOIN sessions s ON cil.session_id = s.id
+JOIN users u ON cil.user_id = u.id
+WHERE cil.interaction_type IN (
+    'floating_chatbot_opened', 'floating_chatbot_closed',
+    'floating_chat_question', 'floating_chat_response',
+    'chat_message'
+)
+  AND cil.phase IN ('phase2', 'phase4', 'phase5')
+ORDER BY u.id, cil.timestamp;
+
+
+-- B17: Quiz accuracy — per question detail
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    kca.phase,
+    kca.question_id,
+    kca.question_text,
+    kca.question_type,
+    kca.attempt_number,
+    kca.selected_answer,
+    kca.correct_answer,
+    kca.is_correct,
+    kca.time_to_answer_seconds,
+    kca.time_to_first_interaction_seconds,
+    kca.confidence_level,
+    kca.help_used,
+    kca.answer_changed,
+    kca.answer_changes,
+    kca.thinking_time_seconds,
+    kca.explanation_viewed,
+    kca.retry_count,
+    kca.created_at
+FROM knowledge_check_attempts kca
+JOIN sessions s ON kca.session_id = s.id
+JOIN users u ON kca.user_id = u.id
+ORDER BY u.id, kca.phase, kca.created_at;
+
+
+-- B18: Quiz session summary — pre/post test per user
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    qss.phase,
+    COALESCE(qss.test_type, qss.metadata->>'test_type', 'unknown') AS test_type,
+    qss.total_questions,
+    qss.correct_answers,
+    qss.incorrect_answers,
+    qss.accuracy_percentage,
+    qss.average_time_per_question_seconds,
+    qss.total_time_seconds,
+    qss.first_attempt_accuracy,
+    qss.completed,
+    qss.quiz_start_time,
+    qss.quiz_end_time
+FROM quiz_session_summary qss
+JOIN sessions s ON qss.session_id = s.id
+JOIN users u ON qss.user_id = u.id
+ORDER BY u.id, qss.phase;
+
+
+-- B19: Navigation trace — every page view, Next button click, phase transition
+SELECT
+    u.id AS user_id,
+    u.name,
+    ne.event_type,
+    ne.from_path,
+    ne.to_path,
+    ne.from_phase,
+    ne.to_phase,
+    ne.button_text,
+    ne.time_on_page_seconds,
+    ne.timestamp
+FROM navigation_events ne
+JOIN sessions s ON ne.session_id = s.id
+JOIN users u ON ne.user_id = u.id
+ORDER BY u.id, ne.timestamp;
+
+
+-- B20: Feedback style switching behavior (did users view alternative style?)
+SELECT
+    u.id AS user_id,
+    u.name,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    fsv.phase,
+    fsv.component,
+    fsv.original_style,
+    fsv.alternative_style,
+    fsv.viewed_at
+FROM feedback_style_views fsv
+JOIN sessions s ON fsv.session_id = s.id
+JOIN users u ON fsv.user_id = u.id
+ORDER BY u.id, fsv.viewed_at;
+
+
+-- B21: Complete engagement dashboard — one row per user with ALL metrics
+SELECT
+    u.id AS user_id,
+    u.name,
+    u.email,
+    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    u.profile_data->>'year' AS year_level,
+    u.profile_data->>'major' AS major,
+    u.profile_data->>'challenging_course' AS course,
+    u.profile_data->>'coach_tone' AS tone,
+    -- Completion
+    COALESCE(comp.phases_done, 0) AS phases_completed,
+    -- Total time
+    COALESCE(time_d.total_min, 0) AS total_learning_min,
+    COALESCE(time_d.active_min, 0) AS active_learning_min,
+    -- Leave/return
+    COALESCE(leave_d.total_leaves, 0) AS total_leaves,
+    COALESCE(leave_d.total_away_min, 0) AS total_away_min,
+    -- Video engagement
+    COALESCE(vid.videos_watched, 0) AS videos_watched,
+    COALESCE(vid.avg_completion, 0) AS avg_video_completion_pct,
+    COALESCE(vid.total_pauses, 0) AS total_video_pauses,
+    COALESCE(vid.total_rewinds, 0) AS total_video_rewinds,
+    -- Chat engagement
+    COALESCE(chat.total_chat_messages, 0) AS total_chat_messages,
+    COALESCE(chat.total_chat_min, 0) AS total_chat_min,
+    -- Quick Help
+    COALESCE(qh.quick_help_opens, 0) AS quick_help_opens,
+    COALESCE(qh.quick_help_questions, 0) AS quick_help_questions,
+    -- Quiz
+    COALESCE(quiz_d.avg_accuracy, 0) AS avg_quiz_accuracy,
+    COALESCE(quiz_d.total_questions_answered, 0) AS total_quiz_questions,
+    -- Assessment / Revision
+    COALESCE(assess.total_assessments, 0) AS total_assessments,
+    COALESCE(assess.avg_score, 0) AS avg_assessment_score,
+    COALESCE(rev_d.total_revisions, 0) AS total_revisions,
+    -- Feedback style
+    COALESCE(fsv_d.style_switches, 0) AS feedback_style_switches,
+    -- Session info
+    s.created_at AS session_start,
+    (SELECT MAX(timestamp) FROM content_interaction_logs WHERE session_id = s.id) AS last_activity
+FROM users u
+JOIN sessions s ON u.id = s.user_id
+-- Completion
+LEFT JOIN (
+    SELECT user_id, session_id, COUNT(DISTINCT phase) AS phases_done
+    FROM phase_completion_analytics WHERE completed_successfully GROUP BY user_id, session_id
+) comp ON u.id = comp.user_id AND s.id = comp.session_id
+-- Time
+LEFT JOIN (
+    SELECT cil2.user_id, cil2.session_id,
+        ROUND(EXTRACT(EPOCH FROM (MAX(cil2.timestamp) - MIN(cil2.timestamp)))::numeric / 60.0, 1) AS total_min,
+        ROUND((EXTRACT(EPOCH FROM (MAX(cil2.timestamp) - MIN(cil2.timestamp)))::numeric -
+            COALESCE(SUM(CASE WHEN cil2.interaction_type = 'user_returned_to_page'
+                THEN (cil2.interaction_data->>'away_duration_seconds')::numeric END), 0)
+        ) / 60.0, 1) AS active_min
+    FROM content_interaction_logs cil2 GROUP BY cil2.user_id, cil2.session_id
+) time_d ON u.id = time_d.user_id AND s.id = time_d.session_id
+-- Leave/return
+LEFT JOIN (
+    SELECT user_id, session_id,
+        COUNT(CASE WHEN interaction_type = 'user_left_page' THEN 1 END) AS total_leaves,
+        ROUND(COALESCE(SUM(CASE WHEN interaction_type = 'user_returned_to_page'
+            THEN (interaction_data->>'away_duration_seconds')::numeric END), 0) / 60.0, 1) AS total_away_min
+    FROM content_interaction_logs GROUP BY user_id, session_id
+) leave_d ON u.id = leave_d.user_id AND s.id = leave_d.session_id
+-- Video
+LEFT JOIN (
+    SELECT user_id, session_id,
+        COUNT(*) AS videos_watched,
+        ROUND(AVG(completion_percentage)::numeric, 1) AS avg_completion,
+        SUM(pause_count) AS total_pauses,
+        SUM(rewind_count) AS total_rewinds
+    FROM user_video_analytics GROUP BY user_id, session_id
+) vid ON u.id = vid.user_id AND s.id = vid.session_id
+-- Chat
+LEFT JOIN (
+    SELECT user_id, session_id,
+        SUM(message_count) AS total_chat_messages,
+        ROUND(SUM(total_duration_seconds)::numeric / 60.0, 1) AS total_chat_min
+    FROM user_chat_analytics
+    WHERE component != 'floating_chatbot'
+    GROUP BY user_id, session_id
+) chat ON u.id = chat.user_id AND s.id = chat.session_id
+-- Quick Help
+LEFT JOIN (
+    SELECT user_id, session_id,
+        COUNT(CASE WHEN interaction_type = 'floating_chatbot_opened' THEN 1 END) AS quick_help_opens,
+        COUNT(CASE WHEN interaction_type = 'floating_chat_question' THEN 1 END) AS quick_help_questions
+    FROM content_interaction_logs
+    WHERE interaction_type IN ('floating_chatbot_opened', 'floating_chat_question')
+    GROUP BY user_id, session_id
+) qh ON u.id = qh.user_id AND s.id = qh.session_id
+-- Quiz
+LEFT JOIN (
+    SELECT user_id, session_id,
+        ROUND(AVG(accuracy_percentage)::numeric, 1) AS avg_accuracy,
+        SUM(total_questions) AS total_questions_answered
+    FROM quiz_session_summary WHERE completed GROUP BY user_id, session_id
+) quiz_d ON u.id = quiz_d.user_id AND s.id = quiz_d.session_id
+-- Assessment
+LEFT JOIN (
+    SELECT user_id, session_id,
+        COUNT(*) AS total_assessments,
+        ROUND(AVG(overall_score)::numeric, 3) AS avg_score
+    FROM assessments GROUP BY user_id, session_id
+) assess ON u.id = assess.user_id AND s.id = assess.session_id
+-- Revision
+LEFT JOIN (
+    SELECT user_id, session_id, COUNT(*) AS total_revisions
+    FROM user_revision_tracking GROUP BY user_id, session_id
+) rev_d ON u.id = rev_d.user_id AND s.id = rev_d.session_id
+-- Feedback style switches
+LEFT JOIN (
+    SELECT user_id, session_id, COUNT(*) AS style_switches
+    FROM feedback_style_views GROUP BY user_id, session_id
+) fsv_d ON u.id = fsv_d.user_id AND s.id = fsv_d.session_id
+ORDER BY u.id;
+
+
 -- ████████████████████████████████████████████████████████████████
 -- SECTION C: RQ1 — Between-Group Comparison (Bot vs Static)
 -- RQ1a: Immediate effects (skill mastery, motivation, exam)
