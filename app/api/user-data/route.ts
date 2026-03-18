@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     
     // Forward to backend API as fallback
     try {
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+      const backendUrl = process.env.BACKEND_URL || 'https://solbot-backend.onrender.com';
       const endpoint = `/api/user-data/${formattedUserId}`;
       const fullUrl = `${backendUrl}${endpoint}`;
       
@@ -245,7 +245,7 @@ export async function GET(request: NextRequest) {
     
     // Try backend as fallback
     try {
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080';
+      const backendUrl = process.env.BACKEND_URL || 'https://solbot-backend.onrender.com';
       let endpoint = `/api/user-data/${formattedUserId}`;
       if (dataType) {
         endpoint += `?data_type=${encodeURIComponent(dataType)}`;

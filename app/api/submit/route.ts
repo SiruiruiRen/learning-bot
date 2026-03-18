@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Set the backend URL
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8080'
+    const backendUrl = process.env.BACKEND_URL || 'https://solbot-backend.onrender.com'
     const endpoint = '/api/chat/submit'
     const fullUrl = `${backendUrl}${endpoint}`
     

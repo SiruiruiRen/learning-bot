@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Set the backend URL
-    const backendUrl = process.env.BACKEND_URL || 'https://sol-bot-backend.onrender.com'
+    const backendUrl = process.env.BACKEND_URL || 'https://solbot-backend.onrender.com'
     const endpoint = '/api/chat'
     const fullUrl = `${backendUrl}${endpoint}`
     
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Check if the backend is running
-    const backendUrl = process.env.BACKEND_URL || 'https://sol-bot-backend.onrender.com'
+    const backendUrl = process.env.BACKEND_URL || 'https://solbot-backend.onrender.com'
     const healthEndpoint = '/health'
     const fullUrl = `${backendUrl}${healthEndpoint}`
     
