@@ -23,7 +23,15 @@ BEGIN
   END IF;
 END $$;
 
--- 3. Verify
+-- 3. Add helper function for condition counting (used by backend allocation)
+CREATE OR REPLACE FUNCTION count_condition(cond TEXT)
+RETURNS INTEGER AS $$
+  SELECT COUNT(*)::integer
+  FROM sessions
+  WHERE metadata->>'condition' = cond;
+$$ LANGUAGE sql STABLE;
+
+-- 4. Verify quiz_session_summary columns
 SELECT column_name, data_type, column_default
 FROM information_schema.columns
 WHERE table_name = 'quiz_session_summary'

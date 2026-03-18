@@ -15,9 +15,8 @@
 -- PREREQUISITES (run ONCE before first export):
 --   • Run database/migration_add_test_type.sql to add test_type column
 --     to quiz_session_summary.
---   • Condition assignment (bot/static) is set at onboarding and stored in
---     sessions.metadata->>'condition'. Only users onboarded AFTER the
---     condition assignment code was deployed will have this field.
+--   • Condition assignment (bot/static) is stored in sessions.metadata->>'condition'.
+--     Users without this field default to 'bot' (all pre-deployment users were bot).
 --   • Currently only post-tests exist (no pre-tests), so quiz_pre_accuracy
 --     will be NULL. quiz_gain columns are reserved for future pre-test addition.
 --
@@ -46,7 +45,7 @@ SELECT
     u.profile_data->>'major'                                  AS major,
     u.profile_data->>'challenging_course'                     AS course,
     u.profile_data->>'coach_tone'                             AS tone,        -- warm/direct
-    COALESCE(s.metadata->>'condition', 'unknown')             AS condition,   -- bot/static
+    COALESCE(s.metadata->>'condition', 'bot')             AS condition,   -- bot/static
     s.created_at                                              AS enrolled_at,
 
     -- Phase completion (boolean flags)
@@ -93,7 +92,7 @@ ORDER BY s.created_at;
 SELECT
     u.id                                                  AS user_id,
     u.email,
-    COALESCE(s.metadata->>'condition', 'unknown')         AS condition,
+    COALESCE(s.metadata->>'condition', 'bot')         AS condition,
     cil.phase,
     cil.interaction_type                                  AS event_type,
     cil.component,
@@ -144,7 +143,7 @@ ORDER BY u.id, cil.timestamp;
 SELECT
     u.id                                                  AS user_id,
     u.email,
-    COALESCE(s.metadata->>'condition', 'unknown')         AS condition,
+    COALESCE(s.metadata->>'condition', 'bot')         AS condition,
     u.profile_data->>'year'                               AS year,
     u.profile_data->>'major'                              AS major,
     u.profile_data->>'challenging_course'                 AS course,
@@ -373,7 +372,7 @@ LEFT JOIN (
     FROM assessments GROUP BY user_id
 ) assess ON u.id = assess.user_id
 
-WHERE COALESCE(s.metadata->>'condition', '') = 'bot'
+WHERE COALESCE(s.metadata->>'condition', 'bot') = 'bot'
 ORDER BY u.id;
 
 
@@ -420,7 +419,7 @@ LEFT JOIN user_inputs ui ON a.session_id = ui.session_id
     AND a.component  = ui.component
     AND ui.is_submission = true
     AND ui.attempt_number = a.attempt_number
-WHERE COALESCE(s.metadata->>'condition', '') = 'bot'
+WHERE COALESCE(s.metadata->>'condition', 'bot') = 'bot'
 ORDER BY u.id, a.phase, a.component, a.attempt_number;
 
 
@@ -577,7 +576,7 @@ LEFT JOIN (SELECT user_id, ROUND(AVG(scaffolding_level::numeric),2) AS avg_scaff
 -- Phase 6
 LEFT JOIN (SELECT user_id, interaction_data->>'aiming_grade' AS aiming_grade, interaction_data->>'expected_grade' AS expected_grade, interaction_data->>'preparation_level' AS preparation_level FROM content_interaction_logs WHERE interaction_type='post_assessment_submitted') p6_evt ON u.id=p6_evt.user_id
 
-WHERE COALESCE(s.metadata->>'condition', '') = 'bot'
+WHERE COALESCE(s.metadata->>'condition', 'bot') = 'bot'
 ORDER BY u.id;
 
 
@@ -589,7 +588,7 @@ ORDER BY u.id;
 SELECT
     u.id AS user_id,
     u.email,
-    COALESCE(s.metadata->>'condition', 'unknown') AS condition,
+    COALESCE(s.metadata->>'condition', 'bot') AS condition,
 
     -- Completeness flags
     (SELECT COUNT(DISTINCT phase) FROM phase_completion_analytics WHERE session_id=s.id AND completed_successfully) AS phases_done,
