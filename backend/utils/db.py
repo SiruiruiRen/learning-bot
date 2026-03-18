@@ -33,73 +33,128 @@ def get_db() -> Client:
 
 def create_user_and_session(name: str, email: str, profile_data: Dict[str, Any]) -> Dict[str, str]:
     """
-    Creates a new user and a new session for that user.
-    Returns a dictionary with the new user_id and session_id.
+    Creates or retrieves a user by email, then creates a new session.
+
+    Identification strategy:
+      • email is the canonical participant identifier (merges with external surveys)
+      • Same email → same user_id (no duplicates)
+      • Each registration creates a new session under that user_id
+      • Test accounts are auto-flagged via is_test field
+
+    Returns dict with user_id, session_id, condition, is_test, is_returning.
     """
     db = get_db()
-    
-    # 1. Create the User
-    new_user_id = str(uuid.uuid4())
-    user_insert_data = {
-        "id": new_user_id,
-        "name": name,
-        "email": email,
-        "profile_data": json.dumps(profile_data) if profile_data else None
-    }
-    
-    try:
-        user_response = db.table("users").insert(user_insert_data).execute()
-        if user_response.data:
-            logger.info(f"Successfully created new user with ID: {new_user_id}")
-        else:
-            logger.error(f"Failed to create user, but continuing to session creation.")
 
+    # --- Detect test accounts ---
+    # Emails containing these patterns are auto-flagged as test data.
+    # Add researcher emails to TEST_EMAILS env var (comma-separated).
+    test_email_patterns = ["test", "demo", "example.com", "localhost"]
+    researcher_emails = [e.strip().lower() for e in
+                         os.environ.get("TEST_EMAILS", "").split(",") if e.strip()]
+    email_lower = email.lower().strip()
+    is_test = (
+        any(pat in email_lower for pat in test_email_patterns)
+        or email_lower in researcher_emails
+    )
+
+    # --- 1. Find existing user by email or create new one ---
+    is_returning = False
+    try:
+        existing = db.table("users").select("id, name").eq("email", email_lower).execute()
+        if existing.data and len(existing.data) > 0:
+            # Returning user — reuse their user_id
+            user_id = existing.data[0]["id"]
+            is_returning = True
+            # Update name/profile if changed
+            db.table("users").update({
+                "name": name,
+                "profile_data": json.dumps(profile_data) if profile_data else None,
+                "is_test": is_test,
+                "updated_at": datetime.utcnow().isoformat()
+            }).eq("id", user_id).execute()
+            logger.info(f"Returning user {user_id} (email={email_lower})")
+        else:
+            # New user
+            user_id = str(uuid.uuid4())
+            user_insert_data = {
+                "id": user_id,
+                "name": name,
+                "email": email_lower,
+                "profile_data": json.dumps(profile_data) if profile_data else None,
+                "is_test": is_test
+            }
+            db.table("users").insert(user_insert_data).execute()
+            logger.info(f"Created new user {user_id} (email={email_lower}, is_test={is_test})")
     except Exception as e:
-        logger.error(f"Error creating user in database: {e}")
+        logger.error(f"Error in user lookup/creation: {e}")
         raise e
 
-    # 2. Create the Session with condition assignment
+    # --- 2. Determine condition ---
     # STUDY_MODE controls group assignment:
     #   "bot_only"    → all users get bot (default — for pilot / bot-only phase)
     #   "randomize"   → 2:1 ratio assignment (bot:static) based on current counts
     #   "static_only" → all users get static (for testing)
     #
-    # Environment variables for randomize mode:
-    #   BOT_TARGET    → target number of bot participants   (default 68)
-    #   STATIC_TARGET → target number of static participants (default 34)
+    # Returning users keep their original condition.
+    # Test accounts always get "bot" (don't consume static quota).
     import random
     study_mode = os.environ.get("STUDY_MODE", "bot_only")
 
-    if study_mode == "randomize":
+    if is_returning:
+        # Look up their previous condition
+        prev_session = db.table("sessions").select("metadata") \
+            .eq("user_id", user_id).order("created_at", desc=True).limit(1).execute()
+        if prev_session.data and prev_session.data[0].get("metadata"):
+            meta = prev_session.data[0]["metadata"]
+            if isinstance(meta, str):
+                meta = json.loads(meta)
+            condition = meta.get("condition", "bot")
+        else:
+            condition = "bot"
+        logger.info(f"Returning user keeps condition: {condition}")
+    elif is_test:
+        condition = "bot"
+        logger.info(f"Test account assigned: bot")
+    elif study_mode == "randomize":
         condition = _assign_condition_by_quota(db)
     elif study_mode == "static_only":
         condition = "static"
     else:
         condition = "bot"
 
-    logger.info(f"Condition assigned: {condition} (STUDY_MODE={study_mode})")
+    logger.info(f"Condition: {condition} (STUDY_MODE={study_mode}, returning={is_returning})")
+
+    # --- 3. Create session ---
     new_session_id = str(uuid.uuid4())
     session_insert_data = {
         "id": new_session_id,
-        "user_id": new_user_id,
+        "user_id": user_id,
         "metadata": json.dumps({
             "initial_profile": profile_data,
-            "condition": condition
+            "condition": condition,
+            "is_test": is_test,
+            "is_returning": is_returning
         })
     }
-    
+
     try:
         session_response = db.table("sessions").insert(session_insert_data).execute()
         if session_response.data:
-             logger.info(f"Successfully created new session with ID: {new_session_id} for user {new_user_id}")
+             logger.info(f"Created session {new_session_id} for user {user_id}")
         else:
             raise Exception("Session creation returned no data.")
-            
+
     except Exception as e:
-        logger.error(f"Error creating session in database: {e}")
+        logger.error(f"Error creating session: {e}")
         raise e
 
-    return {"user_id": new_user_id, "session_id": new_session_id, "condition": condition}
+    return {
+        "user_id": user_id,
+        "session_id": new_session_id,
+        "condition": condition,
+        "is_test": is_test,
+        "is_returning": is_returning
+    }
 
 
 def get_session_by_id(session_id: str) -> Optional[Dict[str, Any]]:

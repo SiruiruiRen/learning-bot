@@ -69,9 +69,13 @@ CREATE TABLE users (
   email TEXT,
   name TEXT,
   profile_data JSONB,  -- stores coach_tone, etc.
+  is_test BOOLEAN DEFAULT FALSE,  -- TRUE for researcher/test accounts
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Unique email index: ensures one user per email address
+CREATE UNIQUE INDEX idx_users_email ON users(email) WHERE email IS NOT NULL;
 
 -- Sessions table
 -- Used by: db.create_user_and_session (insert), db.get_session_by_id (select)
