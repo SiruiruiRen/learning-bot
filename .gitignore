@@ -68,3 +68,8 @@ patterns.txt
 prompt_engineering/evaluation/results/~.xlsx
 ~.xlsx
 .vercel
+
+# Playwright (Stage 1 data-layer tests)
+playwright-report/
+test-results/
+/playwright/.cache/
