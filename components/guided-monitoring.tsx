@@ -773,7 +773,7 @@ export default function GuidedMonitoring({
                 })}
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel>Go Back &amp; Edit</AlertDialogCancel>
+                <AlertDialogCancel>Go Back &amp; Continue to Chat</AlertDialogCancel>
                 <AlertDialogAction onClick={handleFinalSubmit}>
                   Yes, Submit
                 </AlertDialogAction>
