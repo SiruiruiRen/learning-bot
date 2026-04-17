@@ -538,9 +538,41 @@ export default function GuidedMonitoring({
       }
       try { localStorage.removeItem(`solbot_temp_responses_${component}_${phase}`); } catch {}
       setFinalSubmitted(true);
+
+      // Build a "submission receipt" bot message that echoes EXACTLY
+      // what the student submitted, so they see their final answer
+      // reflected back. Chat message parser supports markdown, so we
+      // format as headers + blockquotes for readability.
+      const submittedAt = new Date().toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      });
+      const questionLabelMap: Record<string, string> = {
+        progress_checks: "Progress checks",
+        adaptation_triggers: "Adaptation triggers",
+        strategy_alternatives: "Alternative strategies",
+      };
+      const receiptSections = MONITORING_QUESTIONS
+        .map((q) => {
+          const label = questionLabelMap[q.id] ?? q.id;
+          const ans = (responses[q.id] ?? "").trim();
+          if (!ans) return null;
+          // Prefix each answer line with "> " for markdown blockquote.
+          const quoted = ans.split("\n").map((l) => `> ${l}`).join("\n");
+          return `**${label}:**\n${quoted}`;
+        })
+        .filter(Boolean)
+        .join("\n\n");
+      const receiptContent =
+        `## ✅ Your Final Answer Is Saved\n\n` +
+        `Submitted at ${submittedAt} · You can now proceed to the next phase.\n\n` +
+        receiptSections +
+        `\n\n---\nThese responses have been permanently recorded. ` +
+        `Click the next button at the bottom of the page when you're ready to move on.`;
+
       setMessages(prev => [...prev, {
         id: uuidv4(), sender: "bot" as const,
-        content: "Your responses have been successfully submitted! You can now proceed to the next phase.",
+        content: receiptContent,
         type: "question" as const
       }]);
       if (onComplete) onComplete();
@@ -679,28 +711,46 @@ export default function GuidedMonitoring({
               <Send size={18} />
             </Button>
           </div>
-          <div className="flex items-center justify-between">
-            {showRetryOption ? (
-              <Button onClick={handleRetryFeedback} variant="outline" size="sm" style={{ borderColor: accent, color: accent }}>Try Again for Feedback</Button>
-            ) : <div />}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button size="sm" className="px-4" style={primaryButtonStyle} disabled={isLoading || isSubmittingFinal}>
-                  {isSubmittingFinal ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting...</> : <>Submit Final Version</>}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Submit Final Version?</AlertDialogTitle>
-                  <AlertDialogDescription>Your current responses will be submitted as your final version. Once submitted, you&apos;ll proceed to the next phase.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Go Back</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleFinalSubmit}>Yes, Submit</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          {/* Try-again stays small and secondary, on its own row */}
+          {showRetryOption && (
+            <div className="flex justify-center">
+              <Button onClick={handleRetryFeedback} variant="outline" size="sm" style={{ borderColor: accent, color: accent }} title="Request new feedback">
+                Try Again for Feedback
+              </Button>
+            </div>
+          )}
+          {/* Submit Final Answer — full-width, large, amber-ring glow */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="lg"
+                className="w-full py-6 text-base md:text-lg rounded-xl shadow-lg font-bold ring-4 ring-amber-400/30 hover:ring-amber-400/60 transition-all"
+                style={primaryButtonStyle}
+                disabled={isLoading || isSubmittingFinal}
+                data-testid="submit-final-version"
+              >
+                {isSubmittingFinal ? (
+                  <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Submitting…</>
+                ) : (
+                  <><Send className="h-5 w-5 mr-2" />Submit Final Answer</>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Submit as your final answer?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your current responses will be permanently recorded as
+                  your final answer for this phase. You&apos;ll see them
+                  reflected back on the next screen and can then proceed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Go Back</AlertDialogCancel>
+                <AlertDialogAction onClick={handleFinalSubmit}>Yes, Submit</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )
     }

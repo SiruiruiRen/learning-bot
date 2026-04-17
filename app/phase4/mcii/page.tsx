@@ -149,12 +149,13 @@ export default function MCIIPage() {
             {!chatComplete && !showInstruction && (
               <Button
                 variant="outline"
-                className="border"
+                size="sm"
+                className="border text-xs opacity-75 hover:opacity-100"
                 style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
                 onClick={() => { if (window.confirm('Go back? Any unsaved progress will be lost.')) router.push('/phase4'); }}
                 title="Return to the instructions page"
               >
-                <ChevronLeft className="h-4 w-4 mr-2" />
+                <ChevronLeft className="h-3 w-3 mr-2" />
                 Back to Instructions
               </Button>
             )}
