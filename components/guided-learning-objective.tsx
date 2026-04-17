@@ -369,7 +369,12 @@ export default function GuidedLearningObjective({
       setFeedbackReceived(true);
       setLastFailedRequest(null); // Clear on success
 
-      // Log feedback_delivered event for time-on-feedback tracking
+      // Log feedback_delivered event for time-on-feedback tracking.
+      // CRITICAL: spread the full evaluation so rubric scores
+      // (overall_score, scaffolding_level, lowest_category, etc.)
+      // actually land in the WAL. Before the spread, the WAL row
+      // only contained has_evaluation:true and the research queries
+      // got nulls for every score field.
       try {
         captureToWAL("assessments", {
           event_type: "feedback_delivered",
@@ -377,6 +382,7 @@ export default function GuidedLearningObjective({
           component: component,
           timestamp: new Date().toISOString(),
           has_evaluation: !!data.data.evaluation,
+          ...(data.data.evaluation ?? {}),
         }, { sessionId, eventType: "feedback_delivered" })
         await fetch('/api/events', {
           method: 'POST',

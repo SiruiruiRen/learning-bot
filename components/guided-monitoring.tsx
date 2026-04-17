@@ -361,13 +361,17 @@ export default function GuidedMonitoring({
       setFeedbackReceived(true);
       setLastFailedRequest(null); // Clear on success
 
-      // Log feedback_delivered event for time-on-feedback tracking
+      // Log feedback_delivered event for time-on-feedback tracking.
+      // Spread the evaluation so rubric scores land in WAL (see
+      // guided-learning-objective.tsx for the same fix).
       try {
         captureToWAL("assessments", {
           event_type: "feedback_delivered",
           phase: phase,
           component: component,
           timestamp: new Date().toISOString(),
+          has_evaluation: !!data.data?.evaluation,
+          ...(data.data?.evaluation ?? {}),
         }, { sessionId, eventType: "feedback_delivered" })
         await fetch('/api/events', {
           method: 'POST',
