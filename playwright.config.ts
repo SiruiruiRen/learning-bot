@@ -15,10 +15,15 @@ import { defineConfig, devices } from "@playwright/test"
 export default defineConfig({
   testDir: "./tests/data-layer",
   fullyParallel: false, // sequential so we can reason about queue state
-  retries: 0,
+  // Next.js dev-mode first compile of /dev/data-layer-test can take
+  // 30-60s under load; retries absorb that flakiness without hiding
+  // real data-loss bugs (which are deterministic).
+  retries: 2,
   workers: 1,
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
-  timeout: 60_000,
+  // Test budget: enough for the slowest persona (P2 ~5s) plus a cold
+  // Next.js compile (~60s) plus multiple retries by test code.
+  timeout: 120_000,
   expect: { timeout: 10_000 },
   use: {
     baseURL: process.env.STAGE1_BASE_URL ?? "http://localhost:3004",

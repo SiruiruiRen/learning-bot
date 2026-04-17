@@ -20,13 +20,32 @@ export default function ClientLayout({
   children: React.ReactNode
 }) {
   return (
-    <ThemeProvider 
-      attribute="class" 
+    <ThemeProvider
+      attribute="class"
       defaultTheme="light"
       enableSystem={true}
       disableTransitionOnChange
     >
       {children}
+      <DevAwareAmbient />
+    </ThemeProvider>
+  )
+}
+
+/**
+ * Renders the session-wide ambient components (trackers, chatbot,
+ * session gate) only when NOT on a /dev/* route. Stage 1's
+ * DataLayer test harness lives under /dev/data-layer-test and must
+ * not drag in the trackers — they POST to /api/events which is
+ * rewritten to the Render backend, and a cold Render dyno can keep
+ * those connections open for 30+ seconds, indirectly starving the
+ * test page's first compile.
+ */
+function DevAwareAmbient() {
+  const pathname = usePathname()
+  if (pathname?.startsWith("/dev/")) return null
+  return (
+    <>
       <SessionGate />
       <UserDataTracker />
       <ThemeToggle />
@@ -35,7 +54,7 @@ export default function ClientLayout({
       <NavigationTracker />
       <VisibilityTracker />
       <Toaster position="top-center" richColors />
-    </ThemeProvider>
+    </>
   )
 }
 

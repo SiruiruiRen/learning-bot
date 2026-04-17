@@ -20,35 +20,37 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { DataLayer, type WalRecord } from "@/lib/dataLayer"
+import {
+  DataLayer,
+  getOrCreateDataLayer,
+  type WalRecord,
+} from "@/lib/dataLayer"
 import { getSupabaseBrowserClient } from "@/lib/supabaseBrowserClient"
 
-// Expose a preflight helper to Playwright. The test's beforeAll hook
-// calls window.__stage1Preflight() and fails fast if the WAL table
-// isn't there — much clearer than a 30s queue-drain timeout.
-if (typeof window !== "undefined") {
-  ;(window as unknown as { __stage1Preflight?: unknown }).__stage1Preflight =
-    async () => {
-      const client = getSupabaseBrowserClient()
-      if (!client) {
-        return {
-          ok: false,
-          detail:
-            "Supabase browser client unavailable (NEXT_PUBLIC_SUPABASE_* env vars missing).",
-        }
-      }
-      const { error } = await client
-        .from("write_ahead_log")
-        .select("id")
-        .limit(1)
-      if (error) {
-        return {
-          ok: false,
-          detail: `${error.code ?? ""} ${error.message}`.trim(),
-        }
-      }
-      return { ok: true, detail: "" }
+// The preflight helper is installed on `window` inside a useEffect
+// below so that (a) it runs only in the browser and (b) the bundler
+// cannot tree-shake it — module-scope side effects were being
+// optimised away in Next.js dev builds.
+async function runPreflight(): Promise<{ ok: boolean; detail: string }> {
+  const client = getSupabaseBrowserClient()
+  if (!client) {
+    return {
+      ok: false,
+      detail:
+        "Supabase browser client unavailable (NEXT_PUBLIC_SUPABASE_* env vars missing).",
     }
+  }
+  const { error } = await client
+    .from("write_ahead_log")
+    .select("id")
+    .limit(1)
+  if (error) {
+    return {
+      ok: false,
+      detail: `${error.code ?? ""} ${error.message}`.trim(),
+    }
+  }
+  return { ok: true, detail: "" }
 }
 
 // ---------------------------------------------------------------------
@@ -219,26 +221,29 @@ export default function DataLayerTestPage() {
   const dlRef = useRef<DataLayer | null>(null)
 
   // Assign a per-tab participant id so multiple browsers don't collide.
+  // Also install the Playwright preflight helper on window.
   useEffect(() => {
-    const existing =
-      typeof window !== "undefined"
-        ? localStorage.getItem("stage1_dev_pid")
-        : null
+    ;(
+      window as unknown as {
+        __stage1Preflight?: typeof runPreflight
+      }
+    ).__stage1Preflight = runPreflight
+
+    const existing = localStorage.getItem("stage1_dev_pid")
     const pid = existing ?? `stage1-dev-${crypto.randomUUID()}`
-    if (!existing && typeof window !== "undefined") {
+    if (!existing) {
       localStorage.setItem("stage1_dev_pid", pid)
     }
     setParticipantId(pid)
   }, [])
 
-  // Create / recreate the DataLayer whenever relevant config changes.
+  // Acquire a handle on the DataLayer singleton. Under React Strict
+  // Mode this effect runs twice (setup → cleanup → setup). The
+  // singleton registry in lib/dataLayer.ts refcounts handles so the
+  // underlying instance survives the extra cleanup.
   useEffect(() => {
     if (!participantId) return
-    dlRef.current?.dispose()
-    const dl = new DataLayer(participantId, null, {
-      // When forceOffline is on, we pass null for supabaseClient. The
-      // DataLayer will then stay local-only (sync is a no-op) until the
-      // flag is turned off and we recreate the instance.
+    const dl = getOrCreateDataLayer(participantId, null, {
       supabaseClient: forceOffline ? null : undefined,
       periodicSyncMs: 2_000,
       suppressBeforeUnload: true, // no popup in dev
@@ -253,7 +258,7 @@ export default function DataLayerTestPage() {
 
     return () => {
       unsub()
-      dl.dispose()
+      dl.dispose() // refcount decrement; instance survives until last handle releases
     }
   }, [participantId, forceOffline])
 
@@ -278,6 +283,23 @@ export default function DataLayerTestPage() {
     },
     [appendLog]
   )
+
+  // Expose a promise-returning persona runner on window so Playwright
+  // can await the ENTIRE persona (not just the click dispatch).
+  // Without this the test proceeds before the persona's awaits
+  // finish, and queue-is-drained is checked while records are still
+  // pending.
+  useEffect(() => {
+    ;(
+      window as unknown as {
+        __stage1RunPersona?: (id: PersonaId) => Promise<void>
+      }
+    ).__stage1RunPersona = async (id: PersonaId) => {
+      const persona = PERSONAS.find((x) => x.id === id)
+      if (!persona) throw new Error(`Unknown persona: ${id}`)
+      await runPersona(persona)
+    }
+  }, [runPersona])
 
   const drainNow = useCallback(async () => {
     const dl = dlRef.current
