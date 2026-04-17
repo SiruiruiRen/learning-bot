@@ -743,18 +743,48 @@ export default function GuidedMCII({
                 )}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-2xl">
               <AlertDialogHeader>
                 <AlertDialogTitle>Submit as your final answer?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Your current responses will be permanently recorded as
-                  your final answer for this phase. You&apos;ll see them
-                  reflected back on the next screen and can then proceed.
+                  Please review what you&apos;re about to submit. Once
+                  confirmed, these responses are permanently recorded as
+                  your final answer for this phase.
                 </AlertDialogDescription>
               </AlertDialogHeader>
+              {/* Inline preview of MCII responses */}
+              <div className="max-h-[55vh] overflow-y-auto space-y-3 rounded-lg border p-3 bg-muted/30">
+                {MCII_QUESTIONS.map((q) => {
+                  const labelMap: Record<string, string> = {
+                    pick_goal: "Your goal",
+                    indulge: "Best outcome (visualization)",
+                    consider_obstacles: "Biggest obstacle",
+                    implementation_intention: "If-Then plan",
+                  }
+                  const ans = (responses[q.id] ?? "").trim()
+                  return (
+                    <div key={q.id}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                        {labelMap[q.id] ?? q.id}
+                      </p>
+                      <div
+                        className="text-sm whitespace-pre-wrap rounded border-l-2 pl-3 py-1"
+                        style={{
+                          borderLeftColor: accent,
+                          color: ans ? "hsl(var(--foreground))" : mutedText,
+                        }}
+                      >
+                        {ans || "(not yet answered)"}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
               <AlertDialogFooter>
-                <AlertDialogCancel>Go Back</AlertDialogCancel>
-                <AlertDialogAction onClick={handleFinalSubmit}>Yes, Submit</AlertDialogAction>
+                <AlertDialogCancel>Go Back &amp; Edit</AlertDialogCancel>
+                <AlertDialogAction onClick={handleFinalSubmit}>
+                  Yes, Submit
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
