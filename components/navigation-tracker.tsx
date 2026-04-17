@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { useRef } from "react"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 function getOrCreateAnonId(): string {
   try {
@@ -74,6 +75,12 @@ export default function NavigationTracker() {
             console.error("Failed to log anonymous page view:", response.status, errorText)
           }
         } else {
+          // Stage 2 safety net.
+          captureToWAL("navigation_events", {
+            event_type: "page_view",
+            ...payload,
+          }, { sessionId, eventType: "page_view" })
+
           const response = await fetch("/api/events", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -169,6 +176,12 @@ export default function NavigationTracker() {
               to: nextPhase,
               timeOnPage: timeOnPage + 's'
             })
+
+            // Stage 2 safety net.
+            captureToWAL("navigation_events", {
+              event_type: "next_button",
+              ...payload,
+            }, { sessionId, eventType: "next_button" })
 
             const response = await fetch("/api/events", {
               method: "POST",

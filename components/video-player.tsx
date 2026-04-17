@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState } from 'react';
+import { captureToWAL } from "@/lib/dataLayerInstrument";
 
 interface VideoPlayerProps {
   src: string;
@@ -44,6 +45,19 @@ export default function VideoPlayer({
   // Log analytics event to Supabase
   const logAnalyticsEvent = useCallback(async (eventType: string, metadata: any = {}) => {
     if (!sessionId) return;
+
+    // Stage 2 safety net.
+    const walTable = eventType === "video_watch_completed"
+      ? "user_video_analytics"
+      : "video_interaction_events"
+    captureToWAL(walTable, {
+      event_type: eventType,
+      phase,
+      component: "video_player",
+      video_title: videoTitle,
+      video_src: src,
+      ...metadata,
+    }, { sessionId, eventType })
 
     try {
       await fetch('/api/events', {

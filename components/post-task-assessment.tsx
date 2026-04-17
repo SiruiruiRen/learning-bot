@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { HelpCircle, ArrowRight, BookOpen, CheckCircle } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 interface PostTaskQuestion {
   id: string
@@ -65,7 +66,22 @@ export default function PostTaskAssessment({
   
   const logAssessmentEvent = async (eventType: string, metadata: any) => {
     if (!sessionId) return
-    
+
+    // Stage 2 safety net.
+    const walTable =
+      eventType.includes("assessment") || eventType.includes("evaluation") || eventType.includes("feedback_style")
+        ? "assessments"
+        : eventType.includes("question_answered") || eventType.includes("submit") || eventType.includes("submission") || eventType.includes("final")
+        ? "user_inputs"
+        : "content_interaction_logs"
+    captureToWAL(walTable, {
+      event_type: eventType,
+      phase,
+      component: "post_task_assessment",
+      ...metadata,
+      show_sample_answers: showSampleAnswers,
+    }, { sessionId, eventType })
+
     try {
       await fetch('/api/events', {
         method: 'POST',

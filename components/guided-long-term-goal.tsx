@@ -9,6 +9,7 @@ import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -95,6 +96,11 @@ export default function GuidedLongTermGoal({
         }
         
         try {
+          captureToWAL("messages", {
+            event_type: "chat_started",
+            phase: phase,
+            component: component,
+          }, { sessionId: storedSessionId, eventType: "chat_started" })
           const response = await fetch('/api/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -160,6 +166,18 @@ export default function GuidedLongTermGoal({
 
     // Log individual question response for research analytics
     try {
+      captureToWAL("content_interaction_logs", {
+        event_type: "text_input",
+        phase: phase,
+        component: component,
+        field_name: questionId,
+        input_value: userInput,
+        question_index: currentQuestionIndex,
+        question_text: LONGTERM_QUESTIONS[currentQuestionIndex].question,
+        is_submission: false,
+        attempt_number: 1,
+        timestamp: new Date().toISOString(),
+      }, { sessionId, eventType: "text_input" })
       fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -256,6 +274,14 @@ export default function GuidedLongTermGoal({
 
       // Log AI response
       try {
+        captureToWAL("messages", {
+          event_type: "chat_message",
+          phase: phase,
+          component: component,
+          role: "assistant",
+          content: botFeedback.content,
+          timestamp: new Date().toISOString(),
+        }, { sessionId, eventType: "chat_message" })
         await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -334,6 +360,13 @@ export default function GuidedLongTermGoal({
     setUserInput(responses[LONGTERM_QUESTIONS[0].id] || "");
 
     if (sessionId) {
+      captureToWAL("user_revision_tracking", {
+        event_type: "revision_submitted",
+        phase: phase,
+        component: component,
+        attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+        content_changes: responses,
+      }, { sessionId, eventType: "revision_submitted" })
       fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -366,6 +399,11 @@ export default function GuidedLongTermGoal({
 
   const handleCompleteChat = () => {
     if (chatAnalyticsId && sessionId) {
+      captureToWAL("messages", {
+        event_type: "chat_ended",
+        chat_analytics_id: chatAnalyticsId,
+        message_count: messages.length,
+      }, { sessionId, eventType: "chat_ended" })
       fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

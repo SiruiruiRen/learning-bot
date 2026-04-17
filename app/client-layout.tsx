@@ -10,6 +10,7 @@ import FloatingChatbot from "@/components/floating-chatbot"
 import ClickTracker from "@/components/click-tracker"
 import NavigationTracker from "@/components/navigation-tracker"
 import VisibilityTracker from "@/components/visibility-tracker"
+import { SyncStatusIndicator } from "@/components/sync-status-indicator"
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import { useEffect } from "react"
@@ -53,6 +54,9 @@ function DevAwareAmbient() {
       <ClickTracker />
       <NavigationTracker />
       <VisibilityTracker />
+      {/* Stage 2: visible indicator so students know their data is
+          being saved (or warn them if offline). Hides when queue=0. */}
+      <SyncStatusIndicator />
       <Toaster position="top-center" richColors />
     </>
   )

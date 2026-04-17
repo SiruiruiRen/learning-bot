@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle, HelpCircle, ArrowRight } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 interface KnowledgeCheckProps {
   questionNumber: number
@@ -75,7 +76,19 @@ export default function KnowledgeCheck({
 
   const logQuizEvent = async (eventType: string, metadata: any) => {
     if (!sessionId) return
-    
+
+    // Stage 2 safety net.
+    const walTable =
+      eventType === "question_answered" || eventType === "question_changed"
+        ? "knowledge_check_attempts"
+        : "content_interaction_logs"
+    captureToWAL(walTable, {
+      event_type: eventType,
+      phase,
+      component: "knowledge_check",
+      ...metadata,
+    }, { sessionId, eventType })
+
     try {
       await fetch('/api/events', {
         method: 'POST',

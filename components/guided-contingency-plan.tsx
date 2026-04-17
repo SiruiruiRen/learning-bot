@@ -9,6 +9,7 @@ import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -107,6 +108,18 @@ export default function GuidedContingencyPlan({
 
     // Log individual question response for research analytics
     try {
+      captureToWAL("content_interaction_logs", {
+        event_type: "text_input",
+        phase: phase,
+        component: component,
+        field_name: questionId,
+        input_value: userInput,
+        question_index: currentQuestionIndex,
+        question_text: CONTINGENCY_QUESTIONS[currentQuestionIndex].question,
+        is_submission: false,
+        attempt_number: 1,
+        timestamp: new Date().toISOString(),
+      }, { sessionId, eventType: "text_input" })
       fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

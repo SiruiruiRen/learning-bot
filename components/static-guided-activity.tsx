@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { CheckCircle2, ChevronRight, BookOpen, Edit3, Send } from "lucide-react"
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 /**
  * StaticGuidedActivity — Control condition replacement for AI chatbot.
@@ -80,6 +81,25 @@ export default function StaticGuidedActivity({
 
   const logEvent = (eventType: string, metadata: Record<string, any>) => {
     if (!sessionId.current) return
+    // Stage 2 safety net.
+    const walTable =
+      eventType.includes("submit") || eventType.includes("submission") || eventType.includes("final")
+        ? (eventType.includes("final") ? "phase_completion_analytics" : "user_inputs")
+        : eventType.includes("revision")
+        ? "user_revision_tracking"
+        : eventType.includes("evaluation") || eventType.includes("assessment") || eventType.includes("feedback_style")
+        ? "assessments"
+        : eventType.includes("chat") || eventType.includes("message")
+        ? "messages"
+        : "content_interaction_logs"
+    captureToWAL(walTable, {
+      event_type: eventType,
+      phase,
+      component: componentName,
+      ...metadata,
+      condition: "static",
+      timestamp: new Date().toISOString(),
+    }, { sessionId: sessionId.current, eventType })
     fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

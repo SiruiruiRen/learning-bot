@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { CheckCircle2, Edit3, Send, Lightbulb, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 interface QuestionLabel {
   id: string
@@ -78,6 +79,19 @@ export default function FinalSubmissionCard({
     try {
       const sessionId = localStorage.getItem("session_id")
       const userId = localStorage.getItem("user_id")
+
+      // Stage 2 safety net: final submission is one of the MOST
+      // research-critical events. Capture it to WAL before both
+      // backend writes so even if both /api/events and /api/user-data
+      // fail, the submission is durable in localStorage and will
+      // sync when connectivity returns.
+      captureToWAL("phase_completion_analytics", {
+        event_type: "final_submission",
+        phase: `phase${phaseNumber}`,
+        component: componentName,
+        responses,
+        response_count: Object.keys(responses).length,
+      }, { sessionId, participantId: userId ?? undefined, eventType: "final_submission" })
 
       if (sessionId) {
         await fetch("/api/events", {

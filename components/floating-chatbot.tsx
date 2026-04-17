@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import ChatMessageParser from "@/components/chat-message-parser"
 import { usePathname } from "next/navigation"
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 // Direct backend URL — bypasses Next.js proxy for faster floating chatbot responses
 // Hardcoded fallback ensures direct call even if env var not set during build
@@ -394,13 +395,28 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     const messageToSend = messageOverride || input.trim()
     if (!messageToSend || !sessionId) return
 
+    // Stage 2: one turn_id groups the user's question + the bot's
+    // answer in the WAL — floating chatbot is typically Q&A-only
+    // (no rubric evaluation), so two records per turn.
+    const turnId = newTurnId()
+
     const userMessage = { role: "user", content: messageToSend }
     setMessages(prev => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
     setFollowUpQuestions([])  // Clear old follow-ups while waiting for new response
 
-    // Log user question to analytics
+    // Stage 2 safety net.
+    captureToWAL("messages", {
+      turn_id: turnId,
+      role: "user",
+      content: messageToSend,
+      phase: currentPhase,
+      component: "floating_chatbot",
+      page: pathname,
+    }, { sessionId })
+
+    // Existing analytics path.
     try {
       await fetch('/api/events', {
         method: 'POST',
@@ -410,7 +426,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
           event_type: 'floating_chat_question',
           phase: currentPhase,
           component: 'floating_chatbot',
-          metadata: { question: messageToSend, page: pathname, timestamp: new Date().toISOString() }
+          metadata: { question: messageToSend, page: pathname, timestamp: new Date().toISOString(), turn_id: turnId }
         })
       })
     } catch (error) {
@@ -462,7 +478,19 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
       setMessages(prev => [...prev, assistantMessage])
       setFollowUpQuestions(followUps)
 
-      // Log AI response to analytics for research tracking
+      // Stage 2 safety net: same turn_id as the user message above.
+      captureToWAL("messages", {
+        turn_id: turnId,
+        role: "assistant",
+        content: responseContent,
+        phase: currentPhase,
+        component: "floating_chatbot",
+        page: pathname,
+        model: responseModel,
+        follow_up_count: followUps.length,
+      }, { sessionId })
+
+      // Existing analytics path.
       try {
         await fetch('/api/events', {
           method: 'POST',
@@ -477,7 +505,8 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
               response: responseContent,
               model: responseModel,
               page: pathname,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              turn_id: turnId,
             }
           })
         })

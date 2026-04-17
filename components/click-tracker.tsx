@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { usePathname } from "next/navigation"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 function getOrCreateAnonId(): string {
   try {
@@ -78,6 +79,14 @@ export default function ClickTracker() {
           phase: phase,
           pathname: pathname
         })
+
+        // Stage 2 safety net. click_events is HIGH-frequency —
+        // captureToWAL returns synchronously so the click handler
+        // is not blocked by instrumentation.
+        captureToWAL("click_events", {
+          event_type: "user_click",
+          ...payload,
+        }, { sessionId, eventType: "user_click" })
 
         const response = await fetch("/api/events", {
           method: "POST",

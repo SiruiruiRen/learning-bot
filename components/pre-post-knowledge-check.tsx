@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle, HelpCircle, ArrowRight, BookOpen } from "lucide-react"
 import { usePathname } from "next/navigation"
 import type { KnowledgeCheckQuestion } from "@/lib/knowledge-check-questions"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 interface PrePostKnowledgeCheckProps {
   questions: KnowledgeCheckQuestion[]
@@ -83,7 +84,28 @@ export default function PrePostKnowledgeCheck({
   const logQuizEvent = useCallback(async (eventType: string, metadata: any, sessionIdParam?: string | null) => {
     const currentSessionId = sessionIdParam || sessionId || localStorage.getItem("session_id")
     if (!currentSessionId) return
-    
+
+    // Stage 2 safety net: map the high-level event to the right WAL
+    // target table so the row is replay-ready into Supabase's
+    // specialised analytics tables.
+    //   question_answered / question_changed → knowledge_check_attempts
+    //   quiz_started / quiz_completed         → quiz_session_summary
+    //   anything else                          → content_interaction_logs
+    const walTable =
+      eventType === "question_answered" || eventType === "question_changed"
+        ? "knowledge_check_attempts"
+        : eventType === "quiz_started" || eventType === "quiz_completed"
+          ? "quiz_session_summary"
+          : "content_interaction_logs"
+    captureToWAL(walTable, {
+      event_type: eventType,
+      phase,
+      component: "knowledge_check",
+      test_type: testType,
+      ...metadata,
+    }, { sessionId: currentSessionId, eventType })
+
+    // Existing analytics path.
     try {
       await fetch('/api/events', {
         method: 'POST',

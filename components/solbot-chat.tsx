@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import ChatMessageParser from "@/components/chat-message-parser"
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -132,12 +133,30 @@ export default function SolBotChat({
 
     console.log('💬 User message sent:', input.slice(0, 50) + (input.length > 50 ? '...' : ''))
 
+    // Stage 2: one turn_id groups user message + assistant response
+    // + evaluation in the WAL, so replay / analysis can reconstruct
+    // the full exchange even if only one of the three legs landed.
+    const turnId = newTurnId()
+
     const userMessage = { role: "user", content: input }
     setMessages(prev => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
 
-    // Log user message to analytics
+    // Stage 2 safety net: capture to WAL BEFORE the analytics POST.
+    // This is fire-and-forget; it returns synchronously once the
+    // event is durable in localStorage.
+    captureToWAL("messages", {
+      turn_id: turnId,
+      role: "user",
+      content: input,
+      phase: phase,
+      component: component,
+      attempt_number: attemptNumber,
+      char_count: input.length,
+    }, { sessionId })
+
+    // Existing analytics path (unchanged).
     try {
       await fetch('/api/events', {
         method: 'POST',
@@ -150,7 +169,8 @@ export default function SolBotChat({
           metadata: {
             role: 'user',
             content: input,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            turn_id: turnId,
           }
         })
       })
@@ -188,7 +208,7 @@ export default function SolBotChat({
         content: result.data.message || result.data.content || "I received your message but couldn't process it properly.",
         evaluation: result.data.evaluation,
       }
-      
+
       setMessages(prev => [...prev, assistantMessage])
       if (onNewMessage) {
         onNewMessage(assistantMessage)
@@ -199,7 +219,32 @@ export default function SolBotChat({
         hasEvaluation: !!assistantMessage.evaluation
       })
 
-      // Log chat message to analytics
+      // Stage 2 safety net: WAL-capture the assistant's message,
+      // linked to the same turn_id as the user's message above.
+      captureToWAL("messages", {
+        turn_id: turnId,
+        role: "assistant",
+        content: assistantMessage.content,
+        phase: phase,
+        component: component,
+        has_evaluation: !!assistantMessage.evaluation,
+      }, { sessionId })
+
+      // Stage 2: if the LLM returned an evaluation (rubric scores,
+      // scaffolding level, feedback style), capture it separately as
+      // an `assessments` WAL record — this is RESEARCH-CRITICAL data
+      // that was previously buried inside the assistant message.
+      if (assistantMessage.evaluation) {
+        captureToWAL("assessments", {
+          turn_id: turnId,
+          phase: phase,
+          component: component,
+          attempt_number: attemptNumber,
+          ...assistantMessage.evaluation,
+        }, { sessionId })
+      }
+
+      // Existing analytics path (unchanged).
       try {
         await fetch('/api/events', {
           method: 'POST',
@@ -212,7 +257,8 @@ export default function SolBotChat({
             metadata: {
               role: 'assistant',
               content: assistantMessage.content,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              turn_id: turnId,
             }
           })
         })

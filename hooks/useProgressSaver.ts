@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useCallback, useRef } from "react"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 /**
  * Progress state shape for each phase page.
@@ -64,7 +65,19 @@ export function useProgressSaver(phase: string) {
         console.warn(`Could not save progress for ${phase}:`, error)
       }
 
-      // Backup to Supabase via user-data API (async, non-blocking)
+      // Stage 2 safety net: capture progress to WAL. This is a
+      // high-frequency event (fires on every state change inside a
+      // phase), so we use an idempotency_key tied to the phase +
+      // cardIndex so identical states collapse rather than spam the
+      // table.
+      captureToWAL("user_data", {
+        data_type: `progress_${phase}`,
+        value: progress,
+        phase,
+        cardIndex: progress.cardIndex,
+      }, { eventType: "progress_save" })
+
+      // Existing Supabase backup path.
       try {
         const userId = localStorage.getItem("user_id")
         if (userId) {

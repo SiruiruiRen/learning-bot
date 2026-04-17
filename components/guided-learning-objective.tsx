@@ -21,6 +21,7 @@ import MarkdownRenderer from "@/components/markdown-renderer"
 import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
 import { useChatPersistence } from '@/hooks/useChatPersistence'
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -128,6 +129,12 @@ export default function GuidedLearningObjective({
 
           // Log chat_resumed event
           try {
+            captureToWAL("messages", {
+              event_type: "chat_started",
+              phase: phase,
+              component: component,
+              resumed: true,
+            }, { sessionId: storedSessionId, eventType: "chat_started" })
             const response = await fetch('/api/events', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -165,6 +172,11 @@ export default function GuidedLearningObjective({
 
         // Log chat_started event via unified events API
         try {
+          captureToWAL("messages", {
+            event_type: "chat_started",
+            phase: phase,
+            component: component,
+          }, { sessionId: storedSessionId, eventType: "chat_started" })
           const response = await fetch('/api/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -235,6 +247,18 @@ export default function GuidedLearningObjective({
 
     // Log individual question response for research analytics
     try {
+      captureToWAL("content_interaction_logs", {
+        event_type: "text_input",
+        phase: phase,
+        component: component,
+        field_name: questionId,
+        input_value: userInput,
+        question_index: currentQuestionIndex,
+        question_text: OBJECTIVE_QUESTIONS[currentQuestionIndex].question,
+        is_submission: false,
+        attempt_number: 1,
+        timestamp: new Date().toISOString(),
+      }, { sessionId, eventType: "text_input" })
       fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -294,6 +318,14 @@ export default function GuidedLearningObjective({
 
     // Log user message
     try {
+      captureToWAL("messages", {
+        event_type: "chat_message",
+        phase: phase,
+        component: component,
+        role: "user",
+        content: message,
+        timestamp: new Date().toISOString(),
+      }, { sessionId, eventType: "chat_message" })
       await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -339,6 +371,13 @@ export default function GuidedLearningObjective({
 
       // Log feedback_delivered event for time-on-feedback tracking
       try {
+        captureToWAL("assessments", {
+          event_type: "feedback_delivered",
+          phase: phase,
+          component: component,
+          timestamp: new Date().toISOString(),
+          has_evaluation: !!data.data.evaluation,
+        }, { sessionId, eventType: "feedback_delivered" })
         await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -360,6 +399,13 @@ export default function GuidedLearningObjective({
       // Log chat_ended event
       if (chatAnalyticsId && sessionId) {
         try {
+          captureToWAL("messages", {
+            event_type: "chat_ended",
+            phase: phase,
+            component: component,
+            chat_analytics_id: chatAnalyticsId,
+            message_count: messages.length + 2,
+          }, { sessionId, eventType: "chat_ended" })
           await fetch('/api/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -383,6 +429,14 @@ export default function GuidedLearningObjective({
 
       // Log AI response
       try {
+        captureToWAL("messages", {
+          event_type: "chat_message",
+          phase: phase,
+          component: component,
+          role: "assistant",
+          content: botFeedback.content,
+          timestamp: new Date().toISOString(),
+        }, { sessionId, eventType: "chat_message" })
         await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -449,6 +503,13 @@ export default function GuidedLearningObjective({
       const sid = localStorage.getItem("session_id");
       const uid = localStorage.getItem("user_id");
       if (sid) {
+        captureToWAL("phase_completion_analytics", {
+          event_type: "final_submission",
+          phase: `phase${phaseNumber}`,
+          component,
+          responses,
+          timestamp: new Date().toISOString(),
+        }, { sessionId: sid, eventType: "final_submission" })
         await fetch("/api/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -499,6 +560,13 @@ export default function GuidedLearningObjective({
     setUserInput(responses[OBJECTIVE_QUESTIONS[0].id] || "");
 
     if (sessionId) {
+      captureToWAL("user_revision_tracking", {
+        event_type: "revision_submitted",
+        phase: phase,
+        component: component,
+        attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+        content_changes: responses,
+      }, { sessionId, eventType: "revision_submitted" })
       fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -590,6 +658,12 @@ export default function GuidedLearningObjective({
               onChange={(e) => {
                 setUserInput(e.target.value);
                 if (feedbackReceived && e.target.value.length === 1 && userInput.length === 0 && sessionId) {
+                  captureToWAL("user_revision_tracking", {
+                    event_type: "revision_started",
+                    phase: phase,
+                    component: component,
+                    timestamp: new Date().toISOString(),
+                  }, { sessionId, eventType: "revision_started" })
                   fetch('/api/events', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

@@ -9,6 +9,7 @@ import { motion } from "framer-motion"
 import MarkdownRenderer from "@/components/markdown-renderer"
 import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
+import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -135,6 +136,14 @@ export default function GuidedMonitoringAdaptation({
 
     // Log user message
     try {
+      captureToWAL("messages", {
+        event_type: "chat_message",
+        phase: phase,
+        component: component,
+        role: "user",
+        content: message,
+        timestamp: new Date().toISOString(),
+      }, { sessionId, eventType: "chat_message" })
       await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,6 +187,14 @@ export default function GuidedMonitoringAdaptation({
 
       // Log AI response
       try {
+        captureToWAL("messages", {
+          event_type: "chat_message",
+          phase: phase,
+          component: component,
+          role: "assistant",
+          content: botFeedback.content,
+          timestamp: new Date().toISOString(),
+        }, { sessionId, eventType: "chat_message" })
         await fetch('/api/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
