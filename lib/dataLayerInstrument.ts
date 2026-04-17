@@ -72,6 +72,13 @@ import {
 // ---------------------------------------------------------------------
 const USER_ID_KEY = "user_id"
 const SESSION_ID_KEY = "session_id"
+// Experiment-condition metadata (Stage 2.2): tag every WAL record
+// with these so researchers can filter by group WITHOUT joining back
+// to the session_created event. Robust to localStorage being
+// partially cleared — if condition is missing, we omit the field
+// rather than guessing.
+const CONDITION_KEY = "solbot_condition"   // "bot" | "static"
+const COACH_TONE_KEY = "solbot_coach_tone" // "warm" | "direct" etc.
 
 // ---------------------------------------------------------------------
 // Module-scoped bookkeeping
@@ -101,6 +108,25 @@ function readSessionId(): string | null {
   } catch {
     return null
   }
+}
+
+/**
+ * Stage 2.2: read the experimental-condition metadata set during
+ * onboarding. Returns whatever is present (possibly an empty object).
+ * Never throws; missing values are simply omitted.
+ */
+function readConditionMeta(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  const out: Record<string, string> = {}
+  try {
+    const cond = localStorage.getItem(CONDITION_KEY)
+    if (cond === "bot" || cond === "static") out.condition = cond
+    const tone = localStorage.getItem(COACH_TONE_KEY)
+    if (tone && tone.trim()) out.coach_tone = tone.trim()
+  } catch {
+    // swallow; instrumentation never throws
+  }
+  return out
 }
 
 // ---------------------------------------------------------------------
@@ -162,8 +188,15 @@ export function captureToWAL(
     return null
   }
 
+  // Stage 2.2: auto-tag every record with the participant's
+  // experimental condition + coach tone so researchers can filter by
+  // group without joining back to the session_created event. Caller-
+  // provided payload fields win (explicit > implicit).
+  const condMeta = readConditionMeta()
+  const finalPayload = { ...condMeta, ...payload }
+
   try {
-    const result = dl.record(targetTable, payload, {
+    const result = dl.record(targetTable, finalPayload, {
       eventType: opts.eventType,
       idempotencyKey: opts.idempotencyKey,
     })
