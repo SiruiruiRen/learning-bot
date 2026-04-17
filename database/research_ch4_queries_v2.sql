@@ -131,9 +131,14 @@ ORDER  BY participant_id, phase_norm;
 
 
 -- =====================================================================
--- ### Q3v2 · q3_engagement_indicators (RQ3c input)
--- The 6 engagement indicators. Reads from correct tables + fixes the
--- "only has_evaluation, no scores" problem with a COALESCE fallback.
+-- ### Q3v2.1 · q3_engagement_indicators (RQ3c input)
+-- The 6 engagement indicators. v2.1 fixes two bugs caught during
+-- real-data testing:
+--   (a) FILTER clause must be attached to the aggregate function
+--       itself (AVG / COUNT), NOT to the ROUND wrapper. Re-ordered.
+--   (b) Roster join now comes from users+sessions instead of WAL,
+--       so every Bot participant shows up even if they have no
+--       WAL-side condition tag.
 -- =====================================================================
 WITH w AS (
     SELECT
@@ -188,12 +193,17 @@ fb_deltas AS (
     WHERE role = 'assistant' AND next_ts IS NOT NULL
 ),
 fb_summary AS (
+    -- FIX v2.1: FILTER must be attached to the AGGREGATE (AVG),
+    -- not to ROUND. ROUND is a scalar function and doesn't accept
+    -- FILTER. Wrap AVG(...)FILTER(...) in parens, cast, then round.
     SELECT
         participant_id,
-        ROUND(AVG(sec_to_next)::numeric, 1) FILTER (WHERE sec_to_next BETWEEN 0 AND 600)
-                                            AS mean_time_on_feedback_sec,
-        COUNT(*)            FILTER (WHERE sec_to_next BETWEEN 0 AND 600)
-                                            AS time_on_fb_samples
+        ROUND(
+            (AVG(sec_to_next) FILTER (WHERE sec_to_next BETWEEN 0 AND 600))::numeric,
+            1
+        )                                       AS mean_time_on_feedback_sec,
+        COUNT(*) FILTER (WHERE sec_to_next BETWEEN 0 AND 600)
+                                                AS time_on_fb_samples
     FROM   fb_deltas
     GROUP  BY participant_id
 ),
@@ -388,6 +398,66 @@ WHERE  target_table = 'messages'
   AND  payload->>'component' = 'floating_chatbot'
 GROUP  BY participant_id, payload->>'page', phase_norm
 ORDER  BY participant_id, first_used;
+
+
+-- =====================================================================
+-- ### Q6v2.1 · q6_help_seeking_conversations (DETAIL view)
+-- One row per floating-chatbot Q&A turn, with:
+--   - the student's question
+--   - the page they asked it on
+--   - the bot's full answer
+--   - latency + a flag for the old rubric-format regression
+-- Use this to SPOT-CHECK whether the floating chatbot is answering
+-- conversationally with biology examples (the Stage 2.x prompt fix).
+-- =====================================================================
+WITH user_msgs AS (
+    SELECT participant_id,
+           payload->>'turn_id'   AS turn_id,
+           payload->>'page'      AS page,
+           payload->>'phase'     AS phase,
+           payload->>'content'   AS user_question,
+           client_timestamp      AS asked_at
+    FROM write_ahead_log
+    WHERE target_table = 'messages'
+      AND payload->>'component' = 'floating_chatbot'
+      AND payload->>'role' = 'user'
+      AND participant_id NOT LIKE 'stage%'
+      AND participant_id NOT LIKE 'e2e-%'
+      AND participant_id <> 'anonymous'
+),
+bot_replies AS (
+    SELECT payload->>'turn_id'  AS turn_id,
+           payload->>'content'  AS bot_answer,
+           (payload->>'follow_up_count')::int AS follow_ups,
+           payload->>'model'    AS model,
+           client_timestamp     AS answered_at
+    FROM write_ahead_log
+    WHERE target_table = 'messages'
+      AND payload->>'component' = 'floating_chatbot'
+      AND payload->>'role' = 'assistant'
+)
+SELECT
+    u.participant_id,
+    u.page,
+    u.phase,
+    u.asked_at,
+    b.answered_at,
+    ROUND(EXTRACT(EPOCH FROM (b.answered_at - u.asked_at))::numeric, 1)
+                              AS reply_latency_sec,
+    length(u.user_question)   AS q_chars,
+    length(b.bot_answer)      AS a_chars,
+    b.follow_ups,
+    -- Spot-check whether the floating chatbot regressed back to
+    -- rubric-style markdown headers. Should be FALSE on all rows
+    -- after the prompt fix deploys.
+    (b.bot_answer LIKE '%## Greeting%' OR b.bot_answer LIKE '%## Assessment%'
+     OR b.bot_answer LIKE '%## The Challenge%') AS uses_rubric_format,
+    u.user_question,
+    b.bot_answer,
+    b.model
+FROM   user_msgs u
+LEFT   JOIN bot_replies b ON b.turn_id = u.turn_id
+ORDER  BY u.asked_at DESC;
 
 
 -- =====================================================================
@@ -624,7 +694,11 @@ score_progression AS (
     WHERE first_score IS NOT NULL AND last_score IS NOT NULL
     GROUP BY participant_id
 ),
-span AS (
+span_info AS (
+    -- FIX v2.1: renamed "span" to "span_info" — the final SELECT
+    -- was referring to alias "sp" which never existed, causing
+    -- "missing FROM-clause entry for table sp" errors. Now the
+    -- LEFT JOIN line below + SELECT both use span_info consistently.
     SELECT participant_id,
            ROUND(EXTRACT(EPOCH FROM (MAX(client_timestamp) - MIN(client_timestamp)))/60::numeric, 1)
                                           AS total_session_minutes,
@@ -645,8 +719,8 @@ SELECT
     roster.year,
     roster.major,
     roster.session_start,
-    sp.last_activity,
-    sp.total_session_minutes,
+    span_info.last_activity,
+    span_info.total_session_minutes,
     COALESCE(completion.reached_phase6, FALSE)         AS reached_phase6,
     COALESCE(rev.revision_frequency, 0)                AS revision_frequency,
     COALESCE(help.help_seek_count, 0)                  AS help_seek_count,
@@ -657,7 +731,7 @@ FROM   roster
 LEFT   JOIN rev               USING (participant_id)
 LEFT   JOIN help              USING (participant_id)
 LEFT   JOIN score_progression USING (participant_id)
-LEFT   JOIN span              USING (participant_id)
+LEFT   JOIN span_info         USING (participant_id)
 LEFT   JOIN completion        USING (participant_id)
 WHERE  roster.condition = 'bot'
 ORDER  BY roster.session_start DESC;
