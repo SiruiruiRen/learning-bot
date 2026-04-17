@@ -143,37 +143,106 @@ export default function FinalSubmissionCard({
     }
   }
 
+  const hasResponses = Object.keys(responses).length > 0
+  const submittedAt = submitted ? new Date().toLocaleString() : ""
+
+  // ------------------------------------------------------------
+  // AFTER-SUBMIT view: now shows the student's ACTUAL final answer
+  // so they get a visual receipt of what was recorded. Previously
+  // this was just "Successfully Submitted!" with no answer echo.
+  // ------------------------------------------------------------
   if (submitted) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
       >
         <Card
-          className="border shadow-lg"
-          style={{ backgroundColor: neutralSurface, borderColor: neutralBorder }}
+          className="border-2 shadow-xl"
+          style={{
+            backgroundColor: neutralSurface,
+            borderColor: "#22c55e",
+          }}
         >
-          <CardContent className="py-8 text-center">
-            <CheckCircle2
-              className="h-16 w-16 mx-auto mb-4"
-              style={{ color: "#22c55e" }}
-            />
-            <h3 className="text-xl font-bold mb-2" style={{ color: accent }}>
-              Successfully Submitted!
-            </h3>
-            <p className="text-muted-foreground">
-              Your final responses have been saved. You can now proceed to the
-              next phase.
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-center gap-3">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.15, type: "spring", stiffness: 180 }}
+              >
+                <CheckCircle2
+                  className="h-10 w-10"
+                  style={{ color: "#22c55e" }}
+                />
+              </motion.div>
+              <CardTitle
+                className="text-2xl md:text-3xl font-bold"
+                style={{ color: "#22c55e" }}
+              >
+                Your Answer Is Saved
+              </CardTitle>
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-1">
+              Submitted at {submittedAt} · You can now proceed to the next phase.
             </p>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {/* ECHO: show EXACTLY what the student submitted, clearly
+                labeled per question. This is the "receipt" they were
+                missing before. */}
+            <div className="space-y-4">
+              {questionLabels
+                .map(({ id, label }) => ({ id, label, value: responses[id] }))
+                .filter((r) => r.value)
+                .map(({ id, label, value }) => (
+                  <div
+                    key={id}
+                    className="p-4 rounded-lg border-l-4"
+                    style={{
+                      borderLeftColor: "#22c55e",
+                      backgroundColor: "hsl(var(--muted) / 0.3)",
+                    }}
+                  >
+                    {label ? (
+                      <p
+                        className="text-xs font-semibold uppercase tracking-wide mb-2"
+                        style={{ color: accent }}
+                      >
+                        {label}
+                      </p>
+                    ) : null}
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+            </div>
+
+            <div
+              className="text-center text-xs text-muted-foreground pt-3 border-t"
+              style={{ borderColor: neutralBorder }}
+            >
+              These responses have been permanently recorded. Click the next
+              button at the bottom of the page when you&apos;re ready to move on.
+            </div>
           </CardContent>
         </Card>
       </motion.div>
     )
   }
 
-  const hasResponses = Object.keys(responses).length > 0
-
+  // ------------------------------------------------------------
+  // BEFORE-SUBMIT view: make the "Submit Final Version" action the
+  // clear primary CTA. Changes from the previous layout:
+  //   - Submit button is now FULL WIDTH, prominently centered, with
+  //     a subtle pulsing glow to draw the eye.
+  //   - The edit action is secondary (smaller outline button,
+  //     above the submit).
+  //   - Header copy is sharper ("This is your final answer").
+  // ------------------------------------------------------------
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -189,31 +258,16 @@ export default function FinalSubmissionCard({
             className="flex items-center justify-center gap-2 text-xl md:text-2xl font-bold"
             style={{ color: accent }}
           >
-            <CheckCircle2 className="h-6 w-6" />
-            Review & Submit Your Responses
+            <Send className="h-6 w-6" />
+            Ready to Submit Your Final Answer?
           </CardTitle>
           <p className="text-center text-sm text-muted-foreground mt-1">
-            Please review your answers below. You can edit them or submit your
-            final version.
+            This version will be saved as your final response for this phase.
           </p>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Instruction hint */}
-          <div
-            className="flex items-start gap-3 p-3 rounded-lg border-l-4"
-            style={{
-              borderLeftColor: "#d8b26f",
-              backgroundColor: "hsl(var(--muted) / 0.25)",
-            }}
-          >
-            <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#d8b26f" }} />
-            <p className="text-sm text-muted-foreground">
-              Not satisfied? Click <strong>&quot;Edit Responses&quot;</strong> to revise your answers and get AI score &amp; feedback.
-              Submit your final version when you&apos;re ready.
-            </p>
-          </div>
-
+          {/* Preview of current answer */}
           {hasResponses ? (
             <div
               className="p-4 rounded-lg border"
@@ -222,6 +276,12 @@ export default function FinalSubmissionCard({
                 borderColor: neutralBorder,
               }}
             >
+              <p
+                className="text-xs font-semibold uppercase tracking-wide mb-2"
+                style={{ color: mutedText }}
+              >
+                Your Current Answer
+              </p>
               <p className="text-sm text-foreground whitespace-pre-wrap">
                 {questionLabels
                   .map(({ id }) => responses[id])
@@ -235,9 +295,30 @@ export default function FinalSubmissionCard({
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-4 border-t" style={{ borderColor: neutralBorder }}>
+          {/* Instruction hint */}
+          <div
+            className="flex items-start gap-3 p-3 rounded-lg border-l-4"
+            style={{
+              borderLeftColor: "#d8b26f",
+              backgroundColor: "hsl(var(--muted) / 0.25)",
+            }}
+          >
+            <Lightbulb
+              className="h-5 w-5 mt-0.5 shrink-0"
+              style={{ color: "#d8b26f" }}
+            />
+            <p className="text-sm text-muted-foreground">
+              Not satisfied? Click{" "}
+              <strong>&quot;Edit Responses&quot;</strong> below to revise and
+              get fresh AI feedback. Otherwise, submit your final version.
+            </p>
+          </div>
+
+          {/* Secondary action — edit */}
+          <div className="flex justify-center">
             <Button
               variant="outline"
+              size="sm"
               className="border"
               style={{ borderColor: neutralBorder, color: mutedText }}
               onClick={onEdit}
@@ -246,48 +327,56 @@ export default function FinalSubmissionCard({
               <Edit3 className="h-4 w-4 mr-2" />
               Edit Responses
             </Button>
+          </div>
 
-            {/* Submit with confirmation dialog */}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+          {/* Primary CTA — large, centered, attention-grabbing */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <div className="w-full rounded-xl">
                 <Button
-                  className="px-6 py-2 rounded-lg shadow-md font-semibold"
+                  className="w-full py-6 text-base md:text-lg rounded-xl shadow-lg font-bold ring-4 ring-amber-400/30 hover:ring-amber-400/60 transition-all"
                   style={{
-                    background: "linear-gradient(135deg, #b8892e, #96722d)",
+                    background:
+                      "linear-gradient(135deg, #b8892e, #96722d)",
                     color: "#fff",
                   }}
                   disabled={isSubmitting || !hasResponses}
+                  data-testid="submit-final-version"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Submitting…
                     </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4 mr-2" />
+                      <Send className="h-5 w-5 mr-2" />
                       Submit Final Version
                     </>
                   )}
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Submit Final Version?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Once submitted, your responses will be saved and you&apos;ll proceed
-                    to the next phase. Make sure you&apos;re satisfied with your answers.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Go Back</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleSubmit}>
-                    Yes, Submit
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+              </div>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Submit this as your final answer?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Once you submit, your responses will be permanently saved and
+                  recorded as your final answer for this phase. You can still
+                  review them on the next screen, but you won&apos;t be able to
+                  edit them here.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Go Back</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSubmit}>
+                  Yes, Submit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </motion.div>
