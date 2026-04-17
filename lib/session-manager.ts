@@ -4,6 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid'
+import { captureToWAL } from './dataLayerInstrument'
 
 interface SessionData {
   user_id: string
@@ -137,6 +138,23 @@ export class SessionManager {
    * Register fallback session with backend for data consistency
    */
   private async registerFallbackSession(sessionData: SessionData): Promise<void> {
+    // Stage 2: fallback sessions happen when a student skips onboarding
+    // (e.g. lands directly on /phase1). These students still generate
+    // research data; we must capture their session-create event.
+    captureToWAL("sessions", {
+      event_type: "fallback_session_registered",
+      user_id: sessionData.user_id,
+      session_id: sessionData.session_id,
+      name: sessionData.user_name,
+      email: sessionData.user_email,
+      access_method: "direct_navigation",
+      is_fallback: true,
+    }, {
+      participantId: sessionData.user_id,
+      sessionId: sessionData.session_id,
+      eventType: "fallback_session_registered",
+    })
+
     try {
       await fetch('/api/user-data', {
         method: 'POST',

@@ -138,11 +138,50 @@ function saveQueue(participantId: string, queue: WalRecord[]): void {
   try {
     localStorage.setItem(storageKeyFor(participantId), JSON.stringify(queue))
   } catch (err) {
-    // QuotaExceededError is the main failure mode; surface it loudly.
+    // Recover from QuotaExceededError: drop the oldest 20% of the
+    // queue to free space, archive the dropped records to the
+    // `:failed` slot so researchers can recover them, and retry.
+    // This prevents a student stuck offline-for-hours from blocking
+    // their entire session just because localStorage is full.
+    const isQuota =
+      err instanceof Error &&
+      (err.name === "QuotaExceededError" ||
+        err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+        err.message.toLowerCase().includes("quota"))
+
+    if (isQuota && queue.length > 0) {
+      const trimCount = Math.max(1, Math.floor(queue.length * 0.2))
+      const dropped = queue.slice(0, trimCount)
+      const kept = queue.slice(trimCount)
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[DataLayer] localStorage quota exceeded; dropping oldest ${trimCount} of ${queue.length} queued records. ` +
+          "Dropped records are moved to the :failed archive."
+      )
+      try {
+        const key = `${storageKeyFor(participantId)}:failed`
+        const prevRaw = localStorage.getItem(key)
+        const prev: WalRecord[] = prevRaw ? JSON.parse(prevRaw) : []
+        const withDropped = [...prev, ...dropped]
+        localStorage.setItem(key, JSON.stringify(withDropped))
+      } catch {
+        // Archive itself overflowed — we tried. Drop on the floor.
+      }
+      try {
+        localStorage.setItem(storageKeyFor(participantId), JSON.stringify(kept))
+        // Mutate in place so the caller's in-memory queue matches.
+        queue.splice(0, trimCount)
+        return
+      } catch {
+        // Recovery attempt failed — fall through to re-throw below.
+      }
+    }
+
     // eslint-disable-next-line no-console
     console.error("[DataLayer] Failed to persist queue to localStorage", err)
-    // We intentionally DO NOT swallow the error here — loss of local
-    // durability is the single worst failure mode for the WAL design.
+    // After recovery attempt, if we STILL can't persist, re-throw.
+    // Loss of local durability is the worst failure mode; callers
+    // (captureToWAL) catch this so the app doesn't crash.
     throw err
   }
 }

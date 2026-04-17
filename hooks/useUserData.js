@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { captureToWAL } from '@/lib/dataLayerInstrument';
 
 /**
  * Hook for collecting user data
@@ -48,7 +49,15 @@ export function useUserData() {
       if (userEmail) {
         finalMetadata.email = userEmail;
       }
-      
+
+      // Stage 2 safety net.
+      captureToWAL("user_data", {
+        event_type: `user_data_${dataType}`,
+        data_type: dataType,
+        value,
+        ...finalMetadata,
+      }, { participantId: userId, eventType: `user_data_${dataType}` });
+
       const response = await fetch('/api/user-data', {
         method: 'POST',
         headers: {

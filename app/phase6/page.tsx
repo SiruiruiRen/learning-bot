@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import ModuleBar from "@/components/module-bar"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 export default function Phase6Page() {
   const router = useRouter()
@@ -88,7 +89,38 @@ export default function Phase6Page() {
 
     setIsSubmitted(true)
 
-    // Log submission and save answer
+    // Stage 2: Phase 6 final assessment is THE terminal research
+    // event for a participant. Capture EVERYTHING to WAL before
+    // either backend call so even in catastrophic backend failure
+    // we keep the student's final plan + grade expectations.
+    captureToWAL("phase_completion_analytics", {
+      event_type: "post_assessment_submitted",
+      phase: "phase6",
+      component: "final_assessment",
+      course_name: courseName,
+      answer,
+      answer_length: answer.length,
+      aiming_grade: aimingGrade || null,
+      expected_grade: expectedGrade || null,
+      preparation_level: preparationLevel || null,
+    }, {
+      sessionId,
+      participantId: userId ?? undefined,
+      eventType: "post_assessment_submitted",
+    })
+    captureToWAL("user_data", {
+      event_type: "final_exam_preparation_plan",
+      data_type: "final_exam_preparation_plan",
+      value: answer,
+      phase: "phase6",
+      course_name: courseName,
+    }, {
+      sessionId,
+      participantId: userId ?? undefined,
+      eventType: "final_exam_preparation_plan",
+    })
+
+    // Log submission and save answer (existing paths)
     if (sessionId) {
       try {
         // Log event
@@ -110,7 +142,7 @@ export default function Phase6Page() {
             }
           })
         })
-        
+
         // Also save the answer as user data for research purposes
         if (userId) {
           await fetch('/api/user-data', {

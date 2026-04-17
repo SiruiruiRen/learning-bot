@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 /**
  * Tracks when users leave and return to the page.
@@ -24,6 +25,18 @@ export function useVisibilityTracker() {
     }
 
     const logEvent = (eventType: string, metadata: Record<string, any>) => {
+      const phase = getCurrentPage().match(/\/phase(\d+)/)?.[0]?.replace("/", "") || undefined
+      // Stage 2 safety net. Tab-switch behaviour is research-relevant
+      // (correlates with engagement / distraction), so WAL should
+      // carry it too.
+      captureToWAL("content_interaction_logs", {
+        event_type: eventType,
+        phase,
+        component: "visibility_tracker",
+        page: getCurrentPage(),
+        ...metadata,
+      }, { sessionId, eventType })
+
       try {
         fetch("/api/events", {
           method: "POST",
@@ -31,7 +44,7 @@ export function useVisibilityTracker() {
           body: JSON.stringify({
             session_id: sessionId,
             event_type: eventType,
-            phase: getCurrentPage().match(/\/phase(\d+)/)?.[0]?.replace("/", "") || undefined,
+            phase,
             component: "visibility_tracker",
             metadata: {
               ...metadata,

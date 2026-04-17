@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { captureToWAL } from "@/lib/dataLayerInstrument"
 
 const phaseInfo = [
   {
@@ -206,6 +207,22 @@ export default function IntroPage() {
       coach_tone: coachTone,
     }
 
+    // Stage 2: onboarding is session-critical research data. Capture
+    // to WAL BEFORE the fetch so even if the backend is down we have
+    // a durable record of every attempt, including the randomisation
+    // condition once the server assigns one.
+    const synthPid = `pending:${userEmail}`
+    captureToWAL("sessions", {
+      event_type: "session_create_attempt",
+      email: userEmail,
+      name: userName,
+      coach_tone: coachTone,
+      profile_data,
+    }, {
+      participantId: synthPid,
+      eventType: "session_create_attempt",
+    })
+
     try {
       const response = await fetch('/api/onboarding', {
         method: 'POST',
@@ -234,6 +251,26 @@ export default function IntroPage() {
       localStorage.setItem("solbot_coach_tone", coachTone);
       if (result.data.condition) localStorage.setItem("solbot_condition", result.data.condition);
       if (challengingCourse) localStorage.setItem("solbot_user_course", challengingCourse);
+
+      // Stage 2: successful session creation — now emit the success
+      // record under the real user_id AND session_id. This is the
+      // canonical "experiment started" marker for a participant.
+      // condition assignment is RESEARCH-CRITICAL (controls which
+      // arm of the experiment they're in), so capture it explicitly.
+      captureToWAL("sessions", {
+        event_type: "session_created",
+        user_id: result.data.user_id,
+        session_id: result.data.session_id,
+        email: userEmail,
+        name: userName,
+        coach_tone: coachTone,
+        condition: result.data.condition ?? null,
+        linked_pending_pid: synthPid,
+      }, {
+        participantId: result.data.user_id,
+        sessionId: result.data.session_id,
+        eventType: "session_created",
+      })
 
       router.push("/phase1");
 
@@ -462,7 +499,9 @@ export default function IntroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="year" className="text-base font-medium text-foreground">Academic Level</Label>
+                      <Label htmlFor="year" className="text-base font-medium text-foreground">
+                        Academic Level <span className="text-sm font-normal" style={{ color: mutedText }}>(optional)</span>
+                      </Label>
                       <Select value={userYear} onValueChange={setUserYear}>
                         <SelectTrigger
                           className="w-full border"
@@ -485,7 +524,9 @@ export default function IntroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="major" className="text-base font-medium text-foreground">Field of Study</Label>
+                      <Label htmlFor="major" className="text-base font-medium text-foreground">
+                        Field of Study <span className="text-sm font-normal" style={{ color: mutedText }}>(optional)</span>
+                      </Label>
                       <Input
                         id="major"
                         value={userMajor}
