@@ -57,7 +57,11 @@ class UserDataRequest(BaseModel):
     metadata: Dict[str, Any] = None
 
 # --- API Endpoints ---
-DEPLOY_VERSION = "2026-03-18-v2"  # Bump this to verify deploys
+# 2026-04-17: bumped + expanded to definitively confirm which commit
+# Render is running. /api/version now also echoes back the full list
+# of registered POST routes so we can spot missing/stale routes from
+# the outside without needing shell access.
+DEPLOY_VERSION = "2026-04-17-streaming-v1"
 
 @router.on_event("startup")
 async def startup_event():
@@ -65,7 +69,29 @@ async def startup_event():
 
 @router.get("/version")
 async def get_version():
-    return {"version": DEPLOY_VERSION}
+    # Return registered POST routes alongside the version string so a
+    # single curl tells us whether a suspected missing endpoint (like
+    # /api/chat/stream) is actually registered on the running process.
+    try:
+        from fastapi import FastAPI as _FastAPI
+        import fastapi as _fastapi_mod
+        app_ref = None
+        # Walk up to find the FastAPI app instance
+        import sys as _sys
+        main_mod = _sys.modules.get("main")
+        if main_mod is not None and hasattr(main_mod, "app"):
+            app_ref = main_mod.app
+        post_routes = []
+        if app_ref is not None:
+            for r in app_ref.routes:
+                methods = getattr(r, "methods", None) or set()
+                path = getattr(r, "path", "")
+                for m in sorted(methods):
+                    if m in ("POST", "GET"):
+                        post_routes.append(f"{m} {path}")
+        return {"version": DEPLOY_VERSION, "routes": sorted(post_routes)}
+    except Exception as e:
+        return {"version": DEPLOY_VERSION, "routes_error": str(e)}
 
 @router.post("/onboarding")
 async def handle_onboarding(request: OnboardingRequest):
