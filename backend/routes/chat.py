@@ -11,12 +11,13 @@ import os
 from typing import Dict, Any, List
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 sys.path.append(os.path.abspath('..'))
 from prompt_engineering.scripts.final_prompts import get_prompt
 from backend.utils import db
-from backend.utils.llm import call_claude
+from backend.utils.llm import call_claude, call_claude_stream
 
 logger = logging.getLogger("solbot.routes.chat")
 router = APIRouter(prefix="/api", tags=["main"])
@@ -275,6 +276,195 @@ async def process_chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"Chat processing error: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Failed to process chat message.")
+
+
+# ----------------------------------------------------------------------------
+# Streaming endpoint (2026-04-17)
+# ----------------------------------------------------------------------------
+# Wire-compatible with /api/chat in request shape; the difference is the
+# response format — instead of returning one JSON object after the full
+# Claude response arrives, this endpoint returns Server-Sent Events:
+#
+#     data: {"type":"text","delta":"..."}\n\n        (many of these)
+#     data: {"type":"complete","content":"<cleaned>",
+#            "evaluation":{...},"model":"..."}\n\n   (one, at the end)
+#     data: {"type":"error","error":"..."}\n\n       (only on failure)
+#
+# The browser renders each text delta immediately, so students see the
+# feedback appearing as Claude generates it (time-to-first-token ~1-2s
+# instead of waiting 4-8s for the full response).
+#
+# IMPORTANT: /api/chat is left unchanged. Non-streaming callers (tests,
+# legacy clients) continue to work. This is purely additive.
+# ----------------------------------------------------------------------------
+@router.post("/chat/stream")
+async def process_chat_stream(request: ChatRequest):
+    start_time = time.time()
+
+    async def event_generator():
+        try:
+            # ---- Setup block: mirrors process_chat(). ------------------
+            # Log user message — non-blocking, doesn't stop the stream.
+            user_message_record = None
+            try:
+                user_message_record = db.log_message(
+                    session_id=request.session_id, role="user", content=request.message,
+                    phase=request.phase, component=request.component,
+                    metadata={"is_submission": request.is_submission, "attempt_number": request.attempt_number}
+                )
+            except Exception as db_err:
+                logger.warning(f"[stream] Failed to log user message (non-fatal): {db_err}")
+                user_message_record = {"id": str(uuid.uuid4())}
+
+            # Fetch chat history
+            formatted_history = []
+            try:
+                chat_history = db.get_messages_for_session(request.session_id, limit=10)
+                formatted_history = [
+                    {"role": msg["role"], "content": msg["content"]}
+                    for msg in chat_history if msg["role"] in ["user", "assistant"]
+                ] if chat_history else []
+            except Exception as db_err:
+                logger.warning(f"[stream] Failed to get chat history (non-fatal): {db_err}")
+
+            # Resolve coach_tone
+            coach_tone = "warm"
+            tracking_user_id = None
+            try:
+                session_details = db.get_session_by_id(request.session_id)
+                if session_details:
+                    tracking_user_id = session_details.get("user_id")
+                    if tracking_user_id:
+                        user_data = db.get_user_by_id(tracking_user_id)
+                        if user_data and user_data.get("profile_data"):
+                            profile_data = json.loads(user_data["profile_data"]) if isinstance(user_data["profile_data"], str) else user_data["profile_data"]
+                            tone_raw = profile_data.get("coach_tone", "warm")
+                            coach_tone = "warm" if tone_raw in ("balanced", "warm") else ("direct" if tone_raw == "direct" else "warm")
+            except Exception as db_err:
+                logger.warning(f"[stream] Failed to resolve coach_tone (defaulting to warm): {db_err}")
+
+            # Resolve system prompt + model
+            try:
+                prompt_name = _resolve_prompt_name(request.phase, request.component)
+                system_prompt = get_prompt(prompt_name, style=coach_tone)
+            except ValueError:
+                system_prompt = "You are SoL2LBot, an AI tutor for self-regulated learning."
+
+            is_floating = (request.component == "floating_chatbot")
+            FLOATING_MODEL = "claude-haiku-4-5-20251001"
+            selected_model = FLOATING_MODEL if is_floating else None
+
+            # ---- Streaming block -------------------------------------
+            full_content = ""
+            final_usage: Dict[str, Any] = {}
+            final_model = "unknown"
+            stream_errored = False
+
+            async for chunk in call_claude_stream(
+                system_prompt=system_prompt,
+                user_message=request.message,
+                chat_history=formatted_history,
+                temperature=0.3 if is_floating else 0.1,
+                max_tokens=400 if is_floating else 500,
+                model=selected_model,
+                user_id=tracking_user_id,
+                conversation_id=request.session_id,
+                phase=request.phase,
+                component=request.component,
+            ):
+                ctype = chunk.get("type")
+                if ctype == "text":
+                    full_content += chunk.get("delta", "")
+                    # Forward the raw delta to the client immediately.
+                    yield f"data: {json.dumps({'type': 'text', 'delta': chunk['delta']})}\n\n"
+                elif ctype == "complete":
+                    final_usage = chunk.get("usage", {})
+                    final_model = chunk.get("model", "unknown")
+                    # full_content from chunks should match chunk['content']
+                    # but prefer chunk['content'] as the source of truth
+                    full_content = chunk.get("content", full_content)
+                elif ctype == "error":
+                    stream_errored = True
+                    yield f"data: {json.dumps({'type': 'error', 'error': chunk.get('error', 'unknown')})}\n\n"
+                    # Don't return yet — fall through to log partial content
+                    full_content = chunk.get("partial_content", full_content)
+                    break
+
+            # ---- Post-stream: extract metadata + log -----------------
+            evaluation_metadata = _extract_evaluation_metadata(full_content)
+            cleaned_content = _clean_message_for_student(full_content)
+
+            # Log assistant message — non-blocking
+            assistant_message_record = None
+            try:
+                assistant_message_record = db.log_message(
+                    session_id=request.session_id, role="assistant", content=cleaned_content,
+                    phase=request.phase, component=request.component,
+                    metadata={
+                        "api_usage": final_usage,
+                        "model": final_model,
+                        "evaluation": evaluation_metadata,
+                        "raw_llm_response": full_content,
+                        "streaming": True,
+                    }
+                )
+            except Exception as db_err:
+                logger.warning(f"[stream] Failed to log assistant message (non-fatal): {db_err}")
+                assistant_message_record = {"id": str(uuid.uuid4())}
+
+            # Log assessment — non-blocking
+            try:
+                if request.is_submission and evaluation_metadata:
+                    session_details = db.get_session_by_id(request.session_id)
+                    if session_details:
+                        db.log_assessment(
+                            session_id=request.session_id, user_id=session_details["user_id"],
+                            submission_message_id=user_message_record["id"],
+                            feedback_message_id=assistant_message_record["id"],
+                            phase=request.phase, component=request.component,
+                            attempt_number=request.attempt_number, evaluation=evaluation_metadata,
+                            feedback_style=coach_tone,
+                            evaluation_method="single_prompt_streamed",
+                        )
+            except Exception as db_err:
+                logger.warning(f"[stream] Failed to log assessment (non-fatal): {db_err}")
+
+            # Emit the final "complete" SSE event so the client can attach
+            # the parsed evaluation to the feedback_delivered WAL row.
+            if not stream_errored:
+                yield (
+                    "data: "
+                    + json.dumps({
+                        "type": "complete",
+                        "content": cleaned_content,
+                        "evaluation": evaluation_metadata,
+                        "model": final_model,
+                    })
+                    + "\n\n"
+                )
+
+            logger.info(
+                f"[stream] Session {request.session_id} completed in "
+                f"{time.time() - start_time:.2f}s (streaming)"
+            )
+
+        except Exception as e:
+            logger.error(f"Chat streaming error: {e}\n{traceback.format_exc()}")
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            # Disable intermediary buffering so each delta reaches the
+            # browser as soon as it's yielded (Render's default nginx
+            # otherwise batches small responses).
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
 
 # --- Helper Functions ---
 def _resolve_prompt_name(phase: str, component: str) -> str:

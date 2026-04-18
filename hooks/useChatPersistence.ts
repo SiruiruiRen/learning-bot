@@ -4,6 +4,14 @@ import { useCallback, useRef } from "react"
 
 /**
  * Persisted chat state shape — everything needed to restore a conversation.
+ *
+ * Ch4 (2026-04-17): `feedbackCycleId` lets us RESTORE the active
+ * feedback_cycle_id after a page reload, so events captured before and
+ * after the reload both carry the same id and the R1/feedback/R2
+ * reconstruction stays correct in downstream SQL. Nullable/optional
+ * because (a) pre-Ch4 persisted payloads don't have it, and (b) a
+ * restored session may genuinely have no active cycle yet (user hasn't
+ * answered anything).
  */
 export interface PersistedChatState {
   messages: any[]
@@ -12,6 +20,7 @@ export interface PersistedChatState {
   responses: Record<string, string>
   feedbackReceived: boolean
   finalSubmitted: boolean
+  feedbackCycleId?: string | null
 }
 
 const STORAGE_PREFIX = "solbot_chat_history_"

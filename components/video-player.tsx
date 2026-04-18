@@ -29,6 +29,20 @@ export default function VideoPlayer({
   const lastTimeRef = useRef(0);
   const totalWatchedTime = useRef(0);
   const watchStartTime = useRef<number | null>(null);
+  // Ch4 (2026-04-17): track last known state for rate/fullscreen/volume
+  // so `_change` events can report from→to, not just the new value.
+  const lastPlaybackRateRef = useRef(1);
+  const lastVolumeRef = useRef(1);
+  const lastMutedRef = useRef(false);
+  const isFullscreenRef = useRef(false);
+  // Running counts — on events we want researchers to be able to do
+  // "how many speed-ups" / "how many fullscreen toggles" without
+  // reprocessing every trace row. Kept in refs so that the values in
+  // the captured payload are always the ACTUAL running counts at the
+  // moment of the event (React state batching could desync these).
+  const speedChangeCountRef = useRef(0);
+  const fullscreenChangeCountRef = useRef(0);
+  const volumeChangeCountRef = useRef(0);
 
   // Get session ID from localStorage
   useEffect(() => {
@@ -202,20 +216,129 @@ export default function VideoPlayer({
     const newSeekCount = seekCount + 1;
     setSeekCount(newSeekCount);
 
-    // Check if this is a rewind (going backwards)
-    const isRewind = video.currentTime < lastTimeRef.current;
-    
+    // Ch4 (2026-04-17): classify seek magnitude so researchers can
+    // distinguish "micro-scrub" from "rewind to previous segment"
+    // from "skip-ahead jump" without having to post-process raw deltas.
+    //
+    // Thresholds (absolute seconds of jump):
+    //   <  3s → "small"   (likely scrub/fine-tune)
+    //   3–15s → "medium"  (segment-level navigation)
+    //   ≥ 15s → "large"   (large jump; may indicate disengagement or
+    //                     targeted review of a specific segment)
+    const fromTime = lastTimeRef.current;
+    const toTime = video.currentTime;
+    const deltaSec = toTime - fromTime; // signed: negative = rewind
+    const absDelta = Math.abs(deltaSec);
+    const isRewind = deltaSec < 0;
+    const magnitude =
+      absDelta < 3 ? "small"
+      : absDelta < 15 ? "medium"
+      : "large";
+    // Composite human-readable classification
+    const seekType = isRewind
+      ? `rewind_${magnitude}`       // rewind_small | rewind_medium | rewind_large
+      : magnitude === "large"
+        ? "jump_forward"            // explicit jumps → "jump_forward" is easier to filter
+        : `ff_${magnitude}`;        // ff_small | ff_medium
+
     logAnalyticsEvent(isRewind ? 'video_rewind' : 'video_fast_forward', {
       seek_count: newSeekCount,
-      from_time: lastTimeRef.current,
-      to_time: video.currentTime,
+      from_time: fromTime,
+      to_time: toTime,
       is_rewind: isRewind,
+      seek_magnitude_seconds: absDelta,
+      seek_type: seekType,
       video_title: videoTitle,
       timestamp: new Date().toISOString()
     });
 
-    lastTimeRef.current = video.currentTime;
+    lastTimeRef.current = toTime;
   }, [seekCount, logAnalyticsEvent, videoTitle]);
+
+  // ------------------------------------------------------------------
+  // Ch4 (2026-04-17): additional engagement signals the research
+  // proposal cares about but wasn't previously captured.
+  //   - video_speed_change: 0.5×/1.25×/1.5×/2× are common engagement
+  //     markers (speeding up = coverage without deep processing;
+  //     slowing down = deep processing of a dense segment).
+  //   - video_fullscreen_entered / _exited: focus/distraction signal.
+  //   - video_volume_change: mute/unmute is a well-known
+  //     passive-watching indicator.
+  // ------------------------------------------------------------------
+  const handleRateChange = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const from = lastPlaybackRateRef.current;
+    const to = video.playbackRate;
+    if (Math.abs(from - to) < 0.01) return; // drop no-op / float noise
+    lastPlaybackRateRef.current = to;
+    speedChangeCountRef.current += 1;
+    logAnalyticsEvent('video_speed_change', {
+      from_rate: from,
+      to_rate: to,
+      delta: to - from,
+      is_speedup: to > from,
+      speed_change_count: speedChangeCountRef.current,
+      current_time: video.currentTime,
+      video_title: videoTitle,
+      timestamp: new Date().toISOString()
+    });
+  }, [logAnalyticsEvent, videoTitle]);
+
+  const handleFullscreenChange = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    // Check if fullscreen element is (or contains) this video.
+    const fsEl = document.fullscreenElement;
+    const nowFullscreen = !!fsEl && (fsEl === video || fsEl.contains(video));
+    if (nowFullscreen === isFullscreenRef.current) return; // idempotent
+    isFullscreenRef.current = nowFullscreen;
+    fullscreenChangeCountRef.current += 1;
+    logAnalyticsEvent(
+      nowFullscreen ? 'video_fullscreen_entered' : 'video_fullscreen_exited',
+      {
+        is_fullscreen: nowFullscreen,
+        fullscreen_change_count: fullscreenChangeCountRef.current,
+        current_time: video.currentTime,
+        video_title: videoTitle,
+        timestamp: new Date().toISOString()
+      }
+    );
+  }, [logAnalyticsEvent, videoTitle]);
+
+  const handleVolumeChange = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const fromVol = lastVolumeRef.current;
+    const toVol = video.volume;
+    const fromMuted = lastMutedRef.current;
+    const toMuted = video.muted;
+    // Skip if nothing meaningful changed
+    if (Math.abs(fromVol - toVol) < 0.01 && fromMuted === toMuted) return;
+    lastVolumeRef.current = toVol;
+    lastMutedRef.current = toMuted;
+    volumeChangeCountRef.current += 1;
+    // Classify: mute/unmute vs volume level change
+    let changeType: string;
+    if (fromMuted !== toMuted) {
+      changeType = toMuted ? 'muted' : 'unmuted';
+    } else if (toVol > fromVol) {
+      changeType = 'volume_up';
+    } else {
+      changeType = 'volume_down';
+    }
+    logAnalyticsEvent('video_volume_change', {
+      from_volume: fromVol,
+      to_volume: toVol,
+      from_muted: fromMuted,
+      to_muted: toMuted,
+      change_type: changeType,
+      volume_change_count: volumeChangeCountRef.current,
+      current_time: video.currentTime,
+      video_title: videoTitle,
+      timestamp: new Date().toISOString()
+    });
+  }, [logAnalyticsEvent, videoTitle]);
 
   const handleTimeUpdate = useCallback(() => {
     const video = videoRef.current;
@@ -259,7 +382,10 @@ export default function VideoPlayer({
       efficiency: Math.round((totalWatchedTime.current / video.duration) * 100) + '%'
     })
 
-    // Log completion with detailed analytics
+    // Log completion with detailed analytics — Ch4 additions include
+    // speed/fullscreen/volume change totals so a single row tells the
+    // full engagement story without researchers having to aggregate
+    // the event stream themselves.
     logAnalyticsEvent('video_watch_completed', {
       completion_percentage: 100,
       total_duration: video.duration,
@@ -267,6 +393,10 @@ export default function VideoPlayer({
       play_count: playCount,
       pause_count: pauseCount,
       seek_count: seekCount,
+      speed_change_count: speedChangeCountRef.current,
+      fullscreen_change_count: fullscreenChangeCountRef.current,
+      volume_change_count: volumeChangeCountRef.current,
+      final_playback_rate: lastPlaybackRateRef.current,
       watch_efficiency: (totalWatchedTime.current / video.duration) * 100
     });
 
@@ -277,7 +407,8 @@ export default function VideoPlayer({
   useEffect(() => {
     const videoElement = videoRef.current;
     if (videoElement) {
-      // Add all event listeners
+      // Add all event listeners — including the Ch4 additions:
+      // ratechange, fullscreenchange (document-level), volumechange.
       videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
       videoElement.addEventListener('canplay', handleCanPlay);
       videoElement.addEventListener('error', handleError);
@@ -286,6 +417,10 @@ export default function VideoPlayer({
       videoElement.addEventListener('seeked', handleSeeked);
       videoElement.addEventListener('timeupdate', handleTimeUpdate);
       videoElement.addEventListener('ended', handleEnded);
+      videoElement.addEventListener('ratechange', handleRateChange);
+      videoElement.addEventListener('volumechange', handleVolumeChange);
+      // Fullscreen events fire on DOCUMENT, not the video element.
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
 
       return () => {
         // Clean up event listeners
@@ -297,9 +432,12 @@ export default function VideoPlayer({
         videoElement.removeEventListener('seeked', handleSeeked);
         videoElement.removeEventListener('timeupdate', handleTimeUpdate);
         videoElement.removeEventListener('ended', handleEnded);
+        videoElement.removeEventListener('ratechange', handleRateChange);
+        videoElement.removeEventListener('volumechange', handleVolumeChange);
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
       };
     }
-  }, [handleLoadedMetadata, handleCanPlay, handleError, handlePlay, handlePause, handleSeeked, handleTimeUpdate, handleEnded]);
+  }, [handleLoadedMetadata, handleCanPlay, handleError, handlePlay, handlePause, handleSeeked, handleTimeUpdate, handleEnded, handleRateChange, handleVolumeChange, handleFullscreenChange]);
 
   return (
     <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative">
@@ -349,6 +487,9 @@ export default function VideoPlayer({
           <div>Plays: {playCount}</div>
           <div>Pauses: {pauseCount}</div>
           <div>Seeks: {seekCount}</div>
+          <div>Speed×: {lastPlaybackRateRef.current} ({speedChangeCountRef.current}Δ)</div>
+          <div>FS: {isFullscreenRef.current ? 'Yes' : 'No'} ({fullscreenChangeCountRef.current}Δ)</div>
+          <div>Vol: {Math.round(lastVolumeRef.current * 100)}% {lastMutedRef.current ? 'MUTED' : ''}</div>
           <div>Watched: {Math.round(totalWatchedTime.current)}s</div>
         </div>
       )}

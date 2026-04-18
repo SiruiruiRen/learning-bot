@@ -5,7 +5,7 @@ LLM utility for interacting with Claude
 import logging
 import os
 import json
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, AsyncGenerator
 import asyncio
 from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
@@ -760,8 +760,169 @@ def parse_tool_output(tool_calls: List[Dict[str, Any]]) -> Dict[str, Any]:
                 return json.loads(input_data)
             elif isinstance(input_data, dict):
                 return input_data
-    
+
     except Exception as e:
         logger.error(f"Error parsing tool output: {e}")
-    
-    return {} 
+
+    return {}
+
+
+# ============================================================================
+# Streaming (2026-04-17) — perceived-latency fix
+# ============================================================================
+# call_claude_stream() yields text deltas as Claude generates them, instead
+# of buffering the entire response. Consumers (the /api/chat/stream FastAPI
+# endpoint) pipe these deltas over SSE to the browser, which renders tokens
+# as they arrive. First-token latency goes from ~4-8s (full response) to
+# ~1-2s (first chunk).
+#
+# Output contract: async generator yielding dicts:
+#   {"type": "text",     "delta": "..."}              -- one chunk of text
+#   {"type": "complete", "content": "<full>",          -- end of stream
+#                        "usage": {...}, "model": "..."}
+#   {"type": "error",    "error": "...",
+#                        "partial_content": "<so far>"}  -- failure mid-stream
+#
+# NOTE: we intentionally do NOT cache streamed responses. Cache complexity
+# isn't worth it given the per-student/per-context prompt variability and
+# the fact that generation time is dominated by network + model inference,
+# not prompt lookup.
+# ============================================================================
+
+async def call_claude_stream(
+    system_prompt: str,
+    user_message: str,
+    chat_history: Optional[List[Dict[str, Any]]] = None,
+    temperature: float = 0.3,
+    max_tokens: int = 500,
+    model: Optional[str] = None,
+    user_id: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+    phase: Optional[str] = None,
+    component: Optional[str] = None,
+) -> AsyncGenerator[Dict[str, Any], None]:
+    """Stream a Claude response token-by-token.
+
+    Args match call_claude(). Yields dicts per the contract documented above.
+
+    The caller is responsible for:
+      - writing each text delta to the HTTP response (SSE)
+      - on `complete`, extracting evaluation metadata + logging the final
+        assistant message / assessment to the DB
+    """
+    effective_model = model or CLAUDE_MODEL
+    request_timestamp = time.time()
+
+    # Format messages (same shape as call_claude)
+    messages: List[Dict[str, str]] = []
+    if chat_history:
+        for msg in chat_history[-8:]:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role in ["user", "assistant"] and content:
+                messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": user_message})
+
+    # Mock fallback when no API key — pretend-stream a canned response word
+    # by word so the frontend wiring can be exercised end-to-end locally.
+    if not client:
+        logger.warning("No Anthropic client — emitting mock streamed response")
+        mock = (
+            "Thank you for your response. This is a mock streamed reply used "
+            "for local testing without an Anthropic API key. Configure "
+            "ANTHROPIC_API_KEY to get real feedback.\n\n"
+            "<!-- INSTRUCTOR_METADATA\n"
+            "Overall_Score: 2\n"
+            "Scaffolding_Level: MEDIUM\n"
+            "-->"
+        )
+        for word in mock.split(" "):
+            yield {"type": "text", "delta": word + " "}
+            await asyncio.sleep(0.02)
+        yield {
+            "type": "complete",
+            "content": mock,
+            "usage": {"input_tokens": 0, "output_tokens": len(mock.split())},
+            "model": effective_model,
+        }
+        return
+
+    full_content = ""
+    input_tokens = 0
+    output_tokens = 0
+
+    try:
+        logger.info(
+            f"Streaming Claude API model={effective_model}, temperature={temperature}"
+        )
+        async with client.messages.stream(
+            model=effective_model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system=system_prompt,
+            messages=messages,
+        ) as stream:
+            # text_stream yields only the plain text deltas, skipping
+            # tool_use / thinking blocks we don't use here.
+            async for text in stream.text_stream:
+                if not text:
+                    continue
+                full_content += text
+                yield {"type": "text", "delta": text}
+
+            # Once the stream is exhausted, Anthropic SDK exposes the full
+            # final Message via .get_final_message() — we need it for
+            # usage accounting (input/output token counts).
+            final_message = await stream.get_final_message()
+            if final_message and final_message.usage:
+                input_tokens = final_message.usage.input_tokens or 0
+                output_tokens = final_message.usage.output_tokens or 0
+
+        yield {
+            "type": "complete",
+            "content": full_content,
+            "usage": {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+            },
+            "model": effective_model,
+        }
+
+        # Log the interaction (fire-and-forget so it doesn't block the
+        # response generator returning).
+        response_timestamp = time.time()
+        try:
+            await log_llm_interaction(
+                user_id=user_id,
+                conversation_id=conversation_id,
+                message_id=None,
+                phase=phase,
+                component=component,
+                system_prompt=system_prompt,
+                user_message=user_message,
+                raw_llm_response=full_content,
+                processed_response=full_content,
+                model_name=effective_model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                request_timestamp=request_timestamp,
+                response_timestamp=response_timestamp,
+                duration_ms=int((response_timestamp - request_timestamp) * 1000),
+                cache_hit=False,
+                metadata={
+                    "streaming": True,
+                    "chat_history_length": len(chat_history) if chat_history else 0,
+                },
+            )
+        except Exception as log_err:
+            logger.warning(f"Failed to log streamed LLM interaction: {log_err}")
+
+    except Exception as e:
+        logger.error(f"Claude streaming error: {e}\n{traceback.format_exc()}")
+        yield {
+            "type": "error",
+            "error": str(e),
+            "partial_content": full_content,
+        }

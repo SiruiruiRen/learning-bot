@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import ChatMessageParser from "@/components/chat-message-parser"
 import { usePathname } from "next/navigation"
 import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
+import { useTextareaTelemetry } from "@/hooks/useTextareaTelemetry"
+import { streamChat } from "@/lib/streamChat"
 
 // Direct backend URL — bypasses Next.js proxy for faster floating chatbot responses
 // Hardcoded fallback ensures direct call even if env var not set during build
@@ -216,6 +218,17 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
   // Get page-specific or phase-specific config
   const pageConfig = PAGE_QUESTIONS[pathname] || PAGE_QUESTIONS[`/${currentPhase}`] || DEFAULT_PAGE
 
+  // Ch4 (2026-04-17): textarea engagement telemetry for Quick Help
+  // input. Floating chatbot has no feedback_cycle_id (Q&A-only, no
+  // rubric), so getFeedbackCycleId returns null — the hook just
+  // captures focus/blur/paste/copy against the current page/phase.
+  const textareaTelemetry = useTextareaTelemetry({
+    phase: currentPhase,
+    component: "floating_chatbot",
+    getFieldName: () => "floating_chat_input",
+    getSessionId: () => sessionId,
+  })
+
   // Parse follow-up questions from AI response (lines starting with ">>>")
   const parseFollowUps = (text: string): { cleanText: string; followUps: string[] } => {
     const lines = text.split('\n')
@@ -406,7 +419,7 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
     setIsLoading(true)
     setFollowUpQuestions([])  // Clear old follow-ups while waiting for new response
 
-    // Stage 2 safety net.
+    // Stage 2 safety net — user turn.
     captureToWAL("messages", {
       turn_id: turnId,
       role: "user",
@@ -416,112 +429,112 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
       page: pathname,
     }, { sessionId })
 
-    // Existing analytics path.
-    try {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          event_type: 'floating_chat_question',
-          phase: currentPhase,
-          component: 'floating_chatbot',
-          metadata: { question: messageToSend, page: pathname, timestamp: new Date().toISOString(), turn_id: turnId }
-        })
+    // Fire-and-forget analytics log (no await — UI shouldn't wait).
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        event_type: 'floating_chat_question',
+        phase: currentPhase,
+        component: 'floating_chatbot',
+        metadata: { question: messageToSend, page: pathname, timestamp: new Date().toISOString(), turn_id: turnId }
       })
-    } catch (error) {
-      console.error("Failed to log question:", error)
-    }
+    }).catch(err => console.error("Failed to log question:", err))
 
-    try {
-      // Call backend directly (skip Next.js proxy) for faster responses
-      // Falls back to proxy if NEXT_PUBLIC_BACKEND_URL not set
-      const chatUrl = DIRECT_BACKEND_URL
-        ? `${DIRECT_BACKEND_URL}/api/chat`
-        : "/api/chat"
-      
-      const response = await fetch(chatUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionId,
-          message: messageToSend,
-          phase: currentPhase,
-          component: "floating_chatbot",
-          is_submission: false,
-          attempt_number: 1
-        }),
-      })
+    // ==== 2026-04-17: streaming for floating chatbot too ====
+    // Insert a placeholder assistant message and progressively fill its
+    // content as tokens arrive. We identify it by array index (the
+    // floating chatbot's message objects don't have ids, unlike the
+    // guided components). `placeholderIdx` is captured AFTER the push so
+    // it points at the correct slot regardless of other concurrent
+    // updates. `finalRaw` accumulates the raw response so follow-up
+    // parsing can run once at stream end.
+    let placeholderIdx = -1
+    setMessages(prev => {
+      placeholderIdx = prev.length
+      return [...prev, { role: "assistant", content: "" }]
+    })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || errorData.details || "Server error")
-      }
+    let accumulated = ""
+    let finalModel = "unknown"
 
-      const result = await response.json()
-
-      if (result.error || !result.data) {
-        throw new Error(result.error || result.details || "Invalid response")
-      }
-
-      const rawResponse = result.data.message || result.data.content || "Sorry, I couldn't process that."
-      const responseModel = result.data.model || "unknown"
-      
-      // Parse follow-up questions (>>> lines) from the AI response
-      const { cleanText, followUps } = parseFollowUps(rawResponse)
-      const responseContent = cleanText
-      
-      const assistantMessage = {
-        role: "assistant",
-        content: responseContent,
-      }
-      setMessages(prev => [...prev, assistantMessage])
-      setFollowUpQuestions(followUps)
-
-      // Stage 2 safety net: same turn_id as the user message above.
-      captureToWAL("messages", {
-        turn_id: turnId,
-        role: "assistant",
-        content: responseContent,
+    await streamChat(
+      `${DIRECT_BACKEND_URL}/api/chat/stream`,
+      {
+        session_id: sessionId,
+        message: messageToSend,
         phase: currentPhase,
         component: "floating_chatbot",
-        page: pathname,
-        model: responseModel,
-        follow_up_count: followUps.length,
-      }, { sessionId })
+        is_submission: false,
+        attempt_number: 1,
+      },
+      {
+        onText: (delta) => {
+          accumulated += delta
+          // Show the raw accumulated text while streaming. We defer the
+          // follow-up-question parsing (`>>>` line stripping) until
+          // onComplete so the student doesn't briefly see a half-parsed
+          // `>>> What is retr` line mid-stream.
+          setMessages(prev => prev.map((m, i) =>
+            i === placeholderIdx ? { ...m, content: accumulated } : m
+          ))
+        },
+        onComplete: (cleanedContent, _evaluation, model) => {
+          finalModel = model || "unknown"
+          // cleanedContent here is the server's stripped text; the
+          // floating chatbot has no INSTRUCTOR_METADATA so it's the
+          // same as `accumulated`. Run follow-up parsing on it.
+          const raw = cleanedContent || accumulated
+          const { cleanText, followUps } = parseFollowUps(raw)
+          setMessages(prev => prev.map((m, i) =>
+            i === placeholderIdx ? { ...m, content: cleanText } : m
+          ))
+          setFollowUpQuestions(followUps)
 
-      // Existing analytics path.
-      try {
-        await fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'floating_chat_response',
+          // Stage 2 safety net — assistant turn.
+          captureToWAL("messages", {
+            turn_id: turnId,
+            role: "assistant",
+            content: cleanText,
             phase: currentPhase,
-            component: 'floating_chatbot',
-            metadata: {
-              question: messageToSend,
-              response: responseContent,
-              model: responseModel,
-              page: pathname,
-              timestamp: new Date().toISOString(),
-              turn_id: turnId,
-            }
-          })
-        })
-      } catch (logError) {
-        console.error("Failed to log response:", logError)
+            component: "floating_chatbot",
+            page: pathname,
+            model: finalModel,
+            follow_up_count: followUps.length,
+          }, { sessionId })
+
+          fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: sessionId,
+              event_type: 'floating_chat_response',
+              phase: currentPhase,
+              component: 'floating_chatbot',
+              metadata: {
+                question: messageToSend,
+                response: cleanText,
+                model: finalModel,
+                page: pathname,
+                timestamp: new Date().toISOString(),
+                turn_id: turnId,
+              }
+            })
+          }).catch(logError => console.error("Failed to log response:", logError))
+        },
+        onError: (errMsg) => {
+          console.error("Floating chat stream error:", errMsg)
+          setMessages(prev => prev.map((m, i) =>
+            i === placeholderIdx
+              ? { ...m, content: "Sorry, I encountered an error. Please try again." }
+              : m
+          ))
+        },
       }
-    } catch (error) {
-      console.error("Chat error:", error)
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-      }])
-    } finally {
-      setIsLoading(false)
-    }
+    )
+
+    setIsLoading(false)
   }
 
   const handleSuggestedQuestion = (question: string) => {
@@ -725,6 +738,10 @@ export default function FloatingChatbot({ currentPhase = "default" }: FloatingCh
                       <Textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
+                        onFocus={textareaTelemetry.onFocus}
+                        onBlur={textareaTelemetry.onBlur}
+                        onPaste={textareaTelemetry.onPaste}
+                        onCopy={textareaTelemetry.onCopy}
                         placeholder="Type your question..."
                         className="flex-1 text-sm resize-none"
                         style={{ backgroundColor: neutralSurface, borderColor: neutralBorder, color: "hsl(var(--foreground))" }}

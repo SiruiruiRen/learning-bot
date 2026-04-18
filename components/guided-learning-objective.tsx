@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, ArrowRight, Send, Bot, Loader2 } from "lucide-react"
+import { Check, ArrowRight, Send, Bot, Loader2, Edit3 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,8 @@ import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
 import { useChatPersistence } from '@/hooks/useChatPersistence'
 import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
+import { useTextareaTelemetry } from "@/hooks/useTextareaTelemetry"
+import { streamChat, stripPendingMetadata } from "@/lib/streamChat"
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -95,9 +97,53 @@ export default function GuidedLearningObjective({
   const [finalSubmitted, setFinalSubmitted] = useState(false);
   const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
 
+  // ------------------------------------------------------------------
+  // Ch4 research instrumentation (2026-04-17):
+  // Every R1 → feedback → R2 cycle gets one feedback_cycle_id, shared
+  // across all events of that cycle (text_input, chat_message,
+  // feedback_delivered, revision_submitted). Downstream SQL can then
+  // reconstruct R1/feedback/R2 triples by JOIN on this id, instead of
+  // the fragile timestamp-ordering workaround.
+  //
+  // New cycle id generated at: (a) first use after mount, (b) each
+  // handleEdit (closing one cycle, starting the next). Page reload
+  // mid-session regenerates — the prior id is not persisted (acceptable
+  // minor noise; the refresh-and-continue case is rare).
+  // ------------------------------------------------------------------
+  const feedbackCycleIdRef = useRef<string | null>(null);
+  const getCurrentCycleId = (): string => {
+    if (!feedbackCycleIdRef.current) {
+      feedbackCycleIdRef.current = newTurnId();
+    }
+    return feedbackCycleIdRef.current;
+  };
+  // attempt_number = number of evaluations already seen + 1.
+  // On initial R1 (no evaluations yet) this is 1; after first feedback
+  // it's 2; matches the computation already used in revision_submitted.
+  const computeAttemptNumber = (): number =>
+    messages.filter(m => m.type === 'evaluation').length + 1;
+
+  // Ch4: textarea engagement telemetry (focus/blur/paste/copy).
+  // CRITICAL for Indicator 6 — a paste event captures the verbatim
+  // pasted text so we can detect direct adoption of chatbot feedback
+  // by comparing against the paired feedback_delivered.feedback_text.
+  const textareaTelemetry = useTextareaTelemetry({
+    phase,
+    component,
+    getFieldName: () => interactionState === 'guiding'
+      ? (OBJECTIVE_QUESTIONS[currentQuestionIndex]?.id ?? 'guided_input')
+      : 'chat_revision_input',
+    // Use the lazy-init helper so a paste/focus/blur that happens
+    // BEFORE any text_input still gets a cycle id — the cycle starts
+    // the first time ANY instrumented event fires, not only on submit.
+    getFeedbackCycleId: () => getCurrentCycleId(),
+    getSessionId: () => sessionId,
+  });
+
   const { loadChatState, saveChatState, clearChatState } = useChatPersistence(component, phase);
 
-  // Save full chat state whenever key state changes
+  // Save full chat state whenever key state changes.
+  // Ch4: also persist feedbackCycleId so reloads preserve cycle alignment.
   useEffect(() => {
     if (messages.length === 0) return; // Don't save empty state
     saveChatState({
@@ -107,6 +153,7 @@ export default function GuidedLearningObjective({
       responses,
       feedbackReceived,
       finalSubmitted,
+      feedbackCycleId: feedbackCycleIdRef.current,
     });
   }, [messages, interactionState, currentQuestionIndex, responses, feedbackReceived, finalSubmitted, saveChatState]);
 
@@ -125,6 +172,11 @@ export default function GuidedLearningObjective({
           setResponses(savedChatState.responses);
           setFeedbackReceived(savedChatState.feedbackReceived);
           setFinalSubmitted(savedChatState.finalSubmitted);
+          // Restore the active feedback_cycle_id so post-reload events
+          // keep the same grouping as pre-reload events.
+          if (savedChatState.feedbackCycleId) {
+            feedbackCycleIdRef.current = savedChatState.feedbackCycleId;
+          }
           console.log("Restored full chat state from localStorage");
 
           // Log chat_resumed event
@@ -245,7 +297,12 @@ export default function GuidedLearningObjective({
       console.warn("Could not save responses to localStorage:", error);
     }
 
-    // Log individual question response for research analytics
+    // Log individual question response for research analytics.
+    // Ch4: attempt_number is derived from evaluations seen (not hardcoded 1),
+    // so each revision cycle's text_inputs carry the correct cycle index.
+    // feedback_cycle_id groups all events of one R→feedback→R cycle.
+    const _cycleId = getCurrentCycleId();
+    const _attempt = computeAttemptNumber();
     try {
       captureToWAL("content_interaction_logs", {
         event_type: "text_input",
@@ -256,7 +313,8 @@ export default function GuidedLearningObjective({
         question_index: currentQuestionIndex,
         question_text: OBJECTIVE_QUESTIONS[currentQuestionIndex].question,
         is_submission: false,
-        attempt_number: 1,
+        attempt_number: _attempt,
+        feedback_cycle_id: _cycleId,
         timestamp: new Date().toISOString(),
       }, { sessionId, eventType: "text_input" })
       fetch('/api/events', {
@@ -273,7 +331,8 @@ export default function GuidedLearningObjective({
             question_index: currentQuestionIndex,
             question_text: OBJECTIVE_QUESTIONS[currentQuestionIndex].question,
             is_submission: false,
-            attempt_number: 1,
+            attempt_number: _attempt,
+            feedback_cycle_id: _cycleId,
             timestamp: new Date().toISOString()
           }
         })
@@ -312,11 +371,17 @@ export default function GuidedLearningObjective({
     if (!sessionId) return;
     setIsLoading(true);
     setShowRetryOption(false);
-
-    // Save the request for potential retry
     setLastFailedRequest(message);
 
-    // Log user message
+    // ==== 2026-04-17: streaming /api/chat/stream ====
+    // Token-by-token render so students see the feedback appearing as
+    // Claude generates it (first-token ~1s vs. 4-8s for the full blob).
+    // captureToWAL calls are all synchronous; /api/events POSTs are
+    // fire-and-forget to avoid the "await-fetch-blocks-UI" bug class
+    // we just fixed elsewhere.
+
+    // Log user chat_message (fire-and-forget).
+    const _userMsgCycleId = getCurrentCycleId();
     try {
       captureToWAL("messages", {
         event_type: "chat_message",
@@ -324,9 +389,10 @@ export default function GuidedLearningObjective({
         component: component,
         role: "user",
         content: message,
+        feedback_cycle_id: _userMsgCycleId,
         timestamp: new Date().toISOString(),
       }, { sessionId, eventType: "chat_message" })
-      await fetch('/api/events', {
+      fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -337,150 +403,190 @@ export default function GuidedLearningObjective({
           metadata: {
             role: 'user',
             content: message,
+            feedback_cycle_id: _userMsgCycleId,
             timestamp: new Date().toISOString()
           }
         })
-      })
+      }).catch(err => console.error("Failed to log user chat_message:", err));
     } catch (error) {
       console.error("Failed to log user message:", error)
     }
 
-    try {
-      const response = await fetch(`${DIRECT_BACKEND_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId, message, phase,
-          component, is_submission: true, attempt_number: 1
-        })
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || errorData.details || "Server error")
-      }
-      const data = await response.json();
+    // Create a placeholder bot message now, so the UI shows an empty
+    // bot bubble that fills in character-by-character. Cache its id so
+    // we can update it in onText and finalize it in onComplete.
+    const botMessageId = uuidv4();
+    const placeholderBotMessage: Message = {
+      id: botMessageId,
+      sender: "bot",
+      content: "",
+      type: "evaluation",
+    };
+    setMessages(prev => [...prev, placeholderBotMessage]);
 
-      if (!data || !data.data) {
-        throw new Error("Invalid response format from server")
-      }
+    let accumulated = "";
+    const _fbCycleId = getCurrentCycleId();
 
-      const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation", evaluation: data.data.evaluation };
-      setMessages(prev => [...prev, botFeedback]);
-      setFeedbackReceived(true);
-      setLastFailedRequest(null); // Clear on success
+    await streamChat(
+      `${DIRECT_BACKEND_URL}/api/chat/stream`,
+      {
+        session_id: sessionId,
+        message,
+        phase,
+        component,
+        is_submission: true,
+        attempt_number: 1,
+      },
+      {
+        onText: (delta) => {
+          accumulated += delta;
+          // Hide any partial `<!-- INSTRUCTOR_METADATA ...` block from
+          // the student while the stream is still arriving — otherwise
+          // they'd see the rubric scores flash by as raw comment text
+          // for a couple seconds before onComplete swaps in the cleaned
+          // final content. `accumulated` (the full raw text) is still
+          // forwarded to onComplete for server-side evaluation parsing.
+          const displayable = stripPendingMetadata(accumulated);
+          setMessages(prev => prev.map(m =>
+            m.id === botMessageId
+              ? { ...m, content: displayable }
+              : m
+          ));
+        },
+        onComplete: (cleanedContent, evaluation, model) => {
+          // Replace the streaming placeholder with the final cleaned
+          // content + parsed rubric evaluation (so FeedbackDisplay can
+          // render the score bars).
+          setMessages(prev => prev.map(m =>
+            m.id === botMessageId
+              ? { ...m, content: cleanedContent || accumulated, evaluation: evaluation as any }
+              : m
+          ));
+          setFeedbackReceived(true);
+          setLastFailedRequest(null);
 
-      // Log feedback_delivered event for time-on-feedback tracking.
-      // CRITICAL: spread the full evaluation so rubric scores
-      // (overall_score, scaffolding_level, lowest_category, etc.)
-      // actually land in the WAL. Before the spread, the WAL row
-      // only contained has_evaluation:true and the research queries
-      // got nulls for every score field.
-      try {
-        captureToWAL("assessments", {
-          event_type: "feedback_delivered",
-          phase: phase,
-          component: component,
-          timestamp: new Date().toISOString(),
-          has_evaluation: !!data.data.evaluation,
-          ...(data.data.evaluation ?? {}),
-        }, { sessionId, eventType: "feedback_delivered" })
-        await fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'feedback_delivered',
-            phase: phase,
-            component: component,
-            metadata: {
-              timestamp: new Date().toISOString(),
-              has_evaluation: !!data.data.evaluation,
-            }
-          })
-        })
-      } catch (error) {
-        console.error("Failed to log feedback_delivered:", error)
-      }
-
-      // Log chat_ended event
-      if (chatAnalyticsId && sessionId) {
-        try {
-          captureToWAL("messages", {
-            event_type: "chat_ended",
-            phase: phase,
-            component: component,
-            chat_analytics_id: chatAnalyticsId,
-            message_count: messages.length + 2,
-          }, { sessionId, eventType: "chat_ended" })
-          await fetch('/api/events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              session_id: sessionId,
-              event_type: 'chat_ended',
+          // ===== WAL: feedback_delivered with evaluation + feedback_text =====
+          // Ch4 (2026-04-17): feedback_text = the narrative the student
+          // actually read; feedback_cycle_id = JOIN key linking R1/feedback/R2.
+          const fbText = cleanedContent || accumulated || null;
+          try {
+            captureToWAL("assessments", {
+              event_type: "feedback_delivered",
               phase: phase,
               component: component,
-              metadata: {
+              timestamp: new Date().toISOString(),
+              has_evaluation: !!evaluation,
+              feedback_cycle_id: _fbCycleId,
+              feedback_text: fbText,
+              model,
+              ...(evaluation ?? {}),
+            }, { sessionId, eventType: "feedback_delivered" })
+            fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: sessionId,
+                event_type: 'feedback_delivered',
+                phase: phase,
+                component: component,
+                metadata: {
+                  timestamp: new Date().toISOString(),
+                  has_evaluation: !!evaluation,
+                  feedback_cycle_id: _fbCycleId,
+                  feedback_text: fbText,
+                  model,
+                }
+              })
+            }).catch(err => console.error("Failed to log feedback_delivered:", err));
+          } catch (error) {
+            console.error("Failed to WAL feedback_delivered:", error)
+          }
+
+          // ===== WAL: assistant chat_message =====
+          try {
+            captureToWAL("messages", {
+              event_type: "chat_message",
+              phase: phase,
+              component: component,
+              role: "assistant",
+              content: cleanedContent || accumulated,
+              feedback_cycle_id: _fbCycleId,
+              model,
+              timestamp: new Date().toISOString(),
+            }, { sessionId, eventType: "chat_message" })
+            fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: sessionId,
+                event_type: 'chat_message',
+                phase: phase,
+                component: component,
+                metadata: {
+                  role: 'assistant',
+                  content: cleanedContent || accumulated,
+                  feedback_cycle_id: _fbCycleId,
+                  model,
+                  timestamp: new Date().toISOString()
+                }
+              })
+            }).catch(err => console.error("Failed to log assistant chat_message:", err));
+          } catch (error) {
+            console.error("Failed to WAL assistant chat_message:", error)
+          }
+
+          // ===== chat_ended (for chat_analytics aggregate tracking) =====
+          if (chatAnalyticsId && sessionId) {
+            try {
+              captureToWAL("messages", {
+                event_type: "chat_ended",
+                phase: phase,
+                component: component,
                 chat_analytics_id: chatAnalyticsId,
-                message_count: messages.length + 2, // +2 for the current user msg and bot response
-              },
-            }),
-          })
-        } catch (error) {
-          console.error("Failed to log chat_ended:", error)
-        }
-      }
-
-      // Feedback received — user can continue chatting or submit final version
-
-      // Log AI response
-      try {
-        captureToWAL("messages", {
-          event_type: "chat_message",
-          phase: phase,
-          component: component,
-          role: "assistant",
-          content: botFeedback.content,
-          timestamp: new Date().toISOString(),
-        }, { sessionId, eventType: "chat_message" })
-        await fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'chat_message',
-            phase: phase,
-            component: component,
-            metadata: {
-              role: 'assistant',
-              content: botFeedback.content,
-              timestamp: new Date().toISOString()
+                message_count: messages.length + 2,
+              }, { sessionId, eventType: "chat_ended" })
+              fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  session_id: sessionId,
+                  event_type: 'chat_ended',
+                  phase: phase,
+                  component: component,
+                  metadata: {
+                    chat_analytics_id: chatAnalyticsId,
+                    message_count: messages.length + 2,
+                  },
+                }),
+              }).catch(err => console.error("Failed to log chat_ended:", err));
+            } catch (error) {
+              console.error("Failed to WAL chat_ended:", error)
             }
-          })
-        })
-      } catch (error) {
-        console.error("Failed to log AI response:", error)
+          }
+        },
+        onError: (errMsg) => {
+          console.error("Streaming chat error:", errMsg);
+          // Replace the placeholder with a friendly error message and
+          // let the student retry.
+          const isTimeout = /timeout|took longer/i.test(errMsg);
+          const errorContent = isTimeout
+            ? "I'm taking longer than usual to analyze your thoughtful response. This often happens with complex educational content that requires careful consideration.\n\n**Your work is saved** - you can try again for feedback or continue to the next task."
+            : "I encountered a temporary issue while providing feedback on your response.\n\n**Your work is saved** - please try again or continue to the next task.";
+          setMessages(prev => prev.map(m =>
+            m.id === botMessageId
+              ? { ...m, content: errorContent, type: "evaluation" as const }
+              : m
+          ));
+          setShowRetryOption(true);
+        },
       }
-    } catch (error: any) {
-      console.error("Chat API error:", error);
+    );
 
-      // Create user-friendly error message with retry option
-      const errorContent = error.message?.includes("timeout") || error.message?.includes("took longer")
-        ? "I'm taking longer than usual to analyze your thoughtful response. This often happens with complex educational content that requires careful consideration.\n\n**Your work is saved** - you can try again for feedback or continue to the next task."
-        : "I encountered a temporary issue while providing feedback on your response.\n\n**Your work is saved** - please try again or continue to the next task.";
-
-      const errorMessage: Message = {
-        id: uuidv4(),
-        sender: "bot",
-        content: errorContent,
-        type: "evaluation"
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      setShowRetryOption(true); // Show retry option on error
-    } finally {
-      setIsLoading(false);
-      setInteractionState("chatting");
-    }
+    // streamChat returns after the stream's terminal event (complete or
+    // error) has been dispatched, so we can flip back to chatting state
+    // and clear the loader here.
+    setIsLoading(false);
+    setInteractionState("chatting");
   };
 
   const handleRetryFeedback = () => {
@@ -508,15 +614,37 @@ export default function GuidedLearningObjective({
     try {
       const sid = localStorage.getItem("session_id");
       const uid = localStorage.getItem("user_id");
+      // ---- BUG FIX 2026-04-17 ----
+      // CRITICAL: mark the phase completed in localStorage BEFORE any
+      // network call. Previously the `await fetch('/api/events', ...)`
+      // below could hang up to 30s on Render cold start, and users who
+      // refreshed/navigated during that window never got
+      // `solbot_phase{N}_completed=true` written — SessionGate then
+      // bounced them back to the same phase on next load, even though
+      // they'd already "finished" it.
+      //
+      // WAL capture (captureToWAL) is synchronous and already durable,
+      // so the research data stays intact regardless of fetch timing.
+      // The /api/events call is now fire-and-forget — its `.catch`
+      // handler makes it safe to skip the `await`.
+      try {
+        localStorage.setItem(`solbot_phase${phaseNumber}_completed`, "true");
+      } catch (error) {
+        console.error("Error saving phase completion flag:", error);
+      }
       if (sid) {
+        const _finalCycleId = getCurrentCycleId();
         captureToWAL("phase_completion_analytics", {
           event_type: "final_submission",
           phase: `phase${phaseNumber}`,
           component,
           responses,
+          feedback_cycle_id: _finalCycleId,
           timestamp: new Date().toISOString(),
         }, { sessionId: sid, eventType: "final_submission" })
-        await fetch("/api/events", {
+        // Fire-and-forget — no `await`. If the backend is cold,
+        // the user still proceeds; the WAL row above is durable.
+        fetch("/api/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -524,11 +652,14 @@ export default function GuidedLearningObjective({
             event_type: "final_submission",
             phase: `phase${phaseNumber}`,
             component,
-            metadata: { responses, timestamp: new Date().toISOString() },
+            metadata: {
+              responses,
+              feedback_cycle_id: _finalCycleId,
+              timestamp: new Date().toISOString(),
+            },
           }),
         }).catch(err => console.error("Failed to log final_submission:", err));
       }
-      localStorage.setItem(`solbot_phase${phaseNumber}_completed`, "true");
       if (uid) {
         fetch("/api/user-data", {
           method: "POST",
@@ -598,11 +729,14 @@ export default function GuidedLearningObjective({
     setUserInput(responses[OBJECTIVE_QUESTIONS[0].id] || "");
 
     if (sessionId) {
+      // Capture BEFORE rotation so this event closes the previous cycle.
+      const _closingCycleId = getCurrentCycleId();
       captureToWAL("user_revision_tracking", {
         event_type: "revision_submitted",
         phase: phase,
         component: component,
-        attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+        attempt_number: computeAttemptNumber(),
+        feedback_cycle_id: _closingCycleId,
         content_changes: responses,
       }, { sessionId, eventType: "revision_submitted" })
       fetch('/api/events', {
@@ -614,12 +748,15 @@ export default function GuidedLearningObjective({
           phase: phase,
           component: component,
           metadata: {
-            attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+            attempt_number: computeAttemptNumber(),
+            feedback_cycle_id: _closingCycleId,
             content_changes: responses,
           },
         }),
       });
     }
+    // Rotate cycle: next round of text_inputs = R_{n+1}, new cycle id.
+    feedbackCycleIdRef.current = newTurnId();
   };
 
   const handleEditSingleQuestion = (questionIndex: number) => {
@@ -659,6 +796,10 @@ export default function GuidedLearningObjective({
               placeholder={OBJECTIVE_QUESTIONS[currentQuestionIndex].hint}
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
+              onFocus={textareaTelemetry.onFocus}
+              onBlur={textareaTelemetry.onBlur}
+              onPaste={textareaTelemetry.onPaste}
+              onCopy={textareaTelemetry.onCopy}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
               style={{
@@ -676,8 +817,39 @@ export default function GuidedLearningObjective({
       );
     } else if (interactionState === 'confirming') {
       return (
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleEdit} disabled={isLoading} style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }} title="Edit your response">Edit</Button>
+        <div className="flex gap-2 justify-end flex-wrap">
+          {/* Edit Responses — destructive-ish action, requires confirmation */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={isLoading}
+                style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
+                title="Start over from Question 1 — clears history and current answers"
+              >
+                <Edit3 size={16} className="mr-2" />
+                Edit Responses
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Start over with new answers?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will clear the current conversation and your
+                  three answers, and take you back to{" "}
+                  <strong>Question 1</strong>. You&apos;ll need to answer
+                  all three questions again from the beginning. Your
+                  previous answers will not be saved.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleEdit}>
+                  Yes, start over
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button onClick={handleSubmitForFeedback} disabled={isLoading} style={primaryButtonStyle} title="Confirm and submit for feedback">
             <Check size={16} className="mr-2"/>Confirm & Submit
           </Button>
@@ -696,10 +868,12 @@ export default function GuidedLearningObjective({
               onChange={(e) => {
                 setUserInput(e.target.value);
                 if (feedbackReceived && e.target.value.length === 1 && userInput.length === 0 && sessionId) {
+                  const _revStartCycle = getCurrentCycleId();
                   captureToWAL("user_revision_tracking", {
                     event_type: "revision_started",
                     phase: phase,
                     component: component,
+                    feedback_cycle_id: _revStartCycle,
                     timestamp: new Date().toISOString(),
                   }, { sessionId, eventType: "revision_started" })
                   fetch('/api/events', {
@@ -710,11 +884,18 @@ export default function GuidedLearningObjective({
                       event_type: 'revision_started',
                       phase: phase,
                       component: component,
-                      metadata: { timestamp: new Date().toISOString() }
+                      metadata: {
+                        feedback_cycle_id: _revStartCycle,
+                        timestamp: new Date().toISOString()
+                      }
                     })
                   }).catch(err => console.error("Failed to log revision_started:", err));
                 }
               }}
+              onFocus={textareaTelemetry.onFocus}
+              onBlur={textareaTelemetry.onBlur}
+              onPaste={textareaTelemetry.onPaste}
+              onCopy={textareaTelemetry.onCopy}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
               style={{
@@ -736,6 +917,43 @@ export default function GuidedLearningObjective({
               </Button>
             </div>
           )}
+          {/* Edit Responses — full restart Q1→Q3 with explicit warning.
+              Appears here (chatting state) so a student who saw feedback
+              and now wants to revise from scratch doesn't have to look
+              for the Submit Final button first. */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                style={{ borderColor: neutralBorder, color: mutedText }}
+                disabled={isLoading || isSubmittingFinal}
+                title="Start over from Question 1 — clears the conversation and your current answers"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Responses (start over)
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Start over with new answers?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will clear the current conversation and your
+                  three answers, and take you back to{" "}
+                  <strong>Question 1</strong>. You&apos;ll need to answer
+                  all three questions again from the beginning. Your
+                  previous answers will not be saved.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleEdit}>
+                  Yes, start over
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           {/* Submit Final Answer — full-width, large, amber-ring glow */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -762,36 +980,31 @@ export default function GuidedLearningObjective({
                   your final answer for this phase.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              {/* Inline preview — shows each question's label + the
-                  student's response so they can eyeball before
-                  confirming. Matches the post-submit receipt so the
-                  student sees the same summary twice: here, and on the
-                  confirmation bubble after they click Yes. */}
-              <div className="max-h-[55vh] overflow-y-auto space-y-3 rounded-lg border p-3 bg-muted/30">
-                {OBJECTIVE_QUESTIONS.map((q) => {
-                  const labelMap: Record<string, string> = {
-                    goal_clarity: "What you're learning",
-                    background_connection: "Your resources",
-                    study_resources: "How you'll use them",
-                  }
-                  const ans = (responses[q.id] ?? "").trim()
+              {/* Inline preview — show the student's MOST RECENT full
+                  answer as a single continuous block (no per-question
+                  sub-labels), so they see exactly what will be
+                  recorded. Joined with blank lines between paragraphs. */}
+              <div className="max-h-[55vh] overflow-y-auto rounded-lg border p-4 bg-muted/30">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Your answer
+                </p>
+                {(() => {
+                  const fullAnswer = OBJECTIVE_QUESTIONS
+                    .map((q) => (responses[q.id] ?? "").trim())
+                    .filter(Boolean)
+                    .join("\n\n")
                   return (
-                    <div key={q.id}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                        {labelMap[q.id] ?? q.id}
-                      </p>
-                      <div
-                        className="text-sm whitespace-pre-wrap rounded border-l-2 pl-3 py-1"
-                        style={{
-                          borderLeftColor: accent,
-                          color: ans ? "hsl(var(--foreground))" : mutedText,
-                        }}
-                      >
-                        {ans || "(not yet answered)"}
-                      </div>
+                    <div
+                      className="text-sm whitespace-pre-wrap border-l-2 pl-3 py-1"
+                      style={{
+                        borderLeftColor: accent,
+                        color: fullAnswer ? "hsl(var(--foreground))" : mutedText,
+                      }}
+                    >
+                      {fullAnswer || "(no response yet)"}
                     </div>
                   )
-                })}
+                })()}
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Go Back &amp; Continue to Chat</AlertDialogCancel>
@@ -831,25 +1044,32 @@ export default function GuidedLearningObjective({
             >
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                 {message.type === 'confirmation' && typeof message.content === 'object' ? (
+                  // Ch4 (2026-04-17): simplified confirmation preview.
+                  // Shows the whole answer as one continuous block — no
+                  // per-component labels (Course/Learning Task, Available
+                  // Resources, Strategic Resource Utilization) and no
+                  // click-to-edit on individual sections. Per-section
+                  // editing was error-prone; the only edit path now is
+                  // the explicit "Edit Responses" button which clears
+                  // history and restarts Q1→Q3 (with confirmation).
                   <div className="space-y-3">
-                    <p>Thank you! Here is your complete learning objective. Please review it. <span style={{ color: mutedText, fontSize: "0.85em" }}>Click any section to edit it.</span></p>
-                    {[
-                      { key: "task" as const, label: "Course/Learning Task:", index: 0 },
-                      { key: "resources" as const, label: "Available Resources:", index: 1 },
-                      { key: "strategy" as const, label: "Strategic Resource Utilization:", index: 2 },
-                    ].map(({ key, label, index }) => (
-                      <div
-                        key={key}
-                        className="p-3 rounded-md border transition-colors"
-                        style={{ backgroundColor: "hsl(var(--muted) / 0.5)", borderColor: neutralBorder, cursor: interactionState === "confirming" ? "pointer" : "default" }}
-                        onClick={() => { if (interactionState === "confirming") handleEditSingleQuestion(index); }}
-                        onMouseEnter={(e) => { if (interactionState === "confirming") { e.currentTarget.style.borderColor = accent; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.7)"; }}}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = neutralBorder; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.5)"; }}
-                      >
-                        <h4 className="font-semibold mb-1" style={{ color: accent }}>{label}</h4>
-                        <p className="whitespace-pre-wrap">{(message.content as Record<string, string>)[key]}</p>
-                      </div>
-                    ))}
+                    <p>Thank you! Here is your complete learning objective. Please review it.</p>
+                    <div
+                      className="p-3 rounded-md border whitespace-pre-wrap text-sm"
+                      style={{
+                        backgroundColor: "hsl(var(--muted) / 0.5)",
+                        borderColor: neutralBorder,
+                      }}
+                    >
+                      {[
+                        (message.content as Record<string, string>).task,
+                        (message.content as Record<string, string>).resources,
+                        (message.content as Record<string, string>).strategy,
+                      ]
+                        .map((s) => (s ?? "").trim())
+                        .filter(Boolean)
+                        .join("\n\n")}
+                    </div>
                   </div>
                 ) : message.type === 'evaluation' ? (
                   <FeedbackDisplay 

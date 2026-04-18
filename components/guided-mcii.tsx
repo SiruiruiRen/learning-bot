@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, Send, Bot, Loader2 } from "lucide-react"
+import { Check, Send, Bot, Loader2, Edit3 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,8 @@ import FeedbackDisplay from "@/components/feedback-display"
 import { v4 as uuidv4 } from 'uuid'
 import { useChatPersistence } from '@/hooks/useChatPersistence'
 import { captureToWAL, newTurnId } from "@/lib/dataLayerInstrument"
+import { useTextareaTelemetry } from "@/hooks/useTextareaTelemetry"
+import { streamChat, stripPendingMetadata } from "@/lib/streamChat"
 
 const DIRECT_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://solbot-backend.onrender.com"
 
@@ -103,9 +105,41 @@ export default function GuidedMCII({
   const [finalSubmitted, setFinalSubmitted] = useState(false);
   const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
 
+  // ------------------------------------------------------------------
+  // Ch4 research instrumentation (2026-04-17):
+  // One feedback_cycle_id per R→feedback→R cycle, shared across
+  // text_input / chat_message / feedback_delivered / revision_submitted
+  // so downstream SQL can JOIN R1/feedback/R2 instead of relying on
+  // fragile timestamp ordering. Rotated on each handleEditResponses.
+  // ------------------------------------------------------------------
+  const feedbackCycleIdRef = useRef<string | null>(null);
+  const getCurrentCycleId = (): string => {
+    if (!feedbackCycleIdRef.current) {
+      feedbackCycleIdRef.current = newTurnId();
+    }
+    return feedbackCycleIdRef.current;
+  };
+  const computeAttemptNumber = (): number =>
+    messages.filter(m => m.type === 'evaluation').length + 1;
+
+  // Ch4: textarea engagement telemetry (focus/blur/paste/copy).
+  // Paste detection is critical for Indicator 6 (Feedback Integration).
+  const textareaTelemetry = useTextareaTelemetry({
+    phase,
+    component,
+    getFieldName: () => interactionState === 'guiding'
+      ? (MCII_QUESTIONS[currentQuestionIndex]?.id ?? 'guided_input')
+      : 'chat_revision_input',
+    // Lazy-init cycle id on first paste/focus/blur (see
+    // guided-learning-objective.tsx for rationale).
+    getFeedbackCycleId: () => getCurrentCycleId(),
+    getSessionId: () => sessionId,
+  });
+
   const { loadChatState, saveChatState, clearChatState } = useChatPersistence(component, phase);
 
-  // Save full chat state whenever key state changes
+  // Save full chat state whenever key state changes.
+  // Ch4: also persist feedbackCycleId so reloads preserve cycle alignment.
   useEffect(() => {
     if (messages.length === 0) return;
     saveChatState({
@@ -115,6 +149,7 @@ export default function GuidedMCII({
       responses,
       feedbackReceived,
       finalSubmitted,
+      feedbackCycleId: feedbackCycleIdRef.current,
     });
   }, [messages, interactionState, currentQuestionIndex, responses, feedbackReceived, finalSubmitted, saveChatState]);
 
@@ -133,6 +168,10 @@ export default function GuidedMCII({
           setResponses(savedChatState.responses);
           setFeedbackReceived(savedChatState.feedbackReceived);
           setFinalSubmitted(savedChatState.finalSubmitted);
+          // Restore the active feedback_cycle_id across reloads.
+          if (savedChatState.feedbackCycleId) {
+            feedbackCycleIdRef.current = savedChatState.feedbackCycleId;
+          }
           console.log("Restored full chat state from localStorage");
 
           try {
@@ -249,7 +288,11 @@ export default function GuidedMCII({
       console.warn("Could not save responses to localStorage:", error);
     }
 
-    // Log individual question response for research analytics
+    // Log individual question response for research analytics.
+    // Ch4: attempt_number derived from evaluations seen;
+    // feedback_cycle_id groups events within one R→feedback→R cycle.
+    const _cycleId = getCurrentCycleId();
+    const _attempt = computeAttemptNumber();
     try {
       captureToWAL("content_interaction_logs", {
         event_type: "text_input",
@@ -260,7 +303,8 @@ export default function GuidedMCII({
         question_index: currentQuestionIndex,
         question_text: MCII_QUESTIONS[currentQuestionIndex].question,
         is_submission: false,
-        attempt_number: 1,
+        attempt_number: _attempt,
+        feedback_cycle_id: _cycleId,
         timestamp: new Date().toISOString(),
       }, { sessionId, eventType: "text_input" })
       fetch('/api/events', {
@@ -277,7 +321,8 @@ export default function GuidedMCII({
             question_index: currentQuestionIndex,
             question_text: MCII_QUESTIONS[currentQuestionIndex].question,
             is_submission: false,
-            attempt_number: 1,
+            attempt_number: _attempt,
+            feedback_cycle_id: _cycleId,
             timestamp: new Date().toISOString()
           }
         })
@@ -330,11 +375,13 @@ export default function GuidedMCII({
     if (!sessionId) return;
     setIsLoading(true);
     setShowRetryOption(false);
-
-    // Save the request for potential retry
     setLastFailedRequest(message);
 
-    // Log user message
+    // ==== 2026-04-17: streaming /api/chat/stream ====
+    // Same pattern as guided-learning-objective.tsx — see that file for
+    // the design rationale.
+
+    const _userMsgCycleId = getCurrentCycleId();
     try {
       captureToWAL("messages", {
         event_type: "chat_message",
@@ -342,9 +389,10 @@ export default function GuidedMCII({
         component: component,
         role: "user",
         content: message,
+        feedback_cycle_id: _userMsgCycleId,
         timestamp: new Date().toISOString(),
       }, { sessionId, eventType: "chat_message" })
-      await fetch('/api/events', {
+      fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -355,118 +403,143 @@ export default function GuidedMCII({
           metadata: {
             role: 'user',
             content: message,
+            feedback_cycle_id: _userMsgCycleId,
             timestamp: new Date().toISOString()
           }
         })
-      })
+      }).catch(err => console.error("Failed to log user chat_message:", err));
     } catch (error) {
       console.error("Failed to log user message:", error)
     }
 
-    try {
-      const response = await fetch(`${DIRECT_BACKEND_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId, message, phase,
-          component, is_submission: true, attempt_number: 1
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || errorData.details || "Server error")
-      }
-      
-      const data = await response.json();
-      
-      if (!data || !data.data) {
-        throw new Error("Invalid response format from server")
-      }
+    const botMessageId = uuidv4();
+    const placeholderBotMessage: Message = {
+      id: botMessageId,
+      sender: "bot",
+      content: "",
+      type: "evaluation",
+    };
+    setMessages(prev => [...prev, placeholderBotMessage]);
 
-      const botFeedback: Message = { id: uuidv4(), sender: "bot", content: data.data.message || data.data.content || "Received feedback", type: "evaluation" };
-      setMessages(prev => [...prev, botFeedback]);
-      setFeedbackReceived(true);
-      setLastFailedRequest(null); // Clear on success
+    let accumulated = "";
+    const _fbCycleId = getCurrentCycleId();
 
-      // Log feedback_delivered event for time-on-feedback tracking.
-      // Spread the evaluation so rubric scores land in WAL.
-      try {
-        captureToWAL("assessments", {
-          event_type: "feedback_delivered",
-          phase: phase,
-          component: component,
-          timestamp: new Date().toISOString(),
-          has_evaluation: !!data.data?.evaluation,
-          ...(data.data?.evaluation ?? {}),
-        }, { sessionId, eventType: "feedback_delivered" })
-        await fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'feedback_delivered',
-            phase: phase,
-            component: component,
-            metadata: {
+    await streamChat(
+      `${DIRECT_BACKEND_URL}/api/chat/stream`,
+      {
+        session_id: sessionId,
+        message,
+        phase,
+        component,
+        is_submission: true,
+        attempt_number: 1,
+      },
+      {
+        onText: (delta) => {
+          accumulated += delta;
+          // Hide in-progress INSTRUCTOR_METADATA comment block from
+          // the displayed content — see guided-learning-objective.tsx
+          // for the rationale.
+          const displayable = stripPendingMetadata(accumulated);
+          setMessages(prev => prev.map(m =>
+            m.id === botMessageId
+              ? { ...m, content: displayable }
+              : m
+          ));
+        },
+        onComplete: (cleanedContent, evaluation, model) => {
+          setMessages(prev => prev.map(m =>
+            m.id === botMessageId
+              ? { ...m, content: cleanedContent || accumulated, ...(evaluation ? { evaluation: evaluation as any } : {}) }
+              : m
+          ));
+          setFeedbackReceived(true);
+          setLastFailedRequest(null);
+
+          const fbText = cleanedContent || accumulated || null;
+          try {
+            captureToWAL("assessments", {
+              event_type: "feedback_delivered",
+              phase: phase,
+              component: component,
               timestamp: new Date().toISOString(),
-            }
-          })
-        })
-      } catch (error) {
-        console.error("Failed to log feedback_delivered:", error)
-      }
+              has_evaluation: !!evaluation,
+              feedback_cycle_id: _fbCycleId,
+              feedback_text: fbText,
+              model,
+              ...(evaluation ?? {}),
+            }, { sessionId, eventType: "feedback_delivered" })
+            fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: sessionId,
+                event_type: 'feedback_delivered',
+                phase: phase,
+                component: component,
+                metadata: {
+                  timestamp: new Date().toISOString(),
+                  has_evaluation: !!evaluation,
+                  feedback_cycle_id: _fbCycleId,
+                  feedback_text: fbText,
+                  model,
+                }
+              })
+            }).catch(err => console.error("Failed to log feedback_delivered:", err));
+          } catch (error) {
+            console.error("Failed to WAL feedback_delivered:", error)
+          }
 
-      // Feedback received — user can continue chatting or submit final version
-
-      // Log AI response
-      try {
-        captureToWAL("messages", {
-          event_type: "chat_message",
-          phase: phase,
-          component: component,
-          role: "assistant",
-          content: botFeedback.content,
-          timestamp: new Date().toISOString(),
-        }, { sessionId, eventType: "chat_message" })
-        await fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'chat_message',
-            phase: phase,
-            component: component,
-            metadata: {
-              role: 'assistant',
-              content: botFeedback.content,
-              timestamp: new Date().toISOString()
-            }
-          })
-        })
-      } catch (error) {
-        console.error("Failed to log AI response:", error)
+          try {
+            captureToWAL("messages", {
+              event_type: "chat_message",
+              phase: phase,
+              component: component,
+              role: "assistant",
+              content: cleanedContent || accumulated,
+              feedback_cycle_id: _fbCycleId,
+              model,
+              timestamp: new Date().toISOString(),
+            }, { sessionId, eventType: "chat_message" })
+            fetch('/api/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                session_id: sessionId,
+                event_type: 'chat_message',
+                phase: phase,
+                component: component,
+                metadata: {
+                  role: 'assistant',
+                  content: cleanedContent || accumulated,
+                  feedback_cycle_id: _fbCycleId,
+                  model,
+                  timestamp: new Date().toISOString()
+                }
+              })
+            }).catch(err => console.error("Failed to log assistant chat_message:", err));
+          } catch (error) {
+            console.error("Failed to WAL assistant chat_message:", error)
+          }
+        },
+        onError: (errMsg) => {
+          console.error("Streaming chat error:", errMsg);
+          const isTimeout = /timeout|took longer/i.test(errMsg);
+          const errorContent = isTimeout
+            ? "I'm taking longer than usual to analyze your thoughtful response. This often happens with complex educational content that requires careful consideration.\n\n**Your work is saved** - you can try again for feedback or continue to the next task."
+            : "I encountered a temporary issue while providing feedback on your response.\n\n**Your work is saved** - please try again or continue to the next task.";
+          setMessages(prev => prev.map(m =>
+            m.id === botMessageId
+              ? { ...m, content: errorContent, type: "evaluation" as const }
+              : m
+          ));
+          setShowRetryOption(true);
+        },
       }
-    } catch (error: any) {
-      console.error("Chat API error:", error);
-      
-      // Create user-friendly error message with retry option
-      const errorContent = error.message?.includes("timeout") || error.message?.includes("took longer") 
-        ? "I'm taking longer than usual to analyze your thoughtful response. This often happens with complex educational content that requires careful consideration.\n\n**Your work is saved** - you can try again for feedback or continue to the next task."
-        : "I encountered a temporary issue while providing feedback on your response.\n\n**Your work is saved** - please try again or continue to the next task.";
-      
-      const errorMessage: Message = { 
-        id: uuidv4(), 
-        sender: "bot", 
-        content: errorContent, 
-        type: "evaluation" 
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      setShowRetryOption(true); // Show retry option on error
-    } finally {
-      setIsLoading(false);
-      setInteractionState("chatting");
-    }
+    );
+
+    setIsLoading(false);
+    setInteractionState("chatting");
   };
 
   const handleRetryFeedback = () => {
@@ -507,11 +580,14 @@ export default function GuidedMCII({
     setUserInput(responses[MCII_QUESTIONS[0].id] || "");
 
     if (sessionId) {
+      // Close the current cycle with this event, then rotate.
+      const _closingCycleId = getCurrentCycleId();
       captureToWAL("user_revision_tracking", {
         event_type: "revision_submitted",
         phase: phase,
         component: component,
-        attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+        attempt_number: computeAttemptNumber(),
+        feedback_cycle_id: _closingCycleId,
         content_changes: responses,
       }, { sessionId, eventType: "revision_submitted" })
       fetch('/api/events', {
@@ -523,12 +599,15 @@ export default function GuidedMCII({
           phase: phase,
           component: component,
           metadata: {
-            attempt_number: (messages.filter(m => m.type === 'evaluation').length) + 1,
+            attempt_number: computeAttemptNumber(),
+            feedback_cycle_id: _closingCycleId,
             content_changes: responses,
           },
         }),
       });
     }
+    // Rotate: next R_{n+1} text_inputs belong to a new cycle.
+    feedbackCycleIdRef.current = newTurnId();
   };
 
   const handleEditSingleQuestion = (questionIndex: number) => {
@@ -561,15 +640,27 @@ export default function GuidedMCII({
           body: JSON.stringify({ session_id: sid, event_type: 'chat_ended', metadata: { chat_analytics_id: chatAnalyticsId, message_count: messages.length } }),
         }).catch(() => {});
       }
+      // ---- BUG FIX 2026-04-17 ----
+      // Write phase completion flag to localStorage FIRST, so a cold
+      // backend can't block the gate from opening. Then fire-and-forget
+      // the /api/events POST (WAL already has the durable copy).
+      try {
+        localStorage.setItem(`solbot_phase${phaseNumber}_completed`, "true");
+      } catch (error) {
+        console.error("Error saving phase completion flag:", error);
+      }
       if (sid) {
+        const _finalCycleId = getCurrentCycleId();
         captureToWAL("phase_completion_analytics", {
           event_type: "final_submission",
           phase: `phase${phaseNumber}`,
           component,
           responses,
+          feedback_cycle_id: _finalCycleId,
           timestamp: new Date().toISOString(),
         }, { sessionId: sid, eventType: "final_submission" })
-        await fetch("/api/events", {
+        // Fire-and-forget (was `await`, which could hang 30s on cold start)
+        fetch("/api/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -577,11 +668,10 @@ export default function GuidedMCII({
             event_type: "final_submission",
             phase: `phase${phaseNumber}`,
             component,
-            metadata: { responses, timestamp: new Date().toISOString() },
+            metadata: { responses, feedback_cycle_id: _finalCycleId, timestamp: new Date().toISOString() },
           }),
         }).catch(err => console.error("Failed to log final_submission:", err));
       }
-      localStorage.setItem(`solbot_phase${phaseNumber}_completed`, "true");
       if (uid) {
         fetch("/api/user-data", {
           method: "POST",
@@ -661,10 +751,14 @@ export default function GuidedMCII({
               placeholder={MCII_QUESTIONS[currentQuestionIndex].hint}
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
+              onFocus={textareaTelemetry.onFocus}
+              onBlur={textareaTelemetry.onBlur}
+              onPaste={textareaTelemetry.onPaste}
+              onCopy={textareaTelemetry.onCopy}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
-              style={{ 
-                backgroundColor: neutralSurface, 
+              style={{
+                backgroundColor: neutralSurface,
                 borderColor: neutralBorder,
                 color: "hsl(var(--foreground))"
               }}
@@ -678,8 +772,39 @@ export default function GuidedMCII({
       );
     } else if (interactionState === 'confirming') {
       return (
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleEditResponses} disabled={isLoading} style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }} title="Edit your response">Edit</Button>
+        <div className="flex gap-2 justify-end flex-wrap">
+          {/* Edit Responses — full restart Q1→Q4 with explicit warning */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={isLoading}
+                style={{ borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
+                title="Start over from Question 1 — clears history and current answers"
+              >
+                <Edit3 size={16} className="mr-2" />
+                Edit Responses
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Start over with new answers?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will clear the current conversation and your
+                  four MCII answers, and take you back to{" "}
+                  <strong>Question 1 (your goal)</strong>. You&apos;ll
+                  need to answer all four questions again from the
+                  beginning. Your previous answers will not be saved.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleEditResponses}>
+                  Yes, start over
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button onClick={handleSubmitForFeedback} disabled={isLoading} style={primaryButtonStyle} title="Confirm and submit for feedback">
             <Check size={16} className="mr-2"/>Confirm & Submit
           </Button>
@@ -696,19 +821,25 @@ export default function GuidedMCII({
               onChange={(e) => {
                 setUserInput(e.target.value);
                 if (feedbackReceived && e.target.value.length === 1 && userInput.length === 0 && sessionId) {
+                  const _revStartCycle = getCurrentCycleId();
                   captureToWAL("user_revision_tracking", {
                     event_type: "revision_started",
                     phase,
                     component,
+                    feedback_cycle_id: _revStartCycle,
                     timestamp: new Date().toISOString(),
                   }, { sessionId, eventType: "revision_started" })
                   fetch('/api/events', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId, event_type: 'revision_started', phase, component, metadata: { timestamp: new Date().toISOString() } })
+                    body: JSON.stringify({ session_id: sessionId, event_type: 'revision_started', phase, component, metadata: { feedback_cycle_id: _revStartCycle, timestamp: new Date().toISOString() } })
                   }).catch(err => console.error("Failed to log revision_started:", err));
                 }
               }}
+              onFocus={textareaTelemetry.onFocus}
+              onBlur={textareaTelemetry.onBlur}
+              onPaste={textareaTelemetry.onPaste}
+              onCopy={textareaTelemetry.onCopy}
               maxLength={CHARACTER_LIMIT}
               className="flex-1 min-h-[80px]"
               style={{ backgroundColor: neutralSurface, borderColor: neutralBorder, color: "hsl(var(--foreground))" }}
@@ -726,6 +857,43 @@ export default function GuidedMCII({
               </Button>
             </div>
           )}
+          {/* Edit Responses — full restart Q1→Q4 with explicit warning.
+              Available here (chatting state) so a student who saw
+              feedback and wants to revise from scratch doesn't have to
+              look for it via the Submit Final button. */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                style={{ borderColor: neutralBorder, color: mutedText }}
+                disabled={isLoading || isSubmittingFinal}
+                title="Start over from Question 1 — clears the conversation and your current answers"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit Responses (start over)
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Start over with new answers?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will clear the current conversation and your
+                  four MCII answers, and take you back to{" "}
+                  <strong>Question 1 (your goal)</strong>. You&apos;ll
+                  need to answer all four questions again from the
+                  beginning. Your previous answers will not be saved.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleEditResponses}>
+                  Yes, start over
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           {/* Submit Final Answer — full-width, large, amber-ring glow */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -752,33 +920,31 @@ export default function GuidedMCII({
                   your final answer for this phase.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              {/* Inline preview of MCII responses */}
-              <div className="max-h-[55vh] overflow-y-auto space-y-3 rounded-lg border p-3 bg-muted/30">
-                {MCII_QUESTIONS.map((q) => {
-                  const labelMap: Record<string, string> = {
-                    pick_goal: "Your goal",
-                    indulge: "Best outcome (visualization)",
-                    consider_obstacles: "Biggest obstacle",
-                    implementation_intention: "If-Then plan",
-                  }
-                  const ans = (responses[q.id] ?? "").trim()
+              {/* Inline preview — show the student's MOST RECENT full
+                  answer as a single continuous block (no per-question
+                  sub-labels) so they see exactly what will be
+                  recorded. */}
+              <div className="max-h-[55vh] overflow-y-auto rounded-lg border p-4 bg-muted/30">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Your answer
+                </p>
+                {(() => {
+                  const fullAnswer = MCII_QUESTIONS
+                    .map((q) => (responses[q.id] ?? "").trim())
+                    .filter(Boolean)
+                    .join("\n\n")
                   return (
-                    <div key={q.id}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                        {labelMap[q.id] ?? q.id}
-                      </p>
-                      <div
-                        className="text-sm whitespace-pre-wrap rounded border-l-2 pl-3 py-1"
-                        style={{
-                          borderLeftColor: accent,
-                          color: ans ? "hsl(var(--foreground))" : mutedText,
-                        }}
-                      >
-                        {ans || "(not yet answered)"}
-                      </div>
+                    <div
+                      className="text-sm whitespace-pre-wrap border-l-2 pl-3 py-1"
+                      style={{
+                        borderLeftColor: accent,
+                        color: fullAnswer ? "hsl(var(--foreground))" : mutedText,
+                      }}
+                    >
+                      {fullAnswer || "(no response yet)"}
                     </div>
                   )
-                })}
+                })()}
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Go Back &amp; Continue to Chat</AlertDialogCancel>
@@ -822,26 +988,32 @@ export default function GuidedMCII({
             >
               <CardContent className="p-3 text-sm overflow-hidden max-w-full">
                  {message.type === 'confirmation' && typeof message.content === 'object' ? (
+                    // Ch4 (2026-04-17): simplified confirmation preview.
+                    // Shows the whole MCII plan as one continuous block,
+                    // no per-step labels (Goal/Indulge/Obstacles/Intention)
+                    // and no click-to-edit on sections. Per-section
+                    // editing was error-prone; the only edit path now is
+                    // the explicit "Edit Responses" button which clears
+                    // history and restarts Q1→Q4 with confirmation.
                     <div className="space-y-3">
-                      <p>Thank you for your thoughtful responses! Here is your complete MCII plan. Please review it. <span style={{ color: mutedText, fontSize: "0.85em" }}>Click any section to edit it.</span></p>
-                      {[
-                        { key: "pick_goal" as const, label: "1. Goal:", index: 0 },
-                        { key: "indulge" as const, label: "2. Indulge (Visualization):", index: 1 },
-                        { key: "consider_obstacles" as const, label: "3. Consider Obstacles:", index: 2 },
-                        { key: "implementation_intention" as const, label: "4. Implementation Intention:", index: 3 },
-                      ].map(({ key, label, index }) => (
-                        <div
-                          key={key}
-                          className="p-3 rounded-md border transition-colors"
-                          style={{ backgroundColor: "hsl(var(--muted) / 0.4)", borderColor: neutralBorder, cursor: interactionState === "confirming" ? "pointer" : "default" }}
-                          onClick={() => { if (interactionState === "confirming") handleEditSingleQuestion(index); }}
-                          onMouseEnter={(e) => { if (interactionState === "confirming") { e.currentTarget.style.borderColor = accent; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.7)"; }}}
-                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = neutralBorder; e.currentTarget.style.backgroundColor = "hsl(var(--muted) / 0.4)"; }}
-                        >
-                          <h4 className="font-semibold mb-1" style={{ color: accent }}>{label}</h4>
-                          <p className="whitespace-pre-wrap">{(message.content as Record<string, string>)[key]}</p>
-                        </div>
-                      ))}
+                      <p>Thank you for your thoughtful responses! Here is your complete MCII plan. Please review it.</p>
+                      <div
+                        className="p-3 rounded-md border whitespace-pre-wrap text-sm"
+                        style={{
+                          backgroundColor: "hsl(var(--muted) / 0.4)",
+                          borderColor: neutralBorder,
+                        }}
+                      >
+                        {[
+                          (message.content as Record<string, string>).pick_goal,
+                          (message.content as Record<string, string>).indulge,
+                          (message.content as Record<string, string>).consider_obstacles,
+                          (message.content as Record<string, string>).implementation_intention,
+                        ]
+                          .map((s) => (s ?? "").trim())
+                          .filter(Boolean)
+                          .join("\n\n")}
+                      </div>
                     </div>
                   ) : message.type === 'evaluation' ? (
                   <FeedbackDisplay content={message.content as string} />

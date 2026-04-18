@@ -74,10 +74,15 @@ export default function KnowledgeCheck({
     }
   }, [selectedOption, submitted])
 
-  const logQuizEvent = async (eventType: string, metadata: any) => {
+  // ---- BUG FIX 2026-04-17 ----
+  // logQuizEvent is now SYNCHRONOUS / fire-and-forget. Previously it
+  // `await`-ed fetch('/api/events'), which blocked the Next button
+  // from appearing while Render backend responded (up to 30s on cold
+  // start). WAL capture is synchronous and durable.
+  const logQuizEvent = (eventType: string, metadata: any) => {
     if (!sessionId) return
 
-    // Stage 2 safety net.
+    // Stage 2 safety net — synchronous, always lands.
     const walTable =
       eventType === "question_answered" || eventType === "question_changed"
         ? "knowledge_check_attempts"
@@ -89,38 +94,37 @@ export default function KnowledgeCheck({
       ...metadata,
     }, { sessionId, eventType })
 
-    try {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          event_type: eventType,
-          phase: phase,
-          component: 'knowledge_check',
-          metadata: metadata
-        })
+    // Fire-and-forget — UI is not blocked on backend latency.
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        event_type: eventType,
+        phase: phase,
+        component: 'knowledge_check',
+        metadata: metadata
       })
-    } catch (error) {
+    }).catch(error => {
       console.error(`Failed to log ${eventType}:`, error)
-    }
+    })
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!selectedOption) return
 
     const correct = selectedOption === correctAnswer
     setIsCorrect(correct)
     setSubmitted(true)
-    
+
     // Calculate timing metrics
     const timeToAnswer = Math.round((Date.now() - questionStartTime.current) / 1000)
-    const timeToFirstInteraction = firstInteractionTime.current 
+    const timeToFirstInteraction = firstInteractionTime.current
       ? Math.round((firstInteractionTime.current - questionStartTime.current) / 1000)
       : null
-    
-    // Log question answer
-    await logQuizEvent('quiz_question_answered', {
+
+    // Fire-and-forget log — does NOT block Next button from appearing.
+    logQuizEvent('quiz_question_answered', {
       question_id: `question_${questionNumber}`,
       question_text: question,
       question_type: 'multiple_choice',
@@ -146,10 +150,10 @@ export default function KnowledgeCheck({
     answerChanges.current = []
   }
 
-  const handleManualComplete = async () => {
-    // If this is the final question, log quiz completion
+  const handleManualComplete = () => {
+    // Fire-and-forget log — onComplete() fires immediately.
     if (isFinalQuestion && isCorrect) {
-      await logQuizEvent('quiz_completed', {
+      logQuizEvent('quiz_completed', {
         total_questions: totalQuestions,
       })
     }

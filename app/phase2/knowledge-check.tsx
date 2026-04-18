@@ -74,10 +74,18 @@ export default function KnowledgeCheck({
     }
   }, [selectedOption, submitted])
 
-  const logQuizEvent = async (eventType: string, metadata: any) => {
+  // ---- BUG FIX 2026-04-17 ----
+  // logQuizEvent is now SYNCHRONOUS / fire-and-forget. Previously it
+  // `await`-ed fetch('/api/events'), which meant every time the user
+  // clicked "Submit Answer" or "Complete & Continue", the UI blocked
+  // on a Render backend round-trip (potentially 30s on cold start)
+  // before the Next button could appear. WAL capture (captureToWAL)
+  // is synchronous and already durable, so the research data is safe
+  // regardless of the fetch timing.
+  const logQuizEvent = (eventType: string, metadata: any) => {
     if (!sessionId) return
 
-    // Stage 2 safety net.
+    // Stage 2 safety net — synchronous, always lands.
     const walTable =
       eventType === "question_answered" || eventType === "question_changed"
         ? "knowledge_check_attempts"
@@ -89,38 +97,38 @@ export default function KnowledgeCheck({
       ...metadata,
     }, { sessionId, eventType })
 
-    try {
-      await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          event_type: eventType,
-          phase: phase,
-          component: 'knowledge_check',
-          metadata: metadata
-        })
+    // Fire-and-forget /api/events POST. No `await` so the caller's UI
+    // updates aren't blocked on backend latency.
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        event_type: eventType,
+        phase: phase,
+        component: 'knowledge_check',
+        metadata: metadata
       })
-    } catch (error) {
+    }).catch(error => {
       console.error(`Failed to log ${eventType}:`, error)
-    }
+    })
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!selectedOption) return
 
     const correct = selectedOption === correctAnswer
     setIsCorrect(correct)
     setSubmitted(true)
-    
+
     // Calculate timing metrics
     const timeToAnswer = Math.round((Date.now() - questionStartTime.current) / 1000)
-    const timeToFirstInteraction = firstInteractionTime.current 
+    const timeToFirstInteraction = firstInteractionTime.current
       ? Math.round((firstInteractionTime.current - questionStartTime.current) / 1000)
       : null
-    
-    // Log question answer
-    await logQuizEvent('quiz_question_answered', {
+
+    // Fire-and-forget log — does NOT block the Next button from appearing.
+    logQuizEvent('quiz_question_answered', {
       question_id: `question_${questionNumber}`,
       question_text: question,
       question_type: 'multiple_choice',
@@ -136,12 +144,6 @@ export default function KnowledgeCheck({
       explanation_viewed: false, // Will be updated if user views explanation
       retry_count: 0
     })
-    
-    // If this is the final question and correct, log quiz completion
-    if (isFinalQuestion && correct) {
-      // Note: You may want to track total quiz stats separately
-      // For now, we log individual questions
-    }
   }
 
   const handleTryAgain = async () => {
@@ -152,13 +154,13 @@ export default function KnowledgeCheck({
     answerChanges.current = []
   }
 
-  const handleManualComplete = async () => {
-    // If this is the final question, log quiz completion
+  const handleManualComplete = () => {
+    // Fire-and-forget log — onComplete() fires immediately, user
+    // proceeds to next question / next phase without waiting for
+    // /api/events. WAL already captured the completion.
     if (isFinalQuestion && isCorrect) {
-      await logQuizEvent('quiz_completed', {
+      logQuizEvent('quiz_completed', {
         total_questions: totalQuestions,
-        // Note: You may need to track these across all questions
-        // For now, we log per-question data
       })
     }
     onComplete()
